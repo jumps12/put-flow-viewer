@@ -14,15 +14,22 @@ async function fetchPutFlowData(ticker) {
   const all = await res.json();
   return all
     .filter(p => String(p.symbol ?? '').trim().toUpperCase() === ticker)
-    .map(p => ({
-      strike:    parseFloat(p.strike),
-      expiry:    parseDate(p.expiry),
-      contracts: parseInt(p.contracts),
-      premium:   parseFloat(p.premium),
-      tradeDate: parseDate(p.trade_date),
-    }))
+    .map(p => {
+      // original_premium may be null if the column was added after this row was entered;
+      // fall back to current_premium so older rows still render.
+      const orig = parseFloat(p.original_premium ?? p.current_premium ?? p.premium);
+      const curr = parseFloat(p.current_premium ?? p.premium);
+      return {
+        strike:          parseFloat(p.strike),
+        expiry:          parseDate(p.expiry),
+        contracts:       parseInt(p.contracts),
+        originalPremium: orig,
+        currentPremium:  curr,
+        tradeDate:       parseDate(p.trade_date),
+      };
+    })
     .filter(d =>
-      isFinite(d.strike) && isFinite(d.contracts) && isFinite(d.premium) &&
+      isFinite(d.strike) && isFinite(d.contracts) && isFinite(d.originalPremium) &&
       d.expiry instanceof Date && d.tradeDate instanceof Date &&
       d.expiry > d.tradeDate
     );
@@ -121,6 +128,15 @@ function getDTE(expiry) {
   return Math.floor((exp - today) / 86_400_000);
 }
 
+// Right endpoint of each line: always at least 30 days past today so the
+// label has breathing room to the right of the last candle.
+function lineEndDate(expiry) {
+  const floor = new Date();
+  floor.setHours(0, 0, 0, 0);
+  floor.setDate(floor.getDate() + 30);
+  return expiry > floor ? expiry : floor;
+}
+
 function dteColor(dte) {
   if (dte >= 180) return '#00BCD4'; // teal
   if (dte >= 90)  return '#4CAF50'; // green
@@ -153,7 +169,8 @@ function createLabels(positions) {
   for (const p of positions) {
     const dte   = getDTE(p.expiry);
     const color = dteColor(dte);
-    const mv    = p.contracts * p.premium * 100;
+    // Market value uses original premium — what was paid at trade time
+    const mv    = p.contracts * p.originalPremium * 100;
 
     // Format: 2027-01-15 | 300P | 4,000 cts | $36,320,000
     const strikeStr = p.strike % 1 === 0 ? p.strike.toFixed(0) : p.strike.toFixed(2);
@@ -176,7 +193,7 @@ function updateLabelPositions() {
   if (!_chart || !_candlesSeries || !_labelData.length) return;
 
   for (const { p, el } of _labelData) {
-    const x = _chart.timeScale().timeToCoordinate(dateToStr(p.expiry));
+    const x = _chart.timeScale().timeToCoordinate(dateToStr(lineEndDate(p.expiry)));
     const y = _candlesSeries.priceToCoordinate(p.strike);
 
     if (x === null || y === null) {
@@ -244,20 +261,20 @@ function buildChart(ohlcv, positions) {
   for (const p of positions) {
     const dte   = getDTE(p.expiry);
     const color = dteColor(dte);
-    const width = strikeLineWidth(p.contracts, p.premium);
+    const width = strikeLineWidth(p.contracts, p.originalPremium);
 
     const line = _chart.addLineSeries({
       color,
-      lineWidth:             width,
-      lineStyle:             LightweightCharts.LineStyle.Solid,
-      lastValueVisible:      false,
-      priceLineVisible:      false,
+      lineWidth:              width,
+      lineStyle:              LightweightCharts.LineStyle.Solid,
+      lastValueVisible:       false,
+      priceLineVisible:       false,
       crosshairMarkerVisible: false,
     });
 
     line.setData([
-      { time: dateToStr(p.tradeDate), value: p.strike },
-      { time: dateToStr(p.expiry),    value: p.strike },
+      { time: dateToStr(p.tradeDate),            value: p.strike },
+      { time: dateToStr(lineEndDate(p.expiry)),   value: p.strike },
     ]);
   }
 
@@ -282,7 +299,7 @@ function buildTable(positions) {
     .sort((a, b) => b.strike - a.strike)
     .forEach(p => {
       const dte  = getDTE(p.expiry);
-      const mv   = p.contracts * p.premium * 100;
+      const mv   = p.contracts * p.currentPremium * 100;
       const col  = dteColor(dte);
       const tr   = document.createElement('tr');
       tr.innerHTML = `
@@ -290,7 +307,7 @@ function buildTable(positions) {
         <td>${p.expiry.toLocaleDateString()}</td>
         <td style="color:${col}">${dte}d</td>
         <td>${p.contracts.toLocaleString()}</td>
-        <td>$${p.premium.toFixed(2)}</td>
+        <td>$${p.currentPremium.toFixed(2)}</td>
         <td>${fmtMoney(mv)}</td>
         <td>${p.tradeDate.toLocaleDateString()}</td>
       `;
