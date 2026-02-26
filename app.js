@@ -141,9 +141,60 @@ function fmtMoney(v) {
   return `$${v.toFixed(0)}`;
 }
 
+// ── Strike labels ─────────────────────────────────────────────────────────────
+
+function createLabels(positions) {
+  // Remove any labels left over from a previous load
+  document.querySelectorAll('.strike-label').forEach(el => el.remove());
+  _labelData = [];
+
+  const container = document.getElementById('chart-container');
+
+  for (const p of positions) {
+    const dte   = getDTE(p.expiry);
+    const color = dteColor(dte);
+    const mv    = p.contracts * p.premium * 100;
+
+    // Format: 2027-01-15 | 300P | 4,000 cts | $36,320,000
+    const strikeStr = p.strike % 1 === 0 ? p.strike.toFixed(0) : p.strike.toFixed(2);
+    const mvStr     = '$' + Math.round(mv).toLocaleString();
+    const text      = `${dateToStr(p.expiry)} | ${strikeStr}P | ${p.contracts.toLocaleString()} cts | ${mvStr}`;
+
+    const el = document.createElement('div');
+    el.className    = 'strike-label';
+    el.style.color  = color;
+    el.textContent  = text;
+    container.appendChild(el);
+
+    _labelData.push({ p, el });
+  }
+
+  updateLabelPositions();
+}
+
+function updateLabelPositions() {
+  if (!_chart || !_candlesSeries || !_labelData.length) return;
+
+  for (const { p, el } of _labelData) {
+    const x = _chart.timeScale().timeToCoordinate(dateToStr(p.expiry));
+    const y = _candlesSeries.priceToCoordinate(p.strike);
+
+    if (x === null || y === null) {
+      el.style.display = 'none';
+      continue;
+    }
+
+    el.style.display = 'block';
+    el.style.left    = `${x + 4}px`;
+    el.style.top     = `${y}px`;
+  }
+}
+
 // ── Chart ─────────────────────────────────────────────────────────────────────
 
-let _chart = null;
+let _chart        = null;
+let _candlesSeries = null;
+let _labelData     = []; // [{ p, el }] — kept in sync with the current chart
 
 function buildChart(ohlcv, positions) {
   const container = document.getElementById('chart-container');
@@ -167,10 +218,14 @@ function buildChart(ohlcv, positions) {
     timeScale:       { borderColor: '#30363d', secondsVisible: false },
   });
 
-  // Responsive resize
+  // Responsive resize — also reposition labels
   new ResizeObserver(() => {
     if (_chart) _chart.applyOptions({ width: container.clientWidth });
+    updateLabelPositions();
   }).observe(container);
+
+  // Reposition labels on every pan / zoom
+  _chart.timeScale().subscribeVisibleLogicalRangeChange(updateLabelPositions);
 
   // ── Candlesticks ────────────────────────────────────────
   const candles = _chart.addCandlestickSeries({
@@ -182,6 +237,7 @@ function buildChart(ohlcv, positions) {
     wickDownColor:   '#f85149',
   });
   candles.setData(ohlcv);
+  _candlesSeries = candles;
 
   // ── Strike lines ─────────────────────────────────────────
   // Each position becomes a horizontal line from trade date → expiry
@@ -206,6 +262,9 @@ function buildChart(ohlcv, positions) {
   }
 
   _chart.timeScale().fitContent();
+
+  // Wait one frame for fitContent to settle, then place labels
+  requestAnimationFrame(() => createLabels(positions));
 }
 
 // ── Positions table ───────────────────────────────────────────────────────────
