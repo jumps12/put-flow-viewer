@@ -1,0 +1,329 @@
+// ─── Put Flow Viewer ──────────────────────────────────────────────────────────
+
+// ── Google Sheets ─────────────────────────────────────────────────────────────
+
+async function fetchPutFlowData(ticker) {
+  if (!CONFIG.GOOGLE_API_KEY || CONFIG.GOOGLE_API_KEY === 'YOUR_API_KEY_HERE') {
+    throw new Error('Google API key not configured — edit config.js');
+  }
+
+  const range = encodeURIComponent(`${CONFIG.SHEET_NAME}!A:F`);
+  const url   = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.GOOGLE_SHEETS_ID}/values/${range}?key=${CONFIG.GOOGLE_API_KEY}`;
+
+  const res = await fetch(url);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(`Google Sheets: ${body?.error?.message || res.statusText}`);
+  }
+
+  const { values = [] } = await res.json();
+  if (values.length < 2) return [];
+
+  // Flexible header detection — matches your column names case-insensitively
+  const headers = values[0].map(h => String(h).trim().toLowerCase());
+  const col = (...keys) => headers.findIndex(h => keys.some(k => h.includes(k)));
+
+  const C = {
+    symbol:    col('symbol', 'ticker'),
+    strike:    col('strike'),
+    expiry:    col('expiry', 'expiration', 'exp'),
+    contracts: col('contract', 'qty', 'size', 'quantity'),
+    premium:   col('premium', 'price', 'credit'),
+    tradeDate: col('trade date', 'trade_date', 'date', 'entry'),
+  };
+
+  if (C.symbol === -1 || C.strike === -1) {
+    throw new Error('Sheet must have at least "Symbol" and "Strike" columns');
+  }
+
+  return values.slice(1)
+    .filter(row => String(row[C.symbol] ?? '').trim().toUpperCase() === ticker)
+    .map(row => ({
+      strike:    cleanNum(row[C.strike]),
+      expiry:    parseDate(row[C.expiry]),
+      contracts: cleanNum(row[C.contracts]),
+      premium:   cleanNum(row[C.premium]),
+      tradeDate: parseDate(row[C.tradeDate]),
+    }))
+    .filter(d =>
+      isFinite(d.strike) && isFinite(d.contracts) && isFinite(d.premium) &&
+      d.expiry instanceof Date && d.tradeDate instanceof Date &&
+      d.expiry > d.tradeDate
+    );
+}
+
+// ── Yahoo Finance ──────────────────────────────────────────────────────────────
+
+async function fetchOHLCV(ticker) {
+  const now   = Math.floor(Date.now() / 1000);
+  const start = now - 2 * 365 * 24 * 3600;        // 2 years back
+  const end   = now + 400 * 24 * 3600;             // 400 days forward (covers LEAPS)
+
+  const target = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}` +
+                 `?period1=${start}&period2=${end}&interval=1d`;
+  const url = CONFIG.CORS_PROXY + encodeURIComponent(target);
+
+  let res;
+  try {
+    res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
+  } catch (e) {
+    throw new Error(`Network error: ${e.message}. Check your CORS proxy in config.js.`);
+  }
+  if (!res.ok) throw new Error(`Price data HTTP ${res.status} — is the ticker valid?`);
+
+  const json = await res.json();
+  if (json.chart?.error) {
+    throw new Error(`Yahoo Finance: ${json.chart.error.description || 'unknown error'}`);
+  }
+
+  const result = json.chart?.result?.[0];
+  if (!result) throw new Error(`No price data found for "${ticker}"`);
+
+  const timestamps = result.timestamp ?? [];
+  const q          = result.indicators?.quote?.[0] ?? {};
+
+  return timestamps
+    .map((t, i) => ({
+      time:  tsToDateStr(t),
+      open:  q.open?.[i],
+      high:  q.high?.[i],
+      low:   q.low?.[i],
+      close: q.close?.[i],
+    }))
+    .filter(d => d.open != null && d.high != null && d.low != null && d.close != null);
+}
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+
+function cleanNum(v) {
+  return parseFloat(String(v ?? '').replace(/[$,%\s,]/g, ''));
+}
+
+function parseDate(raw) {
+  if (raw == null) return null;
+  const s = String(raw).trim();
+
+  // MM/DD/YYYY or M/D/YYYY
+  const mdy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (mdy) {
+    let yr = +mdy[3];
+    if (yr < 100) yr += 2000;
+    return new Date(yr, +mdy[1] - 1, +mdy[2]);
+  }
+
+  // YYYY-MM-DD — treat as local (not UTC) to avoid off-by-one
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) return new Date(+iso[1], +iso[2] - 1, +iso[3]);
+
+  // Fallback: native parse, normalise to local midnight
+  const d = new Date(s);
+  if (!isNaN(d)) return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  return null;
+}
+
+function tsToDateStr(ts) {
+  const d = new Date(ts * 1000);
+  return [
+    d.getUTCFullYear(),
+    String(d.getUTCMonth() + 1).padStart(2, '0'),
+    String(d.getUTCDate()).padStart(2, '0'),
+  ].join('-');
+}
+
+function dateToStr(d) {
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('-');
+}
+
+function getDTE(expiry) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const exp = new Date(expiry.getFullYear(), expiry.getMonth(), expiry.getDate());
+  return Math.floor((exp - today) / 86_400_000);
+}
+
+function dteColor(dte) {
+  if (dte >= 180) return '#00BCD4'; // teal
+  if (dte >= 90)  return '#4CAF50'; // green
+  if (dte >= 30)  return '#FFC107'; // yellow
+  return '#F44336';                 // red
+}
+
+function strikeLineWidth(contracts, premium) {
+  const mv = contracts * premium * 100;
+  if (mv > 2_000_000) return 3;
+  if (mv >   500_000) return 2;
+  return 1;
+}
+
+function fmtMoney(v) {
+  if (v >= 1e6) return `$${(v / 1e6).toFixed(2)}M`;
+  if (v >= 1e3) return `$${(v / 1e3).toFixed(0)}K`;
+  return `$${v.toFixed(0)}`;
+}
+
+// ── Chart ─────────────────────────────────────────────────────────────────────
+
+let _chart = null;
+
+function buildChart(ohlcv, positions) {
+  const container = document.getElementById('chart-container');
+
+  if (_chart) { _chart.remove(); _chart = null; }
+
+  _chart = LightweightCharts.createChart(container, {
+    width:  container.clientWidth,
+    height: 540,
+    layout: {
+      background: { type: 'solid', color: '#0d1117' },
+      textColor:  '#c9d1d9',
+      fontSize:   12,
+    },
+    grid: {
+      vertLines: { color: '#1c2128' },
+      horzLines: { color: '#1c2128' },
+    },
+    crosshair:       { mode: LightweightCharts.CrosshairMode.Normal },
+    rightPriceScale: { borderColor: '#30363d' },
+    timeScale:       { borderColor: '#30363d', secondsVisible: false },
+  });
+
+  // Responsive resize
+  new ResizeObserver(() => {
+    if (_chart) _chart.applyOptions({ width: container.clientWidth });
+  }).observe(container);
+
+  // ── Candlesticks ────────────────────────────────────────
+  const candles = _chart.addCandlestickSeries({
+    upColor:         '#2ea043',
+    downColor:       '#f85149',
+    borderUpColor:   '#2ea043',
+    borderDownColor: '#f85149',
+    wickUpColor:     '#2ea043',
+    wickDownColor:   '#f85149',
+  });
+  candles.setData(ohlcv);
+
+  // ── Strike lines ─────────────────────────────────────────
+  // Each position becomes a horizontal line from trade date → expiry
+  for (const p of positions) {
+    const dte   = getDTE(p.expiry);
+    const color = dteColor(dte);
+    const width = strikeLineWidth(p.contracts, p.premium);
+
+    const line = _chart.addLineSeries({
+      color,
+      lineWidth:             width,
+      lineStyle:             LightweightCharts.LineStyle.Solid,
+      lastValueVisible:      false,
+      priceLineVisible:      false,
+      crosshairMarkerVisible: false,
+    });
+
+    line.setData([
+      { time: dateToStr(p.tradeDate), value: p.strike },
+      { time: dateToStr(p.expiry),    value: p.strike },
+    ]);
+  }
+
+  _chart.timeScale().fitContent();
+}
+
+// ── Positions table ───────────────────────────────────────────────────────────
+
+function buildTable(positions) {
+  const tbody = document.getElementById('positions-body');
+  tbody.innerHTML = '';
+
+  if (!positions.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty">No positions on record for this ticker</td></tr>`;
+    return;
+  }
+
+  [...positions]
+    .sort((a, b) => b.strike - a.strike)
+    .forEach(p => {
+      const dte  = getDTE(p.expiry);
+      const mv   = p.contracts * p.premium * 100;
+      const col  = dteColor(dte);
+      const tr   = document.createElement('tr');
+      tr.innerHTML = `
+        <td><b style="color:${col}">$${p.strike.toFixed(2)}</b></td>
+        <td>${p.expiry.toLocaleDateString()}</td>
+        <td style="color:${col}">${dte}d</td>
+        <td>${p.contracts.toLocaleString()}</td>
+        <td>$${p.premium.toFixed(2)}</td>
+        <td>${fmtMoney(mv)}</td>
+        <td>${p.tradeDate.toLocaleDateString()}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+}
+
+// ── Status bar ────────────────────────────────────────────────────────────────
+
+function setStatus(msg, cls = '') {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className   = cls;
+  el.hidden      = !msg;
+}
+
+// ── Entry point ───────────────────────────────────────────────────────────────
+
+async function load(raw) {
+  const ticker = raw.trim().toUpperCase();
+  if (!ticker) return;
+
+  document.getElementById('ticker-input').value = ticker;
+  history.replaceState(null, '', `#${ticker}`);
+
+  setStatus(`Loading ${ticker}…`, 'info');
+  document.getElementById('load-btn').disabled = true;
+
+  try {
+    const [positions, ohlcv] = await Promise.all([
+      fetchPutFlowData(ticker),
+      fetchOHLCV(ticker),
+    ]);
+
+    if (!ohlcv.length) throw new Error(`No price data returned for "${ticker}"`);
+
+    buildChart(ohlcv, positions);
+    buildTable(positions);
+
+    setStatus(
+      positions.length
+        ? `${ohlcv.length} candles · ${positions.length} put position${positions.length !== 1 ? 's' : ''}`
+        : `Loaded price data — no put positions on record for ${ticker}`,
+      positions.length ? 'success' : 'warning'
+    );
+  } catch (err) {
+    setStatus(err.message, 'error');
+    console.error(err);
+  } finally {
+    document.getElementById('load-btn').disabled = false;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('ticker-input');
+  const btn   = document.getElementById('load-btn');
+
+  // Force uppercase as the user types
+  input.addEventListener('input', e => {
+    const pos = e.target.selectionStart;
+    e.target.value = e.target.value.toUpperCase();
+    e.target.setSelectionRange(pos, pos);
+  });
+
+  btn.addEventListener('click',  () => load(input.value));
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') load(input.value); });
+
+  // Restore ticker from URL hash (e.g. index.html#SPY)
+  const hash = decodeURIComponent(location.hash.slice(1));
+  if (hash) { input.value = hash; load(hash); }
+});
