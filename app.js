@@ -1,49 +1,25 @@
 // ─── Put Flow Viewer ──────────────────────────────────────────────────────────
 
-// ── Google Sheets ─────────────────────────────────────────────────────────────
+// ── Positions (from pre-exported JSON) ────────────────────────────────────────
 
 async function fetchPutFlowData(ticker) {
-  if (!CONFIG.GOOGLE_API_KEY || CONFIG.GOOGLE_API_KEY === 'YOUR_API_KEY_HERE') {
-    throw new Error('Google API key not configured — edit config.js');
-  }
-
-  const range = encodeURIComponent(`${CONFIG.SHEET_NAME}!A:F`);
-  const url   = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.GOOGLE_SHEETS_ID}/values/${range}?key=${CONFIG.GOOGLE_API_KEY}`;
-
-  const res = await fetch(url);
+  const res = await fetch('./positions.json');
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(`Google Sheets: ${body?.error?.message || res.statusText}`);
+    if (res.status === 404) {
+      throw new Error('positions.json not found — run fetch_premiums.py first');
+    }
+    throw new Error(`Failed to load positions.json: HTTP ${res.status}`);
   }
 
-  const { values = [] } = await res.json();
-  if (values.length < 2) return [];
-
-  // Flexible header detection — matches your column names case-insensitively
-  const headers = values[0].map(h => String(h).trim().toLowerCase());
-  const col = (...keys) => headers.findIndex(h => keys.some(k => h.includes(k)));
-
-  const C = {
-    symbol:    col('symbol', 'ticker'),
-    strike:    col('strike'),
-    expiry:    col('expiry', 'expiration', 'exp'),
-    contracts: col('contract', 'qty', 'size', 'quantity'),
-    premium:   col('premium', 'price', 'credit'),
-    tradeDate: col('trade date', 'trade_date', 'date', 'entry'),
-  };
-
-  if (C.symbol === -1 || C.strike === -1) {
-    throw new Error('Sheet must have at least "Symbol" and "Strike" columns');
-  }
-
-  return values.slice(1)
-    .filter(row => String(row[C.symbol] ?? '').trim().toUpperCase() === ticker)
-    .map(row => ({
-      strike:    cleanNum(row[C.strike]),
-      expiry:    parseDate(row[C.expiry]),
-      contracts: cleanNum(row[C.contracts]),
-      premium:   cleanNum(row[C.premium]),
-      tradeDate: parseDate(row[C.tradeDate]),
+  const all = await res.json();
+  return all
+    .filter(p => String(p.symbol ?? '').trim().toUpperCase() === ticker)
+    .map(p => ({
+      strike:    parseFloat(p.strike),
+      expiry:    parseDate(p.expiry),
+      contracts: parseInt(p.contracts),
+      premium:   parseFloat(p.premium),
+      tradeDate: parseDate(p.trade_date),
     }))
     .filter(d =>
       isFinite(d.strike) && isFinite(d.contracts) && isFinite(d.premium) &&
