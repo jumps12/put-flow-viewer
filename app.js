@@ -237,7 +237,7 @@ function buildChart(ohlcv, positions) {
     timeScale: {
       borderColor:                '#30363d',
       secondsVisible:             false,
-      rightOffset:                30,
+      rightOffset:                50,
       barSpacing:                 10,
       fixLeftEdge:                false,
       fixRightEdge:               false,
