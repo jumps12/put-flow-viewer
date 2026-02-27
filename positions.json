@@ -4,108 +4,120 @@
     "strike": 200.0,
     "expiry": "2026-05-15",
     "contracts": 5000,
-    "current_premium": 4.08,
+    "current_premium": 3.33,
     "original_premium": 3.5,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "AMD",
     "strike": 195.0,
     "expiry": "2026-03-06",
     "contracts": 1200,
-    "current_premium": 3.25,
+    "current_premium": 4.3,
     "original_premium": 2.81,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "ANET",
     "strike": 105.0,
     "expiry": "2026-04-17",
     "contracts": 8000,
-    "current_premium": 1.54,
+    "current_premium": 1.51,
     "original_premium": 1.9,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "APP",
     "strike": 360.0,
     "expiry": "2026-09-18",
     "contracts": 400,
-    "current_premium": 56.35,
+    "current_premium": 59.1,
     "original_premium": 71.85,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "ASTS",
     "strike": 79.0,
     "expiry": "2026-02-27",
     "contracts": 1200,
-    "current_premium": 0.29,
+    "current_premium": 0.66,
     "original_premium": 1.41,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "BAC",
     "strike": 35.0,
     "expiry": "2028-12-15",
     "contracts": 1500,
-    "current_premium": 2.73,
+    "current_premium": 3.29,
     "original_premium": 2.97,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "CDNS",
     "strike": 245.0,
     "expiry": "2026-03-20",
     "contracts": 3900,
-    "current_premium": 0.85,
+    "current_premium": 1.75,
     "original_premium": 2.3,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "CL",
     "strike": 90.0,
     "expiry": "2026-03-20",
     "contracts": 7000,
-    "current_premium": 0.28,
+    "current_premium": 0.17,
     "original_premium": 0.3,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "CRH",
     "strike": 105.0,
     "expiry": "2026-03-20",
     "contracts": 1050,
-    "current_premium": 0.65,
+    "current_premium": 0.55,
     "original_premium": 0.43,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "CRL",
     "strike": 140.0,
     "expiry": "2026-12-18",
     "contracts": 1020,
-    "current_premium": 10.85,
+    "current_premium": 11.3,
     "original_premium": 12.6,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "CRWV",
     "strike": 37.5,
     "expiry": "2026-04-17",
     "contracts": 27200,
-    "current_premium": 0.38,
+    "current_premium": 0.41,
     "original_premium": 0.44,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "DUOL",
     "strike": 105.0,
     "expiry": "2026-09-18",
     "contracts": 800,
-    "current_premium": 21.95,
+    "current_premium": 27.4,
     "original_premium": 25.3,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "EQT",
@@ -114,34 +126,38 @@
     "contracts": 34400,
     "current_premium": 0.13,
     "original_premium": 0.2,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "EXE",
     "strike": 90.0,
     "expiry": "2026-03-20",
     "contracts": 7500,
-    "current_premium": 0.32,
+    "current_premium": 0.17,
     "original_premium": 0.52,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "FCX",
     "strike": 60.0,
     "expiry": "2026-09-18",
     "contracts": 1775,
-    "current_premium": 5.42,
+    "current_premium": 5.67,
     "original_premium": 5.75,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "FRO",
     "strike": 23.0,
     "expiry": "2026-08-21",
     "contracts": 1700,
-    "current_premium": 0.9,
+    "current_premium": 0.65,
     "original_premium": 0.9,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "GLD",
@@ -150,34 +166,38 @@
     "contracts": 18500,
     "current_premium": 0.3,
     "original_premium": 0.51,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "HAL",
     "strike": 30.0,
     "expiry": "2026-04-17",
     "contracts": 3000,
-    "current_premium": 0.36,
+    "current_premium": 0.39,
     "original_premium": 0.39,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "ILMN",
     "strike": 110.0,
     "expiry": "2026-03-20",
     "contracts": 1000,
-    "current_premium": 1.42,
+    "current_premium": 0.42,
     "original_premium": 1.97,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "INTC",
     "strike": 42.0,
     "expiry": "2026-09-18",
     "contracts": 2900,
-    "current_premium": 5.83,
+    "current_premium": 6.03,
     "original_premium": 5.9,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "INTC",
@@ -186,214 +206,238 @@
     "contracts": 3000,
     "current_premium": 0.0,
     "original_premium": 0.0,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "INTC",
     "strike": 30.0,
     "expiry": "2027-01-15",
     "contracts": 1000,
-    "current_premium": 2.55,
+    "current_premium": 2.43,
     "original_premium": 2.34,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "IREN",
     "strike": 33.0,
     "expiry": "2026-03-06",
     "contracts": 1500,
-    "current_premium": 0.33,
+    "current_premium": 0.48,
     "original_premium": 0.45,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "KKR",
     "strike": 80.0,
     "expiry": "2027-01-15",
     "contracts": 600,
-    "current_premium": 8.95,
+    "current_premium": 10.7,
     "original_premium": 8.5,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "KTOS",
     "strike": 65.0,
     "expiry": "2026-05-15",
     "contracts": 2000,
-    "current_premium": 3.12,
+    "current_premium": 3.85,
     "original_premium": 3.4,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "LITE",
     "strike": 590.0,
     "expiry": "2026-02-27",
     "contracts": 1000,
-    "current_premium": 0.47,
+    "current_premium": 0.06,
     "original_premium": 3.55,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "LLY",
     "strike": 895.0,
     "expiry": "2026-03-27",
     "contracts": 1050,
-    "current_premium": 5.5,
+    "current_premium": 4.47,
     "original_premium": 3.73,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "MRVL",
     "strike": 80.0,
     "expiry": "2026-03-06",
     "contracts": 1050,
-    "current_premium": 5.0,
+    "current_premium": 4.67,
     "original_premium": 5.65,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "NFLX",
     "strike": 62.0,
     "expiry": "2028-01-21",
     "contracts": 600,
-    "current_premium": 7.0,
+    "current_premium": 4.88,
     "original_premium": 7.83,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "PANW",
     "strike": 130.0,
     "expiry": "2026-07-17",
     "contracts": 750,
-    "current_premium": 6.25,
+    "current_premium": 6.72,
     "original_premium": 8.3,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "PLTR",
     "strike": 128.0,
     "expiry": "2026-02-27",
     "contracts": 5400,
-    "current_premium": 0.11,
+    "current_premium": 0.01,
     "original_premium": 2.77,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "PZZA",
     "strike": 27.5,
     "expiry": "2026-04-17",
     "contracts": 5600,
-    "current_premium": 0.62,
+    "current_premium": 1.38,
     "original_premium": 0.57,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "RIO",
     "strike": 90.0,
     "expiry": "2026-03-20",
     "contracts": 1400,
-    "current_premium": 0.98,
+    "current_premium": 1.12,
     "original_premium": 1.38,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "RIVN",
     "strike": 19.0,
     "expiry": "2026-05-15",
     "contracts": 3000,
-    "current_premium": 4.25,
+    "current_premium": 4.35,
     "original_premium": 4.5,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "RKT",
     "strike": 18.0,
     "expiry": "2026-02-27",
     "contracts": 1000,
-    "current_premium": 1.0,
+    "current_premium": 0.11,
     "original_premium": 1.13,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "RXT",
     "strike": 1.0,
     "expiry": "2026-08-21",
     "contracts": 3000,
-    "current_premium": 0.25,
+    "current_premium": 0.28,
     "original_premium": 0.32,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "SA",
     "strike": 30.0,
     "expiry": "2026-05-15",
     "contracts": 1350,
-    "current_premium": 1.73,
+    "current_premium": 1.52,
     "original_premium": 1.88,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "STX",
     "strike": 400.0,
     "expiry": "2026-03-20",
     "contracts": 1000,
-    "current_premium": 23.7,
+    "current_premium": 24.55,
     "original_premium": 31.8,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "T",
     "strike": 18.0,
     "expiry": "2028-01-21",
     "contracts": 1000,
-    "current_premium": 0.66,
+    "current_premium": 0.67,
     "original_premium": 0.64,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "TGT",
     "strike": 115.0,
     "expiry": "2026-04-17",
     "contracts": 1350,
-    "current_premium": 7.05,
+    "current_premium": 7.72,
     "original_premium": 6.95,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "TTD",
     "strike": 25.0,
     "expiry": "2026-09-18",
     "contracts": 2000,
-    "current_premium": 5.2,
+    "current_premium": 5.35,
     "original_premium": 5.4,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "UBER",
     "strike": 50.0,
     "expiry": "2026-08-21",
     "contracts": 2000,
-    "current_premium": 1.06,
+    "current_premium": 1.12,
     "original_premium": 1.21,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "USO",
     "strike": 75.0,
     "expiry": "2026-04-17",
     "contracts": 3000,
-    "current_premium": 3.5,
+    "current_premium": 3.2,
     "original_premium": 3.08,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "VNET",
     "strike": 11.0,
     "expiry": "2026-03-20",
     "contracts": 4000,
-    "current_premium": 0.93,
+    "current_premium": 1.2,
     "original_premium": 0.73,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "VST",
@@ -402,133 +446,148 @@
     "contracts": 8000,
     "current_premium": 0.33,
     "original_premium": 0.33,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "WMT",
     "strike": 113.0,
     "expiry": "2026-03-13",
     "contracts": 8100,
-    "current_premium": 0.36,
+    "current_premium": 0.24,
     "original_premium": 0.29,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "Z",
     "strike": 40.0,
     "expiry": "2026-03-20",
     "contracts": 1000,
-    "current_premium": 0.53,
+    "current_premium": 0.66,
     "original_premium": 1.05,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "AAOI",
     "strike": 35.0,
     "expiry": "2026-09-18",
     "contracts": 200,
-    "current_premium": 6.2,
+    "current_premium": 4.4,
     "original_premium": 6.8,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "AXON",
     "strike": 300.0,
     "expiry": "2026-09-18",
     "contracts": 500,
-    "current_premium": 9.4,
+    "current_premium": 8.55,
     "original_premium": 24.1,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "BA",
     "strike": 205.0,
     "expiry": "2026-04-02",
     "contracts": 3400,
-    "current_premium": 2.01,
+    "current_premium": 2.27,
     "original_premium": 1.67,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "CCJ",
     "strike": 90.0,
     "expiry": "2026-06-18",
     "contracts": 3375,
-    "current_premium": 4.08,
+    "current_premium": 3.93,
     "original_premium": 3.39,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "CMPS",
     "strike": 8.0,
     "expiry": "2026-04-17",
     "contracts": 4000,
-    "current_premium": 1.35,
+    "current_premium": 1.42,
     "original_premium": 0.95,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "CORT",
     "strike": 35.0,
     "expiry": "2026-04-17",
     "contracts": 5000,
-    "current_premium": 2.35,
+    "current_premium": 2.77,
     "original_premium": 2.85,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "DAL",
     "strike": 65.0,
     "expiry": "2026-03-20",
     "contracts": 2500,
-    "current_premium": 1.21,
+    "current_premium": 2.9,
     "original_premium": 1.72,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "ETN",
     "strike": 330.0,
     "expiry": "2026-03-27",
     "contracts": 2675,
-    "current_premium": 2.9,
+    "current_premium": 2.85,
     "original_premium": 2.65,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "EWY",
     "strike": 130.0,
     "expiry": "2026-03-06",
     "contracts": 4000,
-    "current_premium": 1.18,
+    "current_premium": 0.95,
     "original_premium": 1.48,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "FTI",
     "strike": 55.0,
     "expiry": "2026-04-17",
     "contracts": 2000,
-    "current_premium": 0.55,
+    "current_premium": 0.52,
     "original_premium": 0.5,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "FUN",
     "strike": 15.0,
     "expiry": "2026-03-20",
     "contracts": 1900,
-    "current_premium": 0.45,
+    "current_premium": 0.53,
     "original_premium": 0.7,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "IBRX",
     "strike": 6.0,
     "expiry": "2026-05-15",
     "contracts": 12000,
-    "current_premium": 0.53,
+    "current_premium": 0.5,
     "original_premium": 0.45,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "INTC",
@@ -537,196 +596,218 @@
     "contracts": 7500,
     "current_premium": 3.22,
     "original_premium": 3.2,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "INTC",
     "strike": 42.0,
     "expiry": "2027-01-15",
     "contracts": 3000,
-    "current_premium": 7.4,
+    "current_premium": 7.35,
     "original_premium": 7.15,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "ISRG",
     "strike": 450.0,
     "expiry": "2026-04-02",
     "contracts": 1550,
-    "current_premium": 5.17,
+    "current_premium": 3.6,
     "original_premium": 3.25,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "KO",
     "strike": 72.5,
     "expiry": "2026-05-15",
     "contracts": 2750,
-    "current_premium": 0.67,
+    "current_premium": 0.6,
     "original_premium": 0.65,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "NNE",
     "strike": 21.0,
     "expiry": "2026-04-17",
     "contracts": 2300,
-    "current_premium": 1.12,
+    "current_premium": 1.25,
     "original_premium": 1.6,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "NOW",
     "strike": 85.0,
     "expiry": "2026-04-17",
     "contracts": 1150,
-    "current_premium": 1.12,
+    "current_premium": 1.3,
     "original_premium": 1.95,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "PANW",
     "strike": 150.0,
     "expiry": "2026-08-21",
     "contracts": 750,
-    "current_premium": 15.95,
+    "current_premium": 17.2,
     "original_premium": 19.6,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "RIOT",
     "strike": 11.5,
     "expiry": "2026-04-02",
     "contracts": 2000,
-    "current_premium": 0.39,
+    "current_premium": 0.4,
     "original_premium": 0.34,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "RTX",
     "strike": 175.0,
     "expiry": "2026-08-21",
     "contracts": 400,
-    "current_premium": 8.12,
+    "current_premium": 7.95,
     "original_premium": 7.6,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "TARS",
     "strike": 60.0,
     "expiry": "2026-04-17",
     "contracts": 2000,
-    "current_premium": 1.75,
+    "current_premium": 2.45,
     "original_premium": 3.62,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "TLT",
     "strike": 84.0,
     "expiry": "2027-02-19",
     "contracts": 4900,
-    "current_premium": 1.71,
+    "current_premium": 1.64,
     "original_premium": 1.85,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "WMT",
     "strike": 115.0,
     "expiry": "2026-04-17",
     "contracts": 9700,
-    "current_premium": 1.56,
+    "current_premium": 1.13,
     "original_premium": 1.38,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "XERS",
     "strike": 5.0,
     "expiry": "2026-07-17",
     "contracts": 4000,
-    "current_premium": 0.35,
+    "current_premium": 0.55,
     "original_premium": 0.35,
-    "trade_date": "2026-02-19"
+    "trade_date": "2026-02-19",
+    "type": "put"
   },
   {
     "symbol": "ABT",
     "strike": 105.0,
     "expiry": "2026-03-20",
     "contracts": 5000,
-    "current_premium": 0.29,
+    "current_premium": 0.37,
     "original_premium": 0.33,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "AR",
     "strike": 29.0,
     "expiry": "2026-03-27",
     "contracts": 23000,
-    "current_premium": 0.2,
+    "current_premium": 0.3,
     "original_premium": 0.38,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "ARDX",
     "strike": 5.0,
     "expiry": "2026-07-17",
     "contracts": 2000,
-    "current_premium": 0.4,
+    "current_premium": 0.25,
     "original_premium": 0.33,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "AVGO",
     "strike": 250.0,
     "expiry": "2026-04-17",
     "contracts": 5000,
-    "current_premium": 4.45,
+    "current_premium": 4.72,
     "original_premium": 4.97,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "AVGO",
     "strike": 230.0,
     "expiry": "2026-05-15",
     "contracts": 1260,
-    "current_premium": 4.12,
+    "current_premium": 4.38,
     "original_premium": 4.62,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "BABA",
     "strike": 140.0,
     "expiry": "2026-02-27",
     "contracts": 2500,
-    "current_premium": 0.05,
+    "current_premium": 0.01,
     "original_premium": 0.13,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "BABA",
     "strike": 125.0,
     "expiry": "2026-09-18",
     "contracts": 1200,
-    "current_premium": 6.85,
+    "current_premium": 7.7,
     "original_premium": 6.05,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "BE",
     "strike": 150.0,
     "expiry": "2026-03-20",
     "contracts": 1500,
-    "current_premium": 10.68,
+    "current_premium": 14.2,
     "original_premium": 13.35,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "BP",
     "strike": 37.0,
     "expiry": "2026-03-06",
     "contracts": 1875,
-    "current_premium": 0.33,
+    "current_premium": 0.21,
     "original_premium": 0.33,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "BRKB",
@@ -735,187 +816,208 @@
     "contracts": 2000,
     "current_premium": 0.0,
     "original_premium": null,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "C",
     "strike": 95.0,
     "expiry": "2026-11-20",
     "contracts": 600,
-    "current_premium": 5.05,
+    "current_premium": 6.28,
     "original_premium": 6.42,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "CC",
     "strike": 14.0,
     "expiry": "2026-07-17",
     "contracts": 1750,
-    "current_premium": 1.38,
+    "current_premium": 1.27,
     "original_premium": 1.23,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "CRDO",
     "strike": 95.0,
     "expiry": "2026-08-21",
     "contracts": 400,
-    "current_premium": 16.45,
+    "current_premium": 17.2,
     "original_premium": 14.65,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "CVNA",
     "strike": 275.0,
     "expiry": "2026-02-27",
     "contracts": 5000,
-    "current_premium": 0.09,
+    "current_premium": 0.03,
     "original_premium": 0.72,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "CVX",
     "strike": 175.0,
     "expiry": "2026-03-20",
     "contracts": 2500,
-    "current_premium": 1.69,
+    "current_premium": 1.54,
     "original_premium": 1.57,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "DIS",
     "strike": 95.0,
     "expiry": "2026-04-02",
     "contracts": 7250,
-    "current_premium": 0.61,
+    "current_premium": 0.62,
     "original_premium": 0.86,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "EBAY",
     "strike": 86.0,
     "expiry": "2026-02-27",
     "contracts": 2000,
-    "current_premium": 0.2,
+    "current_premium": 0.07,
     "original_premium": 1.77,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "FND",
     "strike": 55.0,
     "expiry": "2026-04-17",
     "contracts": 13200,
-    "current_premium": 0.7,
+    "current_premium": 0.8,
     "original_premium": 0.85,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "FVRR",
     "strike": 10.0,
     "expiry": "2027-01-15",
     "contracts": 2000,
-    "current_premium": 1.73,
+    "current_premium": 1.77,
     "original_premium": 1.9,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "GDX",
     "strike": 90.0,
     "expiry": "2026-03-20",
     "contracts": 1500,
-    "current_premium": 0.32,
+    "current_premium": 0.27,
     "original_premium": 0.68,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "INTU",
     "strike": 300.0,
     "expiry": "2026-09-18",
     "contracts": 400,
-    "current_premium": 20.0,
+    "current_premium": 19.25,
     "original_premium": 28.55,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "ISRG",
     "strike": 440.0,
     "expiry": "2026-03-27",
     "contracts": 1575,
-    "current_premium": 2.43,
+    "current_premium": 2.5,
     "original_premium": 4.38,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "JNJ",
     "strike": 280.0,
     "expiry": "2026-12-18",
     "contracts": 450,
-    "current_premium": 40.88,
+    "current_premium": 37.92,
     "original_premium": 38.65,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "MGM",
     "strike": 30.0,
     "expiry": "2028-01-21",
     "contracts": 2000,
-    "current_premium": 4.6,
+    "current_premium": 3.75,
     "original_premium": 4.62,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "MS",
     "strike": 160.0,
     "expiry": "2026-02-27",
     "contracts": 5000,
-    "current_premium": 0.06,
+    "current_premium": 0.03,
     "original_premium": 0.49,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "MSTR",
     "strike": 126.0,
     "expiry": "2026-02-27",
     "contracts": 1000,
-    "current_premium": 0.35,
+    "current_premium": 0.23,
     "original_premium": 4.75,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "MU",
     "strike": 410.0,
     "expiry": "2026-03-20",
     "contracts": 2000,
-    "current_premium": 29.23,
+    "current_premium": 30.32,
     "original_premium": 28.42,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "NUAI",
     "strike": 4.5,
     "expiry": "2026-03-20",
     "contracts": 1650,
-    "current_premium": 0.55,
+    "current_premium": 0.7,
     "original_premium": 0.55,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "NVDA",
     "strike": 160.0,
     "expiry": "2026-06-18",
     "contracts": 1000,
-    "current_premium": 8.05,
+    "current_premium": 9.22,
     "original_premium": 7.0,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "OKTA",
     "strike": 82.5,
     "expiry": "2026-05-15",
     "contracts": 1500,
-    "current_premium": 11.68,
+    "current_premium": 13.7,
     "original_premium": 14.57,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "VWO",
@@ -924,25 +1026,28 @@
     "contracts": 1670,
     "current_premium": 0.8,
     "original_premium": 0.75,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "WDC",
     "strike": 260.0,
     "expiry": "2026-06-18",
     "contracts": 400,
-    "current_premium": 38.85,
+    "current_premium": 37.28,
     "original_premium": 43.8,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "WMT",
     "strike": 110.0,
     "expiry": "2026-03-20",
     "contracts": 9000,
-    "current_premium": 0.3,
+    "current_premium": 0.27,
     "original_premium": 0.34,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "XLE",
@@ -951,34 +1056,38 @@
     "contracts": 7000,
     "current_premium": 0.47,
     "original_premium": 0.58,
-    "trade_date": "2026-02-20"
+    "trade_date": "2026-02-20",
+    "type": "put"
   },
   {
     "symbol": "AAPL",
     "strike": 260.0,
     "expiry": "2026-04-17",
     "contracts": 10000,
-    "current_premium": 4.95,
+    "current_premium": 6.35,
     "original_premium": 5.7,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "AMGN",
     "strike": 340.0,
     "expiry": "2026-06-18",
     "contracts": 1100,
-    "current_premium": 8.3,
+    "current_premium": 7.1,
     "original_premium": 7.2,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "AMT",
     "strike": 190.0,
     "expiry": "2026-04-17",
     "contracts": 1300,
-    "current_premium": 10.05,
+    "current_premium": 8.55,
     "original_premium": 7.45,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "ANET",
@@ -987,34 +1096,38 @@
     "contracts": 500,
     "current_premium": 0.0,
     "original_premium": 0.0,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "AS",
     "strike": 37.5,
     "expiry": "2026-03-20",
     "contracts": 2375,
-    "current_premium": 1.25,
+    "current_premium": 1.77,
     "original_premium": 1.52,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "ASTS",
     "strike": 80.0,
     "expiry": "2027-01-15",
     "contracts": 2400,
-    "current_premium": 25.88,
+    "current_premium": 27.05,
     "original_premium": 25.55,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "BE",
     "strike": 110.0,
     "expiry": "2026-05-15",
     "contracts": 1400,
-    "current_premium": 10.02,
+    "current_premium": 11.43,
     "original_premium": 12.03,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "CMG",
@@ -1023,16 +1136,18 @@
     "contracts": 12000,
     "current_premium": 0.0,
     "original_premium": 0.0,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "COP",
     "strike": 95.0,
     "expiry": "2026-09-18",
     "contracts": 2500,
-    "current_premium": 3.66,
+    "current_premium": 3.95,
     "original_premium": 3.92,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "CRM",
@@ -1041,25 +1156,28 @@
     "contracts": 1200,
     "current_premium": 0.01,
     "original_premium": 2.12,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "CTSH",
     "strike": 60.0,
     "expiry": "2026-03-20",
     "contracts": 3400,
-    "current_premium": 1.0,
+    "current_premium": 1.05,
     "original_premium": 2.38,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "DHR",
     "strike": 195.0,
     "expiry": "2026-03-20",
     "contracts": 5000,
-    "current_premium": 1.55,
+    "current_premium": 1.77,
     "original_premium": 1.7,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "ETN",
@@ -1068,52 +1186,58 @@
     "contracts": 2720,
     "current_premium": 0.0,
     "original_premium": 0.0,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "EWY",
     "strike": 115.0,
     "expiry": "2026-07-17",
     "contracts": 1000,
-    "current_premium": 5.9,
+    "current_premium": 5.7,
     "original_premium": 6.0,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "FND",
     "strike": 55.0,
     "expiry": "2026-04-17",
     "contracts": 13500,
-    "current_premium": 0.7,
+    "current_premium": 0.8,
     "original_premium": 0.85,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "FND",
     "strike": 60.0,
     "expiry": "2026-06-18",
     "contracts": 2000,
-    "current_premium": 3.48,
+    "current_premium": 3.38,
     "original_premium": 3.55,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "GILD",
     "strike": 140.0,
     "expiry": "2026-05-15",
     "contracts": 600,
-    "current_premium": 6.33,
+    "current_premium": 4.72,
     "original_premium": 4.97,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "IBIT",
     "strike": 35.0,
     "expiry": "2026-03-20",
     "contracts": 1000,
-    "current_premium": 0.79,
+    "current_premium": 1.09,
     "original_premium": 1.39,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "IGV",
@@ -1122,349 +1246,388 @@
     "contracts": 5000,
     "current_premium": 2.9,
     "original_premium": 0.0,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "JPM",
     "strike": 302.5,
     "expiry": "2026-02-27",
     "contracts": 2525,
-    "current_premium": 0.66,
+    "current_premium": 6.72,
     "original_premium": 6.62,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "JPM",
     "strike": 255.0,
     "expiry": "2026-03-27",
     "contracts": 1500,
-    "current_premium": 0.69,
+    "current_premium": 1.25,
     "original_premium": 1.6,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "LULU",
     "strike": 175.0,
     "expiry": "2026-02-27",
     "contracts": 1000,
-    "current_premium": 0.13,
+    "current_premium": 0.03,
     "original_premium": 1.48,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "MDT",
     "strike": 97.0,
     "expiry": "2026-03-06",
     "contracts": 1250,
-    "current_premium": 1.11,
+    "current_premium": 1.08,
     "original_premium": 1.36,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "MKC",
     "strike": 65.0,
     "expiry": "2026-04-17",
     "contracts": 4000,
-    "current_premium": 1.23,
+    "current_premium": 1.05,
     "original_premium": 1.1,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "MNDY",
     "strike": 70.0,
     "expiry": "2027-01-15",
     "contracts": 650,
-    "current_premium": 14.25,
+    "current_premium": 17.2,
     "original_premium": 17.2,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "MNST",
     "strike": 72.5,
     "expiry": "2026-06-18",
     "contracts": 2550,
-    "current_premium": 1.45,
+    "current_premium": 1.05,
     "original_premium": 1.4,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "MSFT",
     "strike": 320.0,
     "expiry": "2027-03-19",
     "contracts": 1100,
-    "current_premium": 16.52,
+    "current_premium": 17.75,
     "original_premium": 18.45,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "NVDA",
     "strike": 150.0,
     "expiry": "2026-03-20",
     "contracts": 2000,
-    "current_premium": 0.7,
+    "current_premium": 0.88,
     "original_premium": 0.91,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "NVO",
     "strike": 35.0,
     "expiry": "2026-05-15",
     "contracts": 10000,
-    "current_premium": 2.24,
+    "current_premium": 2.33,
     "original_premium": 2.0,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "OKTA",
     "strike": 60.0,
     "expiry": "2028-01-21",
     "contracts": 600,
-    "current_premium": 10.5,
+    "current_premium": 11.7,
     "original_premium": 11.75,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "ORCL",
     "strike": 115.0,
     "expiry": "2026-11-20",
     "contracts": 450,
-    "current_premium": 12.43,
+    "current_premium": 13.57,
     "original_premium": 13.62,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "ORCL",
     "strike": 130.0,
     "expiry": "2027-01-15",
     "contracts": 1500,
-    "current_premium": 20.3,
+    "current_premium": 21.85,
     "original_premium": 22.3,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "PLTR",
     "strike": 125.0,
     "expiry": "2026-02-27",
     "contracts": 1100,
-    "current_premium": 0.07,
+    "current_premium": 0.01,
     "original_premium": 1.73,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "PLTR",
     "strike": 95.0,
     "expiry": "2027-03-19",
     "contracts": 2150,
-    "current_premium": 11.62,
+    "current_premium": 11.65,
     "original_premium": 12.8,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "PSX",
     "strike": 140.0,
     "expiry": "2026-05-15",
     "contracts": 2275,
-    "current_premium": 4.2,
+    "current_premium": 4.4,
     "original_premium": 3.5,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "RKT",
     "strike": 17.0,
     "expiry": "2026-03-06",
     "contracts": 1000,
-    "current_premium": 0.7,
+    "current_premium": 0.22,
     "original_premium": 0.78,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "ROK",
     "strike": 350.0,
     "expiry": "2026-04-17",
     "contracts": 2715,
-    "current_premium": 2.42,
+    "current_premium": 3.35,
     "original_premium": 3.35,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "SEI",
     "strike": 40.0,
     "expiry": "2026-03-20",
     "contracts": 1275,
-    "current_premium": 0.65,
+    "current_premium": 0.8,
     "original_premium": 0.97,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "SLV",
     "strike": 55.5,
     "expiry": "2027-01-15",
     "contracts": 1300,
-    "current_premium": 5.08,
+    "current_premium": 4.88,
     "original_premium": 5.78,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "SU",
     "strike": 45.0,
     "expiry": "2026-06-18",
     "contracts": 1000,
-    "current_premium": 0.68,
+    "current_premium": 0.78,
     "original_premium": 0.8,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "TEAM",
     "strike": 70.0,
     "expiry": "2026-02-27",
     "contracts": 1240,
-    "current_premium": 0.05,
+    "current_premium": 0.1,
     "original_premium": 1.93,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "TEM",
     "strike": 50.0,
     "expiry": "2026-09-18",
     "contracts": 2000,
-    "current_premium": 8.45,
+    "current_premium": 8.8,
     "original_premium": 7.82,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "TRIN",
     "strike": 15.0,
     "expiry": "2026-03-20",
     "contracts": 3000,
-    "current_premium": 0.33,
+    "current_premium": 0.47,
     "original_premium": 0.38,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "TROW",
     "strike": 85.0,
     "expiry": "2026-03-20",
     "contracts": 2000,
-    "current_premium": 0.38,
+    "current_premium": 0.6,
     "original_premium": 0.53,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "TSLA",
     "strike": 320.0,
     "expiry": "2026-03-20",
     "contracts": 1200,
-    "current_premium": 0.87,
+    "current_premium": 1.05,
     "original_premium": 1.12,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "TSLA",
     "strike": 370.0,
     "expiry": "2026-04-17",
     "contracts": 7000,
-    "current_premium": 10.15,
+    "current_premium": 11.55,
     "original_premium": 10.75,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "TSM",
     "strike": 360.0,
     "expiry": "2026-04-17",
     "contracts": 6000,
-    "current_premium": 16.15,
+    "current_premium": 16.4,
     "original_premium": 15.4,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "UAL",
     "strike": 95.0,
     "expiry": "2026-04-17",
     "contracts": 2000,
-    "current_premium": 2.42,
+    "current_premium": 4.4,
     "original_premium": 3.17,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "UBER",
     "strike": 42.5,
     "expiry": "2027-01-15",
     "contracts": 2200,
-    "current_premium": 1.03,
+    "current_premium": 1.06,
     "original_premium": 1.32,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "USAS",
     "strike": 8.0,
     "expiry": "2026-03-20",
     "contracts": 2500,
-    "current_premium": 0.38,
+    "current_premium": 0.32,
     "original_premium": 0.57,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "V",
     "strike": 270.0,
     "expiry": "2026-03-20",
     "contracts": 1400,
-    "current_premium": 0.38,
+    "current_premium": 0.56,
     "original_premium": 0.94,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "VALE",
     "strike": 15.0,
     "expiry": "2027-01-15",
     "contracts": 2050,
-    "current_premium": 1.32,
+    "current_premium": 1.31,
     "original_premium": 1.39,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "VEL",
     "strike": 20.0,
     "expiry": "2026-03-20",
     "contracts": 4000,
-    "current_premium": 1.82,
+    "current_premium": 1.73,
     "original_premium": 1.95,
-    "trade_date": "2026-02-23"
+    "trade_date": "2026-02-23",
+    "type": "put"
   },
   {
     "symbol": "AFRM",
     "strike": 42.5,
     "expiry": "2026-06-18",
     "contracts": 900,
-    "current_premium": 3.97,
+    "current_premium": 5.22,
     "original_premium": 4.83,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "AG",
     "strike": 21.0,
     "expiry": "2026-07-17",
     "contracts": 5000,
-    "current_premium": 1.7,
+    "current_premium": 1.6,
     "original_premium": 1.92,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "AMD",
     "strike": 150.0,
     "expiry": "2026-04-17",
     "contracts": 6000,
-    "current_premium": 1.67,
+    "current_premium": 1.94,
     "original_premium": 1.58,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "ANIP",
     "strike": 75.0,
     "expiry": "2026-04-17",
     "contracts": 2000,
-    "current_premium": 4.35,
+    "current_premium": 5.25,
     "original_premium": 4.3,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "AR",
@@ -1473,7 +1636,8 @@
     "contracts": 15000,
     "current_premium": 0.15,
     "original_premium": 0.15,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "AVGO",
@@ -1482,16 +1646,18 @@
     "contracts": 3000,
     "current_premium": 1.61,
     "original_premium": 1.91,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "BBY",
     "strike": 60.0,
     "expiry": "2028-01-21",
     "contracts": 480,
-    "current_premium": 12.93,
+    "current_premium": 13.03,
     "original_premium": 12.82,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "CELH",
@@ -1500,34 +1666,38 @@
     "contracts": 1800,
     "current_premium": 0.01,
     "original_premium": 0.96,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "CRWD",
     "strike": 320.0,
     "expiry": "2026-04-17",
     "contracts": 500,
-    "current_premium": 8.88,
+    "current_premium": 12.28,
     "original_premium": 17.3,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "CRWD",
     "strike": 320.0,
     "expiry": "2028-01-21",
     "contracts": 200,
-    "current_premium": 60.48,
+    "current_premium": 64.9,
     "original_premium": 69.15,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "EOSE",
     "strike": 11.0,
     "expiry": "2026-03-20",
     "contracts": 2500,
-    "current_premium": 4.17,
+    "current_premium": 4.83,
     "original_premium": 1.33,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "ESLT",
@@ -1536,16 +1706,18 @@
     "contracts": 110,
     "current_premium": 0.0,
     "original_premium": 0.0,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "FCX",
     "strike": 64.0,
     "expiry": "2026-02-27",
     "contracts": 1000,
-    "current_premium": 0.07,
+    "current_premium": 0.01,
     "original_premium": 0.31,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "FCX",
@@ -1554,25 +1726,28 @@
     "contracts": 3300,
     "current_premium": 1.06,
     "original_premium": 0.0,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "FUTU",
     "strike": 140.0,
     "expiry": "2026-04-17",
     "contracts": 800,
-    "current_premium": 5.3,
+    "current_premium": 7.12,
     "original_premium": 9.18,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "GFI",
     "strike": 50.0,
     "expiry": "2027-01-15",
     "contracts": 1000,
-    "current_premium": 7.75,
+    "current_premium": 7.45,
     "original_premium": 8.35,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "GLW",
@@ -1581,43 +1756,48 @@
     "contracts": 5300,
     "current_premium": 4.35,
     "original_premium": 0.0,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "HD",
     "strike": 350.0,
     "expiry": "2026-03-20",
     "contracts": 1000,
-    "current_premium": 2.19,
+    "current_premium": 1.95,
     "original_premium": 1.96,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "HL",
     "strike": 10.0,
     "expiry": "2027-01-15",
     "contracts": 2500,
-    "current_premium": 0.69,
+    "current_premium": 0.67,
     "original_premium": 0.71,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "IGV",
     "strike": 75.0,
     "expiry": "2026-03-20",
     "contracts": 1000,
-    "current_premium": 0.85,
+    "current_premium": 1.02,
     "original_premium": 1.95,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "IGV",
     "strike": 70.0,
     "expiry": "2026-06-18",
     "contracts": 5000,
-    "current_premium": 2.17,
+    "current_premium": 2.38,
     "original_premium": 3.1,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "LLY",
@@ -1626,25 +1806,28 @@
     "contracts": 950,
     "current_premium": 0.0,
     "original_premium": 0.0,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "LMND",
     "strike": 50.0,
     "expiry": "2026-09-18",
     "contracts": 1000,
-    "current_premium": 9.7,
+    "current_premium": 11.1,
     "original_premium": 11.2,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "LYFT",
     "strike": 13.0,
     "expiry": "2027-03-19",
     "contracts": 1300,
-    "current_premium": 2.64,
+    "current_premium": 2.66,
     "original_premium": 2.83,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "NVDA",
@@ -1653,7 +1836,8 @@
     "contracts": 1300,
     "current_premium": 0.0,
     "original_premium": 0.0,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "PBR",
@@ -1662,16 +1846,18 @@
     "contracts": 1350,
     "current_premium": 0.0,
     "original_premium": 0.0,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "PGEN",
     "strike": 4.0,
     "expiry": "2026-03-20",
     "contracts": 1000,
-    "current_premium": 0.55,
+    "current_premium": 0.45,
     "original_premium": 0.35,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "PRU",
@@ -1680,124 +1866,138 @@
     "contracts": 2000,
     "current_premium": 0.0,
     "original_premium": 0.0,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "QCOM",
     "strike": 140.0,
     "expiry": "2026-04-17",
     "contracts": 1500,
-    "current_premium": 4.72,
+    "current_premium": 5.75,
     "original_premium": 5.1,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "RACE",
     "strike": 370.0,
     "expiry": "2026-12-18",
     "contracts": 200,
-    "current_premium": 36.3,
+    "current_premium": 36.45,
     "original_premium": 38.5,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "UBER",
     "strike": 55.0,
     "expiry": "2027-01-15",
     "contracts": 1000,
-    "current_premium": 3.16,
+    "current_premium": 3.05,
     "original_premium": 3.53,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "V",
     "strike": 275.0,
     "expiry": "2026-05-15",
     "contracts": 1200,
-    "current_premium": 3.3,
+    "current_premium": 3.75,
     "original_premium": 5.03,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "VZ",
     "strike": 47.0,
     "expiry": "2026-05-15",
     "contracts": 3300,
-    "current_premium": 1.46,
+    "current_premium": 1.16,
     "original_premium": 1.1,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "WSM",
     "strike": 175.0,
     "expiry": "2026-04-17",
     "contracts": 2000,
-    "current_premium": 2.92,
+    "current_premium": 3.95,
     "original_premium": 3.55,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "WULF",
     "strike": 11.0,
     "expiry": "2026-06-18",
     "contracts": 2200,
-    "current_premium": 0.84,
+    "current_premium": 0.87,
     "original_premium": 0.89,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "XLF",
     "strike": 50.0,
     "expiry": "2026-09-18",
     "contracts": 3000,
-    "current_premium": 1.91,
+    "current_premium": 2.53,
     "original_premium": 2.44,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "XOM",
     "strike": 135.0,
     "expiry": "2026-12-18",
     "contracts": 1000,
-    "current_premium": 8.5,
+    "current_premium": 8.6,
     "original_premium": 8.18,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "AAL",
     "strike": 8.0,
     "expiry": "2027-12-17",
     "contracts": 2900,
-    "current_premium": 0.77,
+    "current_premium": 0.88,
     "original_premium": 0.88,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "AAPL",
     "strike": 270.0,
     "expiry": "2026-04-17",
     "contracts": 10000,
-    "current_premium": 8.03,
+    "current_premium": 10.15,
     "original_premium": 8.03,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "ADI",
     "strike": 332.5,
     "expiry": "2026-03-06",
     "contracts": 2900,
-    "current_premium": 1.15,
+    "current_premium": 1.5,
     "original_premium": 1.45,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "BTDR",
     "strike": 8.0,
     "expiry": "2026-03-06",
     "contracts": 1000,
-    "current_premium": 0.5,
+    "current_premium": 0.7,
     "original_premium": 0.35,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "BX",
@@ -1806,115 +2006,128 @@
     "contracts": 1250,
     "current_premium": 9.75,
     "original_premium": 0.0,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "BX",
     "strike": 100.0,
     "expiry": "2027-01-15",
     "contracts": 2150,
-    "current_premium": 10.18,
+    "current_premium": 11.82,
     "original_premium": 9.62,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "COHR",
     "strike": 300.0,
     "expiry": "2027-01-15",
     "contracts": 4000,
-    "current_premium": 100.25,
+    "current_premium": 98.25,
     "original_premium": 90.8,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "CYTK",
     "strike": 50.0,
     "expiry": "2026-04-17",
     "contracts": 1500,
-    "current_premium": 1.93,
+    "current_premium": 1.45,
     "original_premium": 1.75,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "DHI",
     "strike": 135.0,
     "expiry": "2026-03-27",
     "contracts": 3000,
-    "current_premium": 0.57,
+    "current_premium": 0.3,
     "original_premium": 0.83,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "EMR",
     "strike": 130.0,
     "expiry": "2026-06-18",
     "contracts": 1450,
-    "current_premium": 2.8,
+    "current_premium": 3.55,
     "original_premium": 3.12,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "EW",
     "strike": 75.0,
     "expiry": "2026-05-15",
     "contracts": 2585,
-    "current_premium": 1.35,
+    "current_premium": 1.33,
     "original_premium": 1.75,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "FSLR",
     "strike": 155.0,
     "expiry": "2026-04-17",
     "contracts": 4500,
-    "current_premium": 2.17,
+    "current_premium": 2.8,
     "original_premium": 1.85,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "GSK",
     "strike": 60.0,
     "expiry": "2026-04-17",
     "contracts": 2685,
-    "current_premium": 3.15,
+    "current_premium": 2.45,
     "original_premium": 2.2,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "HOOD",
     "strike": 60.0,
     "expiry": "2026-03-20",
     "contracts": 5000,
-    "current_premium": 0.5,
+    "current_premium": 0.77,
     "original_premium": 0.7,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "IBM",
     "strike": 220.0,
     "expiry": "2028-01-21",
     "contracts": 300,
-    "current_premium": 30.88,
+    "current_premium": 33.33,
     "original_premium": 32.95,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "INTC",
     "strike": 40.0,
     "expiry": "2026-08-21",
     "contracts": 1500,
-    "current_premium": 4.4,
+    "current_premium": 4.47,
     "original_premium": 4.42,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "LOW",
     "strike": 250.0,
     "expiry": "2026-03-20",
     "contracts": 3640,
-    "current_premium": 1.79,
+    "current_premium": 1.89,
     "original_premium": 2.15,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "LOW",
@@ -1923,34 +2136,38 @@
     "contracts": 2925,
     "current_premium": 2.33,
     "original_premium": 0.0,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "LRCX",
     "strike": 225.0,
     "expiry": "2026-02-27",
     "contracts": 1500,
-    "current_premium": 0.43,
+    "current_premium": 0.06,
     "original_premium": 0.7,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "MSFT",
     "strike": 250.0,
     "expiry": "2026-12-18",
     "contracts": 1000,
-    "current_premium": 3.5,
+    "current_premium": 3.8,
     "original_premium": 3.42,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "MU",
     "strike": 425.0,
     "expiry": "2026-03-06",
     "contracts": 5000,
-    "current_premium": 22.25,
+    "current_premium": 23.3,
     "original_premium": 19.6,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "NFLX",
@@ -1959,25 +2176,28 @@
     "contracts": 1100,
     "current_premium": 0.01,
     "original_premium": 0.07,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "NOC",
     "strike": 640.0,
     "expiry": "2026-03-20",
     "contracts": 1500,
-    "current_premium": 3.67,
+    "current_premium": 2.05,
     "original_premium": 4.1,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "ORCL",
     "strike": 140.0,
     "expiry": "2026-02-27",
     "contracts": 2700,
-    "current_premium": 0.18,
+    "current_premium": 0.06,
     "original_premium": 1.06,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "OSG",
@@ -1986,115 +2206,128 @@
     "contracts": 3000,
     "current_premium": 0.0,
     "original_premium": 0.0,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "PYPL",
     "strike": 40.0,
     "expiry": "2027-12-17",
     "contracts": 2000,
-    "current_premium": 5.7,
+    "current_premium": 6.28,
     "original_premium": 5.2,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "RKT",
     "strike": 15.0,
     "expiry": "2026-04-17",
     "contracts": 1330,
-    "current_premium": 0.67,
+    "current_premium": 0.43,
     "original_premium": 0.8,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "RSP",
     "strike": 190.0,
     "expiry": "2026-05-15",
     "contracts": 2500,
-    "current_premium": 2.48,
+    "current_premium": 2.73,
     "original_premium": 2.4,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "SATS",
     "strike": 115.0,
     "expiry": "2027-01-15",
     "contracts": 900,
-    "current_premium": 27.75,
+    "current_premium": 27.85,
     "original_premium": 28.55,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "SHLS",
     "strike": 5.0,
     "expiry": "2026-11-20",
     "contracts": 5000,
-    "current_premium": 1.05,
+    "current_premium": 1.12,
     "original_premium": 0.9,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "SILJ",
     "strike": 37.0,
     "expiry": "2026-03-06",
     "contracts": 15000,
-    "current_premium": 0.54,
+    "current_premium": 0.59,
     "original_premium": 1.15,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "SILJ",
     "strike": 35.0,
     "expiry": "2026-03-06",
     "contracts": 30000,
-    "current_premium": 0.29,
+    "current_premium": 0.17,
     "original_premium": 0.38,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "SOFI",
     "strike": 18.0,
     "expiry": "2026-03-20",
     "contracts": 1000,
-    "current_premium": 0.69,
+    "current_premium": 1.28,
     "original_premium": 0.68,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "VALE",
     "strike": 16.0,
     "expiry": "2026-03-20",
     "contracts": 1500,
-    "current_premium": 0.2,
+    "current_premium": 0.22,
     "original_premium": 0.2,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "WBD",
     "strike": 27.0,
     "expiry": "2026-03-20",
     "contracts": 2500,
-    "current_premium": 0.23,
+    "current_premium": 0.07,
     "original_premium": 0.2,
-    "trade_date": "2026-02-25"
+    "trade_date": "2026-02-25",
+    "type": "put"
   },
   {
     "symbol": "ABBV",
     "strike": 200.0,
     "expiry": "2026-04-02",
     "contracts": 1900,
-    "current_premium": 1.13,
+    "current_premium": 0.7,
     "original_premium": 1.21,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "ADBE",
     "strike": 250.0,
     "expiry": "2026-02-27",
     "contracts": 1450,
-    "current_premium": 0.36,
+    "current_premium": 0.11,
     "original_premium": 0.8,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "BHP",
@@ -2103,7 +2336,8 @@
     "contracts": 600,
     "current_premium": 0.0,
     "original_premium": 0.0,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "C",
@@ -2112,16 +2346,18 @@
     "contracts": 5000,
     "current_premium": 0.0,
     "original_premium": 0.0,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "CSCO",
     "strike": 77.0,
     "expiry": "2026-02-27",
     "contracts": 2100,
-    "current_premium": 0.15,
+    "current_premium": 0.03,
     "original_premium": 0.22,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "EOSE",
@@ -2130,7 +2366,8 @@
     "contracts": 2500,
     "current_premium": 0.51,
     "original_premium": 0.0,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "ETN",
@@ -2139,88 +2376,98 @@
     "contracts": 1860,
     "current_premium": 0.0,
     "original_premium": 0.0,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "FIGR",
     "strike": 35.0,
     "expiry": "2026-08-21",
     "contracts": 1000,
-    "current_premium": 9.6,
+    "current_premium": 12.55,
     "original_premium": 9.6,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "GLD",
     "strike": 425.0,
     "expiry": "2026-05-15",
     "contracts": 24600,
-    "current_premium": 5.62,
+    "current_premium": 5.33,
     "original_premium": 6.1,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "GOOGL",
     "strike": 310.0,
     "expiry": "2026-04-02",
     "contracts": 10000,
-    "current_premium": 12.72,
+    "current_premium": 12.25,
     "original_premium": 14.15,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "INTC",
     "strike": 43.5,
     "expiry": "2026-02-27",
     "contracts": 7900,
-    "current_premium": 0.14,
+    "current_premium": 0.02,
     "original_premium": 0.18,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "INTC",
     "strike": 48.0,
     "expiry": "2026-04-17",
     "contracts": 3725,
-    "current_premium": 5.4,
+    "current_premium": 5.42,
     "original_premium": 5.6,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "LITE",
     "strike": 800.0,
     "expiry": "2027-01-15",
     "contracts": 1200,
-    "current_premium": 307.55,
+    "current_premium": 301.3,
     "original_premium": 302.15,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "MU",
     "strike": 400.0,
     "expiry": "2026-03-13",
     "contracts": 5000,
-    "current_premium": 15.92,
+    "current_premium": 16.45,
     "original_premium": 17.0,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "NTES",
     "strike": 105.0,
     "expiry": "2026-09-18",
     "contracts": 1500,
-    "current_premium": 8.75,
+    "current_premium": 8.85,
     "original_premium": 8.7,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "NVDA",
     "strike": 145.0,
     "expiry": "2026-11-20",
     "contracts": 2000,
-    "current_premium": 10.7,
+    "current_premium": 11.57,
     "original_premium": 10.1,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "ONC",
@@ -2229,97 +2476,108 @@
     "contracts": 100,
     "current_premium": 0.0,
     "original_premium": 0.0,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "ORCL",
     "strike": 148.0,
     "expiry": "2026-02-27",
     "contracts": 2200,
-    "current_premium": 1.4,
+    "current_premium": 4.05,
     "original_premium": 2.36,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "PENN",
     "strike": 11.0,
     "expiry": "2026-04-17",
     "contracts": 1200,
-    "current_premium": 0.24,
+    "current_premium": 0.2,
     "original_premium": 0.2,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "TCOM",
     "strike": 45.0,
     "expiry": "2027-01-15",
     "contracts": 1100,
-    "current_premium": 4.45,
+    "current_premium": 3.95,
     "original_premium": 4.1,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "TSEM",
     "strike": 85.0,
     "expiry": "2026-04-17",
     "contracts": 7800,
-    "current_premium": 0.7,
+    "current_premium": 0.6,
     "original_premium": 0.9,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "TSM",
     "strike": 450.0,
     "expiry": "2027-01-15",
     "contracts": 2000,
-    "current_premium": 107.15,
+    "current_premium": 108.7,
     "original_premium": 109.33,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "TTD",
     "strike": 20.0,
     "expiry": "2026-03-06",
     "contracts": 10000,
-    "current_premium": 0.04,
+    "current_premium": 0.05,
     "original_premium": 0.06,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "UAL",
     "strike": 105.0,
     "expiry": "2026-03-20",
     "contracts": 1500,
-    "current_premium": 2.02,
+    "current_premium": 5.3,
     "original_premium": 2.12,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "USAR",
     "strike": 17.0,
     "expiry": "2026-03-20",
     "contracts": 1500,
-    "current_premium": 0.64,
+    "current_premium": 0.95,
     "original_premium": 0.74,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "UTHR",
     "strike": 420.0,
     "expiry": "2026-04-17",
     "contracts": 3450,
-    "current_premium": 9.4,
+    "current_premium": 9.7,
     "original_premium": 9.45,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "VRT",
     "strike": 195.0,
     "expiry": "2026-04-02",
     "contracts": 4190,
-    "current_premium": 1.59,
+    "current_premium": 1.75,
     "original_premium": 2.04,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "WFC",
@@ -2328,7 +2586,8 @@
     "contracts": 5000,
     "current_premium": 0.0,
     "original_premium": 0.0,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "WMT",
@@ -2337,24 +2596,27 @@
     "contracts": 5000,
     "current_premium": 0.97,
     "original_premium": 0.0,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "ZM",
     "strike": 70.0,
     "expiry": "2026-06-18",
     "contracts": 3000,
-    "current_premium": 3.83,
+    "current_premium": 4.53,
     "original_premium": 4.3,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   },
   {
     "symbol": "ZM",
     "strike": 65.0,
     "expiry": "2026-09-18",
     "contracts": 5000,
-    "current_premium": 3.92,
+    "current_premium": 4.58,
     "original_premium": 4.7,
-    "trade_date": "2026-02-26"
+    "trade_date": "2026-02-26",
+    "type": "put"
   }
 ]

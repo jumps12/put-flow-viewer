@@ -26,6 +26,7 @@ async function fetchPutFlowData(ticker) {
         originalPremium: orig,
         currentPremium:  curr,
         tradeDate:       parseDate(p.trade_date),
+        type:            (p.type ?? 'put').toLowerCase(), // 'put' or 'call'
       };
     })
     .filter(d => {
@@ -181,7 +182,7 @@ function createLabels(positions) {
 
   for (const p of positions) {
     const dte   = getDTE(p.expiry);
-    const color = dteColor(dte);
+    const color = p.type === 'call' ? '#AA00FF' : dteColor(dte);
     // Market value uses original premium — what was paid at trade time
     const mv    = p.contracts * p.originalPremium * 100;
 
@@ -320,16 +321,20 @@ function buildChart(ohlcv, positions) {
   futureLine.setData(futurePts);
 
   // ── Strike lines ─────────────────────────────────────────
-  // Each position becomes a horizontal line from trade date → expiry
+  // Puts: solid line, DTE color. Calls: dashed purple.
   for (const p of positions) {
-    const dte   = getDTE(p.expiry);
-    const color = dteColor(dte);
-    const width = strikeLineWidth(p.contracts, p.originalPremium);
+    const isCall  = p.type === 'call';
+    const dte     = getDTE(p.expiry);
+    const color   = isCall ? '#AA00FF' : dteColor(dte);
+    const width   = strikeLineWidth(p.contracts, p.originalPremium);
+    const style   = isCall
+      ? LightweightCharts.LineStyle.Dashed
+      : LightweightCharts.LineStyle.Solid;
 
     const line = _chart.addLineSeries({
       color,
       lineWidth:              width,
-      lineStyle:              LightweightCharts.LineStyle.Solid,
+      lineStyle:              style,
       lastValueVisible:       false,
       priceLineVisible:       false,
       crosshairMarkerVisible: false,
@@ -358,7 +363,7 @@ function buildTable(positions) {
   tbody.innerHTML = '';
 
   if (!positions.length) {
-    tbody.innerHTML = `<tr><td colspan="10" class="empty">No positions on record for this ticker</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" class="empty">No positions on record for this ticker</td></tr>`;
     return;
   }
 
@@ -390,9 +395,14 @@ function buildTable(positions) {
         ? `${plPct >= 0 ? '+' : '−'}${Math.abs(plPct).toFixed(1)}%`
         : '—';
 
+      const isCall   = p.type === 'call';
+      const typeCol  = isCall ? '#AA00FF' : col;
+      const typeStr  = isCall ? 'CALL' : 'PUT';
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td><b style="color:${col}">$${p.strike.toFixed(2)}</b></td>
+        <td style="color:${typeCol};font-weight:600">${typeStr}</td>
         <td>${p.expiry.toLocaleDateString()}</td>
         <td style="color:${col}">${dte}d</td>
         <td>${p.contracts.toLocaleString()}</td>
