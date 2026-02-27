@@ -128,12 +128,12 @@ function getDTE(expiry) {
   return Math.floor((exp - today) / 86_400_000);
 }
 
-// Right endpoint of each line: always at least 30 days past today so the
+// Right endpoint of each line: always at least 60 days past today so the
 // label has breathing room to the right of the last candle.
 function lineEndDate(expiry) {
   const floor = new Date();
   floor.setHours(0, 0, 0, 0);
-  floor.setDate(floor.getDate() + 30);
+  floor.setDate(floor.getDate() + 60);
   return expiry > floor ? expiry : floor;
 }
 
@@ -291,7 +291,7 @@ function buildTable(positions) {
   tbody.innerHTML = '';
 
   if (!positions.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="empty">No positions on record for this ticker</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" class="empty">No positions on record for this ticker</td></tr>`;
     return;
   }
 
@@ -299,16 +299,41 @@ function buildTable(positions) {
     .sort((a, b) => b.strike - a.strike)
     .forEach(p => {
       const dte  = getDTE(p.expiry);
-      const mv   = p.contracts * p.currentPremium * 100;
       const col  = dteColor(dte);
-      const tr   = document.createElement('tr');
+
+      const orig = p.originalPremium;
+      const curr = p.currentPremium;
+
+      const plPerCt = (orig - curr) * 100;
+      const plTotal = plPerCt * p.contracts;
+      const plPct   = orig > 0 ? (orig - curr) / orig * 100 : null;
+
+      // Green when premium has decayed (winning), red when it has grown (losing)
+      const plCol = plTotal >= 0 ? '#2ea043' : '#f85149';
+
+      const fmtPl = v => {
+        const sign = v >= 0 ? '+' : '−';
+        const abs  = Math.abs(v);
+        if (abs >= 1e6) return `${sign}$${(abs / 1e6).toFixed(2)}M`;
+        if (abs >= 1e3) return `${sign}$${(abs / 1e3).toFixed(0)}K`;
+        return `${sign}$${abs.toFixed(0)}`;
+      };
+
+      const plPctStr = plPct !== null
+        ? `${plPct >= 0 ? '+' : '−'}${Math.abs(plPct).toFixed(1)}%`
+        : '—';
+
+      const tr = document.createElement('tr');
       tr.innerHTML = `
         <td><b style="color:${col}">$${p.strike.toFixed(2)}</b></td>
         <td>${p.expiry.toLocaleDateString()}</td>
         <td style="color:${col}">${dte}d</td>
         <td>${p.contracts.toLocaleString()}</td>
-        <td>$${p.currentPremium.toFixed(2)}</td>
-        <td>${fmtMoney(mv)}</td>
+        <td>$${orig.toFixed(2)}</td>
+        <td style="color:${plCol}">$${curr.toFixed(2)}</td>
+        <td style="color:${plCol}">${plPerCt >= 0 ? '+' : '−'}$${Math.abs(plPerCt).toFixed(2)}</td>
+        <td style="color:${plCol}">${fmtPl(plTotal)}</td>
+        <td style="color:${plCol}">${plPctStr}</td>
         <td>${p.tradeDate.toLocaleDateString()}</td>
       `;
       tbody.appendChild(tr);
