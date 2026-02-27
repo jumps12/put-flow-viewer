@@ -172,9 +172,10 @@ function createLabels(positions) {
     // Market value uses original premium — what was paid at trade time
     const mv    = p.contracts * p.originalPremium * 100;
 
-    // Format: 2027-01-15 | 300P | 4,000x
+    // Format: 2027-01-15 | 300P | 4,000x | $36.3M
     const strikeStr = p.strike % 1 === 0 ? p.strike.toFixed(0) : p.strike.toFixed(2);
-    const text      = `${dateToStr(p.expiry)} | ${strikeStr}P | ${p.contracts.toLocaleString()}x`;
+    const mvStr     = fmtMoney(mv);
+    const text      = `${dateToStr(p.expiry)} | ${strikeStr}P | ${p.contracts.toLocaleString()}x | ${mvStr}`;
 
     const el = document.createElement('div');
     el.className    = 'strike-label';
