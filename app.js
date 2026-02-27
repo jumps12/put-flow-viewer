@@ -205,6 +205,12 @@ function createLabels(positions) {
 function updateLabelPositions() {
   if (!_chart || !_candlesSeries || !_labelData.length) return;
 
+  const container   = document.getElementById('chart-container');
+  // Keep labels inside the chart pane — the right price scale is ~70 px wide.
+  // Labels start at x+4 and can be ~200 px wide, so guard against the right edge.
+  const priceScaleW = 75;
+  const maxLabelX   = container.clientWidth - priceScaleW;
+
   for (const { p, el } of _labelData) {
     const x = _chart.timeScale().timeToCoordinate(dateToStr(lineEndDate()));
     const y = _candlesSeries.priceToCoordinate(p.strike);
@@ -215,7 +221,7 @@ function updateLabelPositions() {
     }
 
     el.style.display = 'block';
-    el.style.left    = `${x + 4}px`;
+    el.style.left    = `${Math.min(x + 4, maxLabelX)}px`;
     el.style.top     = `${y}px`;
   }
 }
@@ -269,12 +275,13 @@ function buildChart(ohlcv, positions) {
 
   // ── Candlesticks ────────────────────────────────────────
   const candles = _chart.addCandlestickSeries({
-    upColor:         '#2ea043',
-    downColor:       '#f85149',
-    borderUpColor:   '#2ea043',
-    borderDownColor: '#f85149',
-    wickUpColor:     '#2ea043',
-    wickDownColor:   '#f85149',
+    upColor:          '#2ea043',
+    downColor:        '#f85149',
+    borderUpColor:    '#2ea043',
+    borderDownColor:  '#f85149',
+    wickUpColor:      '#2ea043',
+    wickDownColor:    '#f85149',
+    priceLineVisible: false, // disabled — we add a full-width one below
   });
   candles.setData(ohlcv);
   _candlesSeries = candles;
@@ -283,6 +290,18 @@ function buildChart(ohlcv, positions) {
   // LightweightCharts only allocates time slots for dates present in series data.
   // Without this, the axis stops at the last candle and right-scroll is blocked.
   const lastClose = ohlcv.length ? ohlcv[ohlcv.length - 1].close : 0;
+
+  // ── Full-width current price line ────────────────────────
+  // createPriceLine() spans the entire visible chart width (unlike the built-in
+  // priceLineVisible which only draws to the last candle date).
+  candles.createPriceLine({
+    price:            lastClose,
+    color:            '#f85149',
+    lineWidth:        1,
+    lineStyle:        LightweightCharts.LineStyle.Dashed,
+    axisLabelVisible: true,
+    title:            '',
+  });
   const futureLine = _chart.addLineSeries({
     color:                  '#0d1117', // matches chart background — effectively invisible
     lineWidth:              1,
