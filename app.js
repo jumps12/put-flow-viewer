@@ -172,10 +172,9 @@ function createLabels(positions) {
     // Market value uses original premium — what was paid at trade time
     const mv    = p.contracts * p.originalPremium * 100;
 
-    // Format: 2027-01-15 | 300P | 4,000 cts | $36,320,000
+    // Format: 2027-01-15 | 300P | 4,000x
     const strikeStr = p.strike % 1 === 0 ? p.strike.toFixed(0) : p.strike.toFixed(2);
-    const mvStr     = fmtMoney(mv);
-    const text      = `${dateToStr(p.expiry)} | ${strikeStr}P | ${p.contracts.toLocaleString()} cts | ${mvStr}`;
+    const text      = `${dateToStr(p.expiry)} | ${strikeStr}P | ${p.contracts.toLocaleString()}x`;
 
     const el = document.createElement('div');
     el.className    = 'strike-label';
@@ -193,7 +192,7 @@ function updateLabelPositions() {
   if (!_chart || !_candlesSeries || !_labelData.length) return;
 
   for (const { p, el } of _labelData) {
-    const x = _chart.timeScale().timeToCoordinate(dateToStr(lineEndDate(p.expiry)));
+    const x = _chart.timeScale().timeToCoordinate(dateToStr(lineEndDate()));
     const y = _candlesSeries.priceToCoordinate(p.strike);
 
     if (x === null || y === null) {
@@ -276,7 +275,7 @@ function buildChart(ohlcv, positions) {
 
     line.setData([
       { time: dateToStr(p.tradeDate),            value: p.strike },
-      { time: dateToStr(lineEndDate(p.expiry)),   value: p.strike },
+      { time: dateToStr(lineEndDate()),   value: p.strike },
     ]);
   }
 
