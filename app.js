@@ -28,11 +28,16 @@ async function fetchPutFlowData(ticker) {
         tradeDate:       parseDate(p.trade_date),
       };
     })
-    .filter(d =>
-      isFinite(d.strike) && isFinite(d.contracts) && isFinite(d.originalPremium) &&
-      d.expiry instanceof Date && d.tradeDate instanceof Date &&
-      d.expiry > d.tradeDate
-    );
+    .filter(d => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return (
+        isFinite(d.strike) && isFinite(d.contracts) && isFinite(d.originalPremium) &&
+        d.expiry instanceof Date && d.tradeDate instanceof Date &&
+        d.expiry > d.tradeDate &&
+        d.expiry >= today
+      );
+    });
 }
 
 // ── Yahoo Finance ──────────────────────────────────────────────────────────────

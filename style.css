@@ -115,7 +115,7 @@ h1 {
 #chart-legend {
   position: absolute;
   top: 8px;
-  left: 8px;
+  right: 8px;
   z-index: 10;
   background: rgba(13, 17, 23, 0.82);
   border: 1px solid rgba(255, 255, 255, 0.07);
