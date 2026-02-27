@@ -128,13 +128,13 @@ function getDTE(expiry) {
   return Math.floor((exp - today) / 86_400_000);
 }
 
-// Right endpoint of each line: always at least 60 days past today so the
-// label has breathing room to the right of the last candle.
-function lineEndDate(expiry) {
-  const floor = new Date();
-  floor.setHours(0, 0, 0, 0);
-  floor.setDate(floor.getDate() + 60);
-  return expiry > floor ? expiry : floor;
+// Right endpoint of each line: always exactly 60 calendar days past today.
+// Expiry is shown in the label text; the visual right edge is a fixed margin.
+function lineEndDate() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 60);
+  return d;
 }
 
 function dteColor(dte) {
@@ -278,9 +278,17 @@ function buildChart(ohlcv, positions) {
     ]);
   }
 
-  _chart.timeScale().fitContent();
+  // Set a fixed visible window: 6 months back → 60 days forward
+  const visFrom = new Date();
+  visFrom.setDate(visFrom.getDate() - 180);
+  const visTo = new Date();
+  visTo.setDate(visTo.getDate() + 60);
+  _chart.timeScale().setVisibleRange({
+    from: dateToStr(visFrom),
+    to:   dateToStr(visTo),
+  });
 
-  // Wait one frame for fitContent to settle, then place labels
+  // Wait one frame for the range to settle, then place labels
   requestAnimationFrame(() => createLabels(positions));
 }
 
