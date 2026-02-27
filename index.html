@@ -3,54 +3,75 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Put Flow Viewer</title>
+  <title>Put Flow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>Put Flow Viewer</h1>
-      <div class="controls">
-        <input type="text" id="ticker-input" placeholder="SPY" maxlength="10"
+
+  <nav id="topnav">
+    <div class="nav-brand">
+      <span class="brand-icon">▼</span>
+      <span class="brand-name">Put Flow</span>
+    </div>
+    <div class="nav-controls">
+      <div class="search-wrap">
+        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+          <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M10 10L13.5 13.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        <input type="text" id="ticker-input" placeholder="Ticker symbol…" maxlength="10"
                autocomplete="off" spellcheck="false">
-        <button id="load-btn">Load</button>
       </div>
-    </header>
+      <button id="load-btn">Load</button>
+    </div>
+  </nav>
+
+  <main class="page">
 
     <div id="status" hidden></div>
+    <div id="ticker-bar" hidden></div>
 
-    <div class="legend">
-      <span style="color:#00BCD4">&#9679; 180+ DTE</span>
-      <span style="color:#4CAF50">&#9679; 90–180 DTE</span>
-      <span style="color:#FFC107">&#9679; 30–90 DTE</span>
-      <span style="color:#F44336">&#9679; &lt;30 DTE</span>
-      <span class="sep">|</span>
-      <span class="sep">|</span>
-      <span class="lw-item"><span class="lw lw3"></span>&gt;$2M</span>
-      <span class="lw-item"><span class="lw lw2"></span>&gt;$500K</span>
-      <span class="lw-item"><span class="lw lw1"></span>&lt;$500K</span>
+    <div class="toolbar">
+      <div class="toolbar-group">
+        <span class="dte-pill c-teal">180+ DTE</span>
+        <span class="dte-pill c-green">90–180 DTE</span>
+        <span class="dte-pill c-amber">30–90 DTE</span>
+        <span class="dte-pill c-red">&lt;30 DTE</span>
+      </div>
+      <div class="toolbar-sep"></div>
+      <div class="toolbar-group">
+        <span class="lw-item"><span class="lw lw3"></span>&gt;$2M</span>
+        <span class="lw-item"><span class="lw lw2"></span>&gt;$500K</span>
+        <span class="lw-item"><span class="lw lw1"></span>&lt;$500K</span>
+      </div>
     </div>
 
     <div id="chart-container"></div>
 
-    <table id="positions-table">
-      <thead>
-        <tr>
-          <th>Strike</th>
-          <th>Expiry</th>
-          <th>DTE</th>
-          <th>Contracts</th>
-          <th>Orig $</th>
-          <th>Curr $</th>
-          <th>P&amp;L / ct</th>
-          <th>Total P&amp;L</th>
-          <th>P&amp;L %</th>
-          <th>Trade Date</th>
-        </tr>
-      </thead>
-      <tbody id="positions-body"></tbody>
-    </table>
-  </div>
+    <div class="table-wrap">
+      <table id="positions-table">
+        <thead>
+          <tr>
+            <th>Strike</th>
+            <th>Expiry</th>
+            <th>DTE</th>
+            <th>Contracts</th>
+            <th>Orig $</th>
+            <th>Curr $</th>
+            <th>P&amp;L / ct</th>
+            <th>Total P&amp;L</th>
+            <th>P&amp;L %</th>
+            <th>Trade Date</th>
+          </tr>
+        </thead>
+        <tbody id="positions-body"></tbody>
+      </table>
+    </div>
+
+  </main>
 
   <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
   <script src="config.js"></script>

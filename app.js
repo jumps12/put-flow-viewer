@@ -397,6 +397,20 @@ function setStatus(msg, cls = '') {
   el.hidden      = !msg;
 }
 
+function setTickerBar(ticker, positions) {
+  const el = document.getElementById('ticker-bar');
+  if (!positions.length) { el.hidden = true; return; }
+  const totalMV = positions.reduce((s, p) => s + p.contracts * p.originalPremium * 100, 0);
+  el.innerHTML = `
+    <span class="tb-ticker">${ticker}</span>
+    <span class="tb-sep">·</span>
+    <span class="tb-stat"><b>${positions.length}</b> put position${positions.length !== 1 ? 's' : ''}</span>
+    <span class="tb-sep">·</span>
+    <span class="tb-stat">Deployed: <b class="tb-mv">${fmtMoney(totalMV)}</b></span>
+  `;
+  el.hidden = false;
+}
+
 // ── Entry point ───────────────────────────────────────────────────────────────
 
 async function load(raw) {
@@ -407,6 +421,7 @@ async function load(raw) {
   history.replaceState(null, '', `#${ticker}`);
 
   setStatus(`Loading ${ticker}…`, 'info');
+  document.getElementById('ticker-bar').hidden = true;
   document.getElementById('load-btn').disabled = true;
 
   try {
@@ -419,13 +434,13 @@ async function load(raw) {
 
     buildChart(ohlcv, positions);
     buildTable(positions);
+    setTickerBar(ticker, positions);
 
-    setStatus(
-      positions.length
-        ? `${ohlcv.length} candles · ${positions.length} put position${positions.length !== 1 ? 's' : ''}`
-        : `Loaded price data — no put positions on record for ${ticker}`,
-      positions.length ? 'success' : 'warning'
-    );
+    if (!positions.length) {
+      setStatus(`No put positions on record for ${ticker}`, 'warning');
+    } else {
+      setStatus('', '');
+    }
   } catch (err) {
     setStatus(err.message, 'error');
     console.error(err);
