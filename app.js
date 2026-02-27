@@ -233,7 +233,15 @@ function buildChart(ohlcv, positions) {
     handleScroll:    true,
     handleScale:     true,
     rightPriceScale: { borderColor: '#30363d' },
-    timeScale:       { borderColor: '#30363d', secondsVisible: false },
+    timeScale: {
+      borderColor:                '#30363d',
+      secondsVisible:             false,
+      rightOffset:                30,
+      barSpacing:                 10,
+      fixLeftEdge:                false,
+      fixRightEdge:               false,
+      lockVisibleTimeRangeOnResize: false,
+    },
   });
 
   // Responsive resize — also reposition labels
@@ -279,13 +287,10 @@ function buildChart(ohlcv, positions) {
     ]);
   }
 
-  // Default view: last 3 months of candles with 30 days right padding for labels
-  const visFrom = new Date();
-  visFrom.setDate(visFrom.getDate() - 90);
-  _chart.timeScale().setVisibleRange({
-    from: dateToStr(visFrom),
-    to:   dateToStr(lineEndDate()),
-  });
+  // Default view: scroll to right edge (rightOffset:30 gives 30-bar buffer past last candle).
+  // scrollToPosition(0) positions the last bar at the right edge minus rightOffset,
+  // keeping the chart freely scrollable in both directions.
+  _chart.timeScale().scrollToPosition(0, false);
 
   // Wait one frame for the range to settle, then place labels
   requestAnimationFrame(() => createLabels(positions));
