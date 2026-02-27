@@ -250,7 +250,7 @@ function buildChart(ohlcv, positions) {
     timeScale: {
       borderColor:                '#30363d',
       secondsVisible:             false,
-      rightOffset:                100,
+      rightOffset:                10,
       barSpacing:                 10,
       fixLeftEdge:                false,
       fixRightEdge:               false,
@@ -278,6 +278,27 @@ function buildChart(ohlcv, positions) {
   });
   candles.setData(ohlcv);
   _candlesSeries = candles;
+
+  // ── Invisible future line — forces the time axis to render 90 days ahead ──
+  // LightweightCharts only allocates time slots for dates present in series data.
+  // Without this, the axis stops at the last candle and right-scroll is blocked.
+  const lastClose = ohlcv.length ? ohlcv[ohlcv.length - 1].close : 0;
+  const futureLine = _chart.addLineSeries({
+    color:                  'transparent',
+    lineWidth:              1,
+    lastValueVisible:       false,
+    priceLineVisible:       false,
+    crosshairMarkerVisible: false,
+  });
+  const futurePts = [];
+  const futureStart = new Date();
+  futureStart.setHours(0, 0, 0, 0);
+  for (let i = 1; i <= 90; i++) {
+    const d = new Date(futureStart);
+    d.setDate(d.getDate() + i);
+    futurePts.push({ time: dateToStr(d), value: lastClose });
+  }
+  futureLine.setData(futurePts);
 
   // ── Strike lines ─────────────────────────────────────────
   // Each position becomes a horizontal line from trade date → expiry
