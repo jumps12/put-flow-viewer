@@ -284,7 +284,7 @@ function buildChart(ohlcv, positions) {
   // Without this, the axis stops at the last candle and right-scroll is blocked.
   const lastClose = ohlcv.length ? ohlcv[ohlcv.length - 1].close : 0;
   const futureLine = _chart.addLineSeries({
-    color:                  'transparent',
+    color:                  '#0d1117', // matches chart background — effectively invisible
     lineWidth:              1,
     lastValueVisible:       false,
     priceLineVisible:       false,
