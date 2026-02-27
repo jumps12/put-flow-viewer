@@ -115,7 +115,7 @@ h1 {
 #chart-legend {
   position: absolute;
   top: 8px;
-  right: 8px;
+  right: 80px;
   z-index: 10;
   background: rgba(13, 17, 23, 0.82);
   border: 1px solid rgba(255, 255, 255, 0.07);
@@ -134,16 +134,17 @@ h1 {
   font-size: 9px;
   letter-spacing: 0.03em;
 }
-#chart-legend .cl-w3,
-#chart-legend .cl-w2,
-#chart-legend .cl-w1 {
-  padding-left: 2px;
-  border-left-style: solid;
-  border-left-color: #8b949e;
+#chart-legend .cl-bar {
+  display: inline-block;
+  width: 16px;
+  background: #8b949e;
+  vertical-align: middle;
+  margin-right: 4px;
+  border-radius: 1px;
 }
-#chart-legend .cl-w3 { border-left-width: 3px; }
-#chart-legend .cl-w2 { border-left-width: 2px; }
-#chart-legend .cl-w1 { border-left-width: 1px; }
+#chart-legend .cl-w3 .cl-bar { height: 3px; }
+#chart-legend .cl-w2 .cl-bar { height: 2px; }
+#chart-legend .cl-w1 .cl-bar { height: 1px; }
 
 /* Compact permanent label at the right end of each line */
 .strike-label {
