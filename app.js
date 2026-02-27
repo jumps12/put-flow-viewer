@@ -133,12 +133,20 @@ function getDTE(expiry) {
   return Math.floor((exp - today) / 86_400_000);
 }
 
-// Right endpoint of each line: always exactly 60 calendar days past today.
-// Expiry is shown in the label text; the visual right edge is a fixed margin.
+// Visible right endpoint of each line (where label sits): today + 30 days.
 function lineEndDate() {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
   d.setDate(d.getDate() + 30);
+  return d;
+}
+
+// Far future anchor point pushed into the series data so LightweightCharts
+// allocates time-axis space for future dates, enabling right-scroll.
+function lineFarDate() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 90);
   return d;
 }
 
@@ -242,7 +250,7 @@ function buildChart(ohlcv, positions) {
     timeScale: {
       borderColor:                '#30363d',
       secondsVisible:             false,
-      rightOffset:                50,
+      rightOffset:                100,
       barSpacing:                 10,
       fixLeftEdge:                false,
       fixRightEdge:               false,
@@ -288,8 +296,9 @@ function buildChart(ohlcv, positions) {
     });
 
     line.setData([
-      { time: dateToStr(p.tradeDate),            value: p.strike },
-      { time: dateToStr(lineEndDate()),   value: p.strike },
+      { time: dateToStr(p.tradeDate),   value: p.strike },
+      { time: dateToStr(lineEndDate()), value: p.strike },
+      { time: dateToStr(lineFarDate()), value: p.strike },
     ]);
   }
 
