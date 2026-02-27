@@ -39,8 +39,8 @@ async function fetchPutFlowData(ticker) {
 
 async function fetchOHLCV(ticker) {
   const now   = Math.floor(Date.now() / 1000);
-  const start = now - 2 * 365 * 24 * 3600;        // 2 years back
-  const end   = now + 400 * 24 * 3600;             // 400 days forward (covers LEAPS)
+  const start = now - 2 * 365 * 24 * 3600;  // 2 years back
+  const end   = now + 2   * 24 * 3600;      // 2-day buffer for timezone edge cases
 
   const target = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}` +
                  `?period1=${start}&period2=${end}&interval=1d`;
