@@ -133,7 +133,7 @@ function getDTE(expiry) {
 function lineEndDate() {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + 60);
+  d.setDate(d.getDate() + 30);
   return d;
 }
 
@@ -152,7 +152,7 @@ function strikeLineWidth(contracts, premium) {
 }
 
 function fmtMoney(v) {
-  if (v >= 1e6) return `$${(v / 1e6).toFixed(2)}M`;
+  if (v >= 1e6) return `$${(v / 1e6).toFixed(1)}M`;
   if (v >= 1e3) return `$${(v / 1e3).toFixed(0)}K`;
   return `$${v.toFixed(0)}`;
 }
@@ -174,7 +174,7 @@ function createLabels(positions) {
 
     // Format: 2027-01-15 | 300P | 4,000 cts | $36,320,000
     const strikeStr = p.strike % 1 === 0 ? p.strike.toFixed(0) : p.strike.toFixed(2);
-    const mvStr     = '$' + Math.round(mv).toLocaleString();
+    const mvStr     = fmtMoney(mv);
     const text      = `${dateToStr(p.expiry)} | ${strikeStr}P | ${p.contracts.toLocaleString()} cts | ${mvStr}`;
 
     const el = document.createElement('div');
@@ -231,6 +231,8 @@ function buildChart(ohlcv, positions) {
       horzLines: { color: '#1c2128' },
     },
     crosshair:       { mode: LightweightCharts.CrosshairMode.Normal },
+    handleScroll:    true,
+    handleScale:     true,
     rightPriceScale: { borderColor: '#30363d' },
     timeScale:       { borderColor: '#30363d', secondsVisible: false },
   });
@@ -278,14 +280,12 @@ function buildChart(ohlcv, positions) {
     ]);
   }
 
-  // Set a fixed visible window: 6 months back → 60 days forward
+  // Default view: last 3 months of candles with 30 days right padding for labels
   const visFrom = new Date();
-  visFrom.setDate(visFrom.getDate() - 180);
-  const visTo = new Date();
-  visTo.setDate(visTo.getDate() + 60);
+  visFrom.setDate(visFrom.getDate() - 90);
   _chart.timeScale().setVisibleRange({
     from: dateToStr(visFrom),
-    to:   dateToStr(visTo),
+    to:   dateToStr(lineEndDate()),
   });
 
   // Wait one frame for the range to settle, then place labels
