@@ -434,6 +434,8 @@ function renderSidebarCards(positions, isExpired) {
           <span class="pos-detail-val">${dteVal}</span>
           <span class="pos-detail-lbl">Contracts</span>
           <span class="pos-detail-val">${p.contracts.toLocaleString()}</span>
+          <span></span>
+          <span class="pos-detail-val" style="color:var(--fg3)">${fmtMoney(p.contracts * p.originalPremium * 100)}</span>
           <span class="pos-detail-lbl">Traded</span>
           <span class="pos-detail-val">${p.tradeDate.toLocaleDateString()}</span>
         </div>
