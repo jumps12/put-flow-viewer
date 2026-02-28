@@ -617,7 +617,7 @@ body::before {
   margin-bottom: 5px;
 }
 .ratio-seg { border-radius: 1px; }
-.puts-seg  { background: #ff3355; }
+.puts-seg  { background: var(--accent); }
 .calls-seg { background: #aa44ff; }
 
 .ratio-labels {
