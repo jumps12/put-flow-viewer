@@ -12,4 +12,5 @@
 
 const CONFIG = {
   CORS_PROXY: 'https://corsproxy.io/?',
+  AI_WORKER:  'https://options-ai.YOUR-SUBDOMAIN.workers.dev',
 };

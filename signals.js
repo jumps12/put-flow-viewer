@@ -272,17 +272,14 @@ async function fetchAiAnalysis(ticker) {
     messages:   [{ role: 'user', content: buildAiPrompt(s) }],
   });
 
-  const aiUrl = 'https://api.anthropic.com/v1/messages';
+  const aiUrl = CONFIG.AI_WORKER;
   console.log('[AI] Fetching:', aiUrl);
 
   let res;
   try {
     res = await fetch(aiUrl, {
       method:  'POST',
-      headers: {
-        'Content-Type':      'application/json',
-        'anthropic-version': '2023-06-01',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: payload,
     });
   } catch (netErr) {
