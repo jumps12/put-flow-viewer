@@ -229,7 +229,7 @@ function renderSignals(signals) {
   }).join('');
 }
 
-function setStatus(msg, cls) {
+function setSigStatus(msg, cls) {
   const el = document.getElementById('sig-status');
   el.textContent = msg;
   el.className   = cls;
@@ -242,10 +242,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     const signals = await loadSignals();
     renderSignals(signals);
-    setStatus('', '');
+    setSigStatus('', '');
   } catch (err) {
     document.getElementById('signals-grid').innerHTML = '';
-    setStatus(err.message, 'error');
+    setSigStatus(err.message, 'error');
     console.error(err);
   }
 });

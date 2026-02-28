@@ -152,10 +152,10 @@ function lineFarDate() {
 }
 
 function dteColor(dte) {
-  if (dte >= 180) return '#00BCD4'; // teal
-  if (dte >= 90)  return '#4CAF50'; // green
-  if (dte >= 30)  return '#FFC107'; // yellow
-  return '#F44336';                 // red
+  if (dte >= 180) return '#00c8ff'; // cyan
+  if (dte >= 90)  return '#00e676'; // green
+  if (dte >= 30)  return '#ffb300'; // amber
+  return '#ff3355';                 // red
 }
 
 function strikeLineWidth(contracts, premium) {
@@ -182,14 +182,15 @@ function createLabels(positions) {
 
   for (const p of positions) {
     const dte   = getDTE(p.expiry);
-    const color = p.type === 'call' ? '#AA00FF' : dteColor(dte);
+    const color = p.type === 'call' ? '#aa44ff' : dteColor(dte);
     // Market value uses original premium — what was paid at trade time
     const mv    = p.contracts * p.originalPremium * 100;
 
-    // Format: 2027-01-15 | 300P | 4,000x | $36.3M
+    // Format: 2027-01-15 | 300P | 4,000x | $36.3M  (C for calls, P for puts)
+    const typeChar  = p.type === 'call' ? 'C' : 'P';
     const strikeStr = p.strike % 1 === 0 ? p.strike.toFixed(0) : p.strike.toFixed(2);
     const mvStr     = fmtMoney(mv);
-    const text      = `${dateToStr(p.expiry)} | ${strikeStr}P | ${p.contracts.toLocaleString()}x | ${mvStr}`;
+    const text      = `${dateToStr(p.expiry)} | ${strikeStr}${typeChar} | ${p.contracts.toLocaleString()}x | ${mvStr}`;
 
     const el = document.createElement('div');
     el.className    = 'strike-label';
@@ -242,20 +243,20 @@ function buildChart(ohlcv, positions) {
     width:  container.clientWidth,
     height: 540,
     layout: {
-      background: { type: 'solid', color: '#0d1117' },
-      textColor:  '#c9d1d9',
+      background: { type: 'solid', color: '#07090d' },
+      textColor:  '#c8d8ea',
       fontSize:   12,
     },
     grid: {
-      vertLines: { color: '#1c2128' },
-      horzLines: { color: '#1c2128' },
+      vertLines: { color: '#111520' },
+      horzLines: { color: '#111520' },
     },
     crosshair:       { mode: LightweightCharts.CrosshairMode.Normal },
     handleScroll:    true,
     handleScale:     true,
-    rightPriceScale: { borderColor: '#30363d' },
+    rightPriceScale: { borderColor: '#1c2535' },
     timeScale: {
-      borderColor:                '#30363d',
+      borderColor:                '#1c2535',
       secondsVisible:             false,
       rightOffset:                10,
       barSpacing:                 10,
@@ -276,12 +277,12 @@ function buildChart(ohlcv, positions) {
 
   // ── Candlesticks ────────────────────────────────────────
   const candles = _chart.addCandlestickSeries({
-    upColor:          '#2ea043',
-    downColor:        '#f85149',
-    borderUpColor:    '#2ea043',
-    borderDownColor:  '#f85149',
-    wickUpColor:      '#2ea043',
-    wickDownColor:    '#f85149',
+    upColor:          '#00e676',
+    downColor:        '#ff3355',
+    borderUpColor:    '#00e676',
+    borderDownColor:  '#ff3355',
+    wickUpColor:      '#00e676',
+    wickDownColor:    '#ff3355',
     priceLineVisible: false, // disabled — we add a full-width one below
   });
   candles.setData(ohlcv);
@@ -297,14 +298,14 @@ function buildChart(ohlcv, positions) {
   // priceLineVisible which only draws to the last candle date).
   candles.createPriceLine({
     price:            lastClose,
-    color:            '#f85149',
+    color:            '#00c8ff',
     lineWidth:        1,
     lineStyle:        LightweightCharts.LineStyle.Dashed,
     axisLabelVisible: true,
     title:            '',
   });
   const futureLine = _chart.addLineSeries({
-    color:                  '#0d1117', // matches chart background — effectively invisible
+    color:                  '#07090d', // matches chart background — effectively invisible
     lineWidth:              1,
     lastValueVisible:       false,
     priceLineVisible:       false,
@@ -325,7 +326,7 @@ function buildChart(ohlcv, positions) {
   for (const p of positions) {
     const isCall  = p.type === 'call';
     const dte     = getDTE(p.expiry);
-    const color   = isCall ? '#AA00FF' : dteColor(dte);
+    const color   = isCall ? '#aa44ff' : dteColor(dte);
     const width   = strikeLineWidth(p.contracts, p.originalPremium);
     const style   = isCall
       ? LightweightCharts.LineStyle.Dashed
@@ -381,7 +382,7 @@ function buildTable(positions) {
       const plPct   = orig > 0 ? (orig - curr) / orig * 100 : null;
 
       // Green when premium has decayed (winning), red when it has grown (losing)
-      const plCol = plTotal >= 0 ? '#2ea043' : '#f85149';
+      const plCol = plTotal >= 0 ? '#00e676' : '#ff3355';
 
       const fmtPl = v => {
         const sign = v >= 0 ? '+' : '−';
@@ -396,7 +397,7 @@ function buildTable(positions) {
         : '—';
 
       const isCall   = p.type === 'call';
-      const typeCol  = isCall ? '#AA00FF' : col;
+      const typeCol  = isCall ? '#aa44ff' : col;
       const typeStr  = isCall ? 'CALL' : 'PUT';
 
       const tr = document.createElement('tr');
@@ -433,11 +434,145 @@ function setTickerBar(ticker, positions) {
   el.innerHTML = `
     <span class="tb-ticker">${ticker}</span>
     <span class="tb-sep">·</span>
-    <span class="tb-stat"><b>${positions.length}</b> put position${positions.length !== 1 ? 's' : ''}</span>
+    <span class="tb-stat"><b>${positions.length}</b> position${positions.length !== 1 ? 's' : ''}</span>
     <span class="tb-sep">·</span>
     <span class="tb-stat">Deployed: <b class="tb-mv">${fmtMoney(totalMV)}</b></span>
   `;
   el.hidden = false;
+}
+
+// ── Live clock ────────────────────────────────────────────────────────────────
+
+function startClock() {
+  function tick() {
+    const now  = new Date();
+    const timeEl = document.getElementById('clock-time');
+    const dateEl = document.getElementById('clock-date');
+    if (timeEl) timeEl.textContent = now.toLocaleTimeString('en-US', {
+      hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit',
+    });
+    if (dateEl) dateEl.textContent = now.toLocaleDateString('en-US', {
+      weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
+    }).toUpperCase();
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+// ── Collapsible sections ───────────────────────────────────────────────────────
+
+function initCollapsibles() {
+  document.querySelectorAll('.collapse-btn').forEach(btn => {
+    const body = document.getElementById(btn.dataset.target);
+    if (!body) return;
+    btn.addEventListener('click', () => {
+      const willCollapse = !body.classList.contains('collapsed');
+      body.classList.toggle('collapsed', willCollapse);
+      btn.classList.toggle('open', !willCollapse);
+    });
+  });
+}
+
+// ── Portfolio summary ─────────────────────────────────────────────────────────
+
+async function buildPortfolio() {
+  const el = document.getElementById('portfolio-body');
+  if (!el) return;
+
+  try {
+    const res = await fetch('./positions.json');
+    if (!res.ok) throw new Error('positions.json not found — run fetch_premiums.py first');
+    const all = await res.json();
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const active = all.filter(p => {
+      const expiry    = parseDate(p.expiry);
+      const tradeDate = parseDate(p.trade_date);
+      const orig      = parseFloat(p.original_premium ?? p.current_premium ?? p.premium);
+      const contracts = parseInt(p.contracts);
+      return expiry && tradeDate && expiry >= today && expiry > tradeDate &&
+             isFinite(orig) && isFinite(contracts) && contracts > 0;
+    });
+
+    if (!active.length) {
+      el.innerHTML = '<div class="port-empty">No active positions found in positions.json.</div>';
+      return;
+    }
+
+    const tickers = [...new Set(active.map(p => String(p.symbol ?? '').trim().toUpperCase()))].filter(Boolean);
+
+    let totalMV = 0, totalPL = 0, wins = 0;
+    let putMV = 0, callMV = 0, putCts = 0, callCts = 0;
+
+    for (const p of active) {
+      const orig      = parseFloat(p.original_premium ?? p.current_premium ?? p.premium);
+      const curr      = parseFloat(p.current_premium ?? p.premium);
+      const contracts = parseInt(p.contracts);
+      const mv        = contracts * orig * 100;
+      const pl        = (orig - curr) * 100 * contracts;
+      const type      = (p.type ?? 'put').toLowerCase();
+
+      totalMV += mv;
+      totalPL += pl;
+      if (pl >= 0) wins++;
+
+      if (type === 'call') { callMV += mv; callCts += contracts; }
+      else                 { putMV  += mv; putCts  += contracts; }
+    }
+
+    const winRate  = Math.round(wins / active.length * 100);
+    const plCol    = totalPL >= 0 ? 'var(--up)' : 'var(--dn)';
+    const plSign   = totalPL >= 0 ? '+' : '−';
+    const plAbs    = Math.abs(totalPL);
+    const maxMV    = Math.max(putMV, callMV) || 1;
+    const putPct   = (putMV  / maxMV * 100).toFixed(1);
+    const callPct  = (callMV / maxMV * 100).toFixed(1);
+
+    el.innerHTML = `
+      <div class="port-stats">
+        <div class="port-stat">
+          <div class="port-stat-val" style="color:var(--accent)">${fmtMoney(totalMV)}</div>
+          <div class="port-stat-lbl">Total Notional</div>
+        </div>
+        <div class="port-stat">
+          <div class="port-stat-val" style="color:${plCol}">${plSign}${fmtMoney(plAbs)}</div>
+          <div class="port-stat-lbl">Total P&amp;L</div>
+        </div>
+        <div class="port-stat">
+          <div class="port-stat-val">${winRate}%</div>
+          <div class="port-stat-lbl">Win Rate</div>
+        </div>
+        <div class="port-stat">
+          <div class="port-stat-val">${tickers.length}</div>
+          <div class="port-stat-lbl">Active Tickers</div>
+        </div>
+        <div class="port-stat">
+          <div class="port-stat-val">${active.length}</div>
+          <div class="port-stat-lbl">Total Positions</div>
+        </div>
+      </div>
+      <div class="port-breakdown">
+        <div class="breakdown-row">
+          <span class="breakdown-lbl" style="color:var(--dn)">PUTS</span>
+          <div class="breakdown-bar-wrap">
+            <div class="breakdown-bar put-bar" style="width:${putPct}%"></div>
+          </div>
+          <span class="breakdown-val">${fmtMoney(putMV)}</span>
+        </div>
+        <div class="breakdown-row">
+          <span class="breakdown-lbl" style="color:var(--call)">CALLS</span>
+          <div class="breakdown-bar-wrap">
+            <div class="breakdown-bar call-bar" style="width:${callPct}%"></div>
+          </div>
+          <span class="breakdown-val">${fmtMoney(callMV)}</span>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    el.innerHTML = `<div class="port-empty" style="color:var(--dn)">${err.message}</div>`;
+  }
 }
 
 // ── Entry point ───────────────────────────────────────────────────────────────
@@ -479,6 +614,10 @@ async function load(raw) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  startClock();
+  initCollapsibles();
+  buildPortfolio();
+
   const input = document.getElementById('ticker-input');
   const btn   = document.getElementById('load-btn');
 
