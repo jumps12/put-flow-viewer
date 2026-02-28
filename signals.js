@@ -103,12 +103,40 @@ async function loadSignals() {
 
     const daysActive = Math.max(1, Math.ceil((today - minTradeDate) / 86_400_000));
 
-    const totalPuts      = puts.reduce((s, p)  => s + (parseInt(p.contracts) || 0), 0);
-    const totalCalls     = calls.reduce((s, p) => s + (parseInt(p.contracts) || 0), 0);
+    const totalPuts  = puts.reduce((s, p)  => s + (parseInt(p.contracts) || 0), 0);
+    const totalCalls = calls.reduce((s, p) => s + (parseInt(p.contracts) || 0), 0);
     const totalContracts = totalPuts + totalCalls;
 
-    // All position types are bullish — score is total bullish contracts × days active
-    const score = totalContracts * daysActive;
+    // ── Weighted put score by DTE ────────────────────────────
+    // Longer DTE = stronger conviction (more premium at risk, further out)
+    let putScore = 0;
+    for (const p of puts) {
+      const contracts = parseInt(p.contracts) || 0;
+      const expiry    = parseDate(p.expiry);
+      const dte       = expiry ? Math.floor((expiry - today) / 86_400_000) : 0;
+      const weight    = dte >= 180 ? 3 : dte >= 90 ? 2 : dte >= 30 ? 1.5 : 1;
+      putScore += contracts * weight;
+    }
+
+    // ── Weighted call score by original premium ──────────────
+    // Higher premium = bigger directional bet
+    let callScore = 0;
+    for (const p of calls) {
+      const contracts = parseInt(p.contracts) || 0;
+      const orig      = parseFloat(p.original_premium ?? p.current_premium ?? p.premium);
+      // 0 or unparseable = not yet fetched → use 1.5 as neutral default
+      const weight    = (!isFinite(orig) || orig === 0) ? 1.5
+                      : orig > 5  ? 2
+                      : orig >= 1 ? 1.5
+                      : 1;
+      callScore += contracts * weight;
+    }
+
+    // ── Confluence bonus ─────────────────────────────────────
+    // Having both puts sold AND calls bought signals coordinated conviction
+    const rawScore      = putScore + callScore;
+    const confluenceBonus = 1.5; // always true here — confluence is required to reach this point
+    const score         = rawScore * confluenceBonus;
 
     // Earliest confluence window — find the closest put-call pair dates
     let closestGap = Infinity;
@@ -132,6 +160,10 @@ async function loadSignals() {
       totalPuts,
       totalCalls,
       totalContracts,
+      putScore,
+      callScore,
+      rawScore,
+      confluenceBonus,
       putCount:  puts.length,
       callCount: calls.length,
       daysActive,
@@ -182,10 +214,11 @@ function renderSignals(signals) {
   summary.hidden = false;
 
   grid.innerHTML = signals.map(s => {
-    const putPct  = Math.round(s.totalPuts  / (s.totalPuts + s.totalCalls) * 100);
+    const putPct  = Math.round(s.totalPuts / (s.totalPuts + s.totalCalls) * 100);
     const callPct = 100 - putPct;
-    const badgeCls = s.badge === 'STRONG' ? 'badge-strong' : 'badge-notable';
-    const dateRange = `${fmtDate(s.minTradeDate)} → ${fmtDate(s.maxExpiry)}`;
+    const badgeCls    = s.badge === 'STRONG' ? 'badge-strong' : 'badge-notable';
+    const dateRange   = `${fmtDate(s.minTradeDate)} → ${fmtDate(s.maxExpiry)}`;
+    const breakdown   = `Puts: ${fmtScore(s.putScore)} + Calls: ${fmtScore(s.callScore)} × ${s.confluenceBonus} confluence = ${fmtScore(s.score)}`;
 
     return `
       <div class="signal-card">
@@ -221,6 +254,7 @@ function renderSignals(signals) {
 
         <div class="card-footer">
           <div class="card-dates">${dateRange}</div>
+          <div class="card-score-breakdown">${breakdown}</div>
           <div class="card-row2">
             <span class="card-score">Bullish Conviction Score: ${fmtScore(s.score)}</span>
             <a class="card-link" href="#" data-ticker="${s.ticker}">View chart →</a>
