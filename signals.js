@@ -225,7 +225,7 @@ function renderSignals(signals) {
           <div class="card-dates">${dateRange}</div>
           <div class="card-row2">
             <span class="card-score">Score: ${fmtScore(s.score)}</span>
-            <a class="card-link" href="index.html#${s.ticker}">View chart →</a>
+            <a class="card-link" href="#" data-ticker="${s.ticker}">View chart →</a>
           </div>
         </div>
       </div>`;
@@ -251,4 +251,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     setSigStatus(err.message, 'error');
     console.error(err);
   }
+
+  // "View chart →" — load ticker and scroll to chart
+  document.getElementById('signals-grid').addEventListener('click', e => {
+    const link = e.target.closest('a[data-ticker]');
+    if (!link) return;
+    e.preventDefault();
+    const ticker = link.dataset.ticker;
+    load(ticker);
+    document.getElementById('sec01-body').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
 });
