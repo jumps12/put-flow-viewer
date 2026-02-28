@@ -8,12 +8,8 @@
 //   'https://api.allorigins.win/raw?url='
 //   'https://api.codetabs.com/v1/proxy?quest='
 //
-// ANTHROPIC_KEY: your Anthropic API key for AI analysis on signals page.
-// The key is sent via CORS proxy — only use this for local/personal use.
-//
 // ──────────────────────────────────────────────────────────────────────────────
 
 const CONFIG = {
-  CORS_PROXY:    'https://corsproxy.io/?',
-  ANTHROPIC_KEY: 'YOUR_KEY_HERE',
+  CORS_PROXY: 'https://corsproxy.io/?',
 };

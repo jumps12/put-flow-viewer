@@ -265,13 +265,6 @@ async function fetchAiAnalysis(ticker) {
   const s = signalMap.get(ticker);
   if (!s) throw new Error('Signal data not found');
 
-  if (!CONFIG.ANTHROPIC_KEY || CONFIG.ANTHROPIC_KEY === 'YOUR_KEY_HERE') {
-    throw new Error('Set ANTHROPIC_KEY in config.js to enable AI analysis');
-  }
-
-  const anthropicUrl = 'https://api.anthropic.com/v1/messages';
-  const proxyUrl     = CONFIG.CORS_PROXY + encodeURIComponent(anthropicUrl);
-
   const payload = JSON.stringify({
     model:      'claude-sonnet-4-6',
     max_tokens: 400,
@@ -279,13 +272,15 @@ async function fetchAiAnalysis(ticker) {
     messages:   [{ role: 'user', content: buildAiPrompt(s) }],
   });
 
+  const aiUrl = 'https://api.anthropic.com/v1/messages';
+  console.log('[AI] Fetching:', aiUrl);
+
   let res;
   try {
-    res = await fetch(proxyUrl, {
+    res = await fetch(aiUrl, {
       method:  'POST',
       headers: {
         'Content-Type':      'application/json',
-        'x-api-key':         CONFIG.ANTHROPIC_KEY,
         'anthropic-version': '2023-06-01',
       },
       body: payload,
@@ -300,14 +295,14 @@ async function fetchAiAnalysis(ticker) {
     data = await res.json();
   } catch (parseErr) {
     const raw = await res.text().catch(() => '(unreadable)');
-    console.error('[AI] Non-JSON response:', raw);
+    console.error('[AI] Non-JSON response (HTTP ' + res.status + '):', raw);
     throw new Error(`Non-JSON response (HTTP ${res.status})`);
   }
 
   if (!res.ok) {
     const msg = data?.error?.message ?? JSON.stringify(data?.error) ?? `HTTP ${res.status}`;
-    console.error('[AI] Anthropic error:', res.status, data);
-    throw new Error(`Anthropic ${res.status}: ${msg}`);
+    console.error('[AI] API error:', res.status, data);
+    throw new Error(`API ${res.status}: ${msg}`);
   }
 
   const text = data.content?.[0]?.text;
