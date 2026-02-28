@@ -251,25 +251,70 @@ function buildAiPrompt(s) {
   ].join('\n');
 }
 
+const AI_SYSTEM_PROMPT =
+  'You are an expert options flow analyst. Analyze the following institutional ' +
+  'options flow data and write a concise 3-4 sentence trade narrative in the ' +
+  'style of a professional trader. Focus on: what the flow implies directionally, ' +
+  'key strike levels to watch, any notable patterns (repeat flow, large size, ' +
+  'unusual expiry), and a specific actionable idea. Be direct and confident. ' +
+  'Do not use bullet points. Write in plain conversational trader language.';
+
 async function fetchAiAnalysis(ticker) {
   if (aiCache.has(ticker)) return aiCache.get(ticker);
 
   const s = signalMap.get(ticker);
   if (!s) throw new Error('Signal data not found');
 
-  const res = await fetch(`${CONFIG.AI_PROXY}/analyze`, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ prompt: buildAiPrompt(s) }),
+  if (!CONFIG.ANTHROPIC_KEY || CONFIG.ANTHROPIC_KEY === 'YOUR_KEY_HERE') {
+    throw new Error('Set ANTHROPIC_KEY in config.js to enable AI analysis');
+  }
+
+  const anthropicUrl = 'https://api.anthropic.com/v1/messages';
+  const proxyUrl     = CONFIG.CORS_PROXY + encodeURIComponent(anthropicUrl);
+
+  const payload = JSON.stringify({
+    model:      'claude-sonnet-4-6',
+    max_tokens: 400,
+    system:     AI_SYSTEM_PROMPT,
+    messages:   [{ role: 'user', content: buildAiPrompt(s) }],
   });
 
-  const data = await res.json();
+  let res;
+  try {
+    res = await fetch(proxyUrl, {
+      method:  'POST',
+      headers: {
+        'Content-Type':      'application/json',
+        'x-api-key':         CONFIG.ANTHROPIC_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: payload,
+    });
+  } catch (netErr) {
+    console.error('[AI] Network error:', netErr);
+    throw new Error(`Network error: ${netErr.message}`);
+  }
+
+  let data;
+  try {
+    data = await res.json();
+  } catch (parseErr) {
+    const raw = await res.text().catch(() => '(unreadable)');
+    console.error('[AI] Non-JSON response:', raw);
+    throw new Error(`Non-JSON response (HTTP ${res.status})`);
+  }
+
   if (!res.ok) {
-    throw new Error(data?.error?.message ?? data?.error ?? `HTTP ${res.status}`);
+    const msg = data?.error?.message ?? JSON.stringify(data?.error) ?? `HTTP ${res.status}`;
+    console.error('[AI] Anthropic error:', res.status, data);
+    throw new Error(`Anthropic ${res.status}: ${msg}`);
   }
 
   const text = data.content?.[0]?.text;
-  if (!text) throw new Error('Empty response from AI');
+  if (!text) {
+    console.error('[AI] Unexpected response shape:', JSON.stringify(data).slice(0, 300));
+    throw new Error('Empty response from AI');
+  }
 
   aiCache.set(ticker, text);
   return text;
