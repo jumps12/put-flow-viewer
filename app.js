@@ -192,6 +192,8 @@ function createLabels(positions) {
     const el = document.createElement('div');
     el.className    = 'strike-label';
     el.style.color  = color;
+    // Puts: label sits just below the line. Calls keep the default centered-on-line position.
+    if (p.type === 'put') el.style.transform = 'translateY(3px)';
     el.textContent  = text;
     container.appendChild(el);
 
@@ -290,14 +292,11 @@ function buildChart(ohlcv, positions) {
   // Reposition labels on every pan / zoom
   _chart.timeScale().subscribeVisibleLogicalRangeChange(updateLabelPositions);
 
-  // ── Candlesticks ────────────────────────────────────────
-  const candles = _chart.addCandlestickSeries({
+  // ── OHLC bars ────────────────────────────────────────────
+  const candles = _chart.addBarSeries({
     upColor:          '#00e676',
     downColor:        '#ff3355',
-    borderUpColor:    '#00e676',
-    borderDownColor:  '#ff3355',
-    wickUpColor:      '#00e676',
-    wickDownColor:    '#ff3355',
+    openVisible:      true,
     priceLineVisible: false, // disabled — we add a full-width one below
   });
   candles.setData(ohlcv);
