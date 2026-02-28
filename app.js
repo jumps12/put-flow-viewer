@@ -210,12 +210,11 @@ function updateLabelPositions() {
   // Approximate rendered label height (10px font × 1.6 line-height + 2px padding)
   const LABEL_H     = 18;
 
-  const xPos = _chart.timeScale().timeToCoordinate(dateToStr(lineEndDate()));
-
-  // Compute natural Y for every label
+  // Compute natural positions — each label sits at the right end of its line (expiry date).
+  // x is clamped to maxLabelX later, so far-future expiries always show near the right edge.
   const items = _labelData.map(({ p, el }) => ({
     el,
-    x: xPos,
+    x: _chart.timeScale().timeToCoordinate(dateToStr(p.expiry)),
     y: _candlesSeries.priceToCoordinate(p.strike),
   }));
 
@@ -304,19 +303,6 @@ function buildChart(ohlcv, positions) {
   candles.setData(ohlcv);
   _candlesSeries = candles;
 
-  // ── Trade-entry markers — subtle arrowUp triangles below each trade-date candle ──
-  const tradeMarkers = positions
-    .map(p => ({
-      time:     dateToStr(p.tradeDate),
-      position: 'belowBar',
-      color:    p.type === 'call' ? '#7722bb' : '#0088aa',
-      shape:    'arrowUp',
-      text:     '',
-      size:     1,
-    }))
-    .sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
-  candles.setMarkers(tradeMarkers);
-
   // ── Invisible future line — forces the time axis to render 90 days ahead ──
   // LightweightCharts only allocates time slots for dates present in series data.
   // Without this, the axis stops at the last candle and right-scroll is blocked.
@@ -373,9 +359,8 @@ function buildChart(ohlcv, positions) {
     });
 
     series.setData([
-      { time: dateToStr(p.tradeDate),   value: p.strike },
-      { time: dateToStr(lineEndDate()), value: p.strike },
-      { time: dateToStr(lineFarDate()), value: p.strike },
+      { time: dateToStr(p.tradeDate), value: p.strike },
+      { time: dateToStr(p.expiry),    value: p.strike },
     ]);
 
     _strikeData.push({ p, series, color, width });
