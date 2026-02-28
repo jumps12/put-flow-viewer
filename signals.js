@@ -161,7 +161,7 @@ function renderSignals(signals) {
       <div class="sig-empty">
         <div class="sig-empty-icon">◈</div>
         <div>No confluence signals found</div>
-        <div class="sig-empty-sub">Signals appear when a ticker has both puts and calls traded within a 7-day window.</div>
+        <div class="sig-empty-sub">Signals appear when a ticker has puts sold and calls bought within a 7-day window — a bullish confluence pattern.</div>
       </div>`;
     return;
   }
@@ -171,6 +171,7 @@ function renderSignals(signals) {
   const notableN = signals.length - strongN;
   const summary  = document.getElementById('sig-summary');
   summary.innerHTML = `
+    <span class="sum-pill bull-key">PUT SOLD + CALL BOUGHT = BULL CONFLUENCE</span>
     <span class="sum-pill strong">${strongN} STRONG</span>
     <span class="sum-pill notable">${notableN} NOTABLE</span>
     <span class="sum-pill total">${signals.length} total tickers</span>
@@ -190,15 +191,17 @@ function renderSignals(signals) {
           <span class="card-badge ${badgeCls}">${s.badge}</span>
         </div>
 
+        <div class="card-strat">PUT SOLD <span class="card-strat-bull">▲ BULLISH</span> + CALL BOUGHT</div>
+
         <div class="card-stats">
           <div class="stat">
             <div class="stat-val put-color">${fmtNum(s.totalPuts)}</div>
-            <div class="stat-lbl">Put contracts</div>
+            <div class="stat-lbl">Puts Sold</div>
           </div>
           <div class="stat-divider"></div>
           <div class="stat">
             <div class="stat-val call-color">${fmtNum(s.totalCalls)}</div>
-            <div class="stat-lbl">Call contracts</div>
+            <div class="stat-lbl">Calls Bought</div>
           </div>
           <div class="stat-divider"></div>
           <div class="stat">
@@ -213,8 +216,8 @@ function renderSignals(signals) {
             <div class="ratio-seg calls-seg" style="flex:${s.totalCalls}"></div>
           </div>
           <div class="ratio-labels">
-            <span class="put-color">${putPct}% puts</span>
-            <span class="call-color">${callPct}% calls</span>
+            <span class="put-color">${putPct}% puts sold</span>
+            <span class="call-color">${callPct}% calls bought</span>
           </div>
         </div>
 

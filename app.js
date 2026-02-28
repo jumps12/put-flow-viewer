@@ -466,108 +466,6 @@ function initCollapsibles() {
   });
 }
 
-// ── Portfolio summary ─────────────────────────────────────────────────────────
-
-async function buildPortfolio() {
-  const el = document.getElementById('portfolio-body');
-  if (!el) return;
-
-  try {
-    const res = await fetch('./positions.json');
-    if (!res.ok) throw new Error('positions.json not found — run fetch_premiums.py first');
-    const all = await res.json();
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const active = all.filter(p => {
-      const expiry    = parseDate(p.expiry);
-      const tradeDate = parseDate(p.trade_date);
-      const orig      = parseFloat(p.original_premium ?? p.current_premium ?? p.premium);
-      const contracts = parseInt(p.contracts);
-      return expiry && tradeDate && expiry >= today && expiry > tradeDate &&
-             isFinite(orig) && isFinite(contracts) && contracts > 0;
-    });
-
-    if (!active.length) {
-      el.innerHTML = '<div class="port-empty">No active positions found in positions.json.</div>';
-      return;
-    }
-
-    const tickers = [...new Set(active.map(p => String(p.symbol ?? '').trim().toUpperCase()))].filter(Boolean);
-
-    let totalMV = 0, totalPL = 0, wins = 0;
-    let putMV = 0, callMV = 0, putCts = 0, callCts = 0;
-
-    for (const p of active) {
-      const orig      = parseFloat(p.original_premium ?? p.current_premium ?? p.premium);
-      const curr      = parseFloat(p.current_premium ?? p.premium);
-      const contracts = parseInt(p.contracts);
-      const mv        = contracts * orig * 100;
-      const pl        = (orig - curr) * 100 * contracts;
-      const type      = (p.type ?? 'put').toLowerCase();
-
-      totalMV += mv;
-      totalPL += pl;
-      if (pl >= 0) wins++;
-
-      if (type === 'call') { callMV += mv; callCts += contracts; }
-      else                 { putMV  += mv; putCts  += contracts; }
-    }
-
-    const winRate  = Math.round(wins / active.length * 100);
-    const plCol    = totalPL >= 0 ? 'var(--up)' : 'var(--dn)';
-    const plSign   = totalPL >= 0 ? '+' : '−';
-    const plAbs    = Math.abs(totalPL);
-    const maxMV    = Math.max(putMV, callMV) || 1;
-    const putPct   = (putMV  / maxMV * 100).toFixed(1);
-    const callPct  = (callMV / maxMV * 100).toFixed(1);
-
-    el.innerHTML = `
-      <div class="port-stats">
-        <div class="port-stat">
-          <div class="port-stat-val" style="color:var(--accent)">${fmtMoney(totalMV)}</div>
-          <div class="port-stat-lbl">Total Notional</div>
-        </div>
-        <div class="port-stat">
-          <div class="port-stat-val" style="color:${plCol}">${plSign}${fmtMoney(plAbs)}</div>
-          <div class="port-stat-lbl">Total P&amp;L</div>
-        </div>
-        <div class="port-stat">
-          <div class="port-stat-val">${winRate}%</div>
-          <div class="port-stat-lbl">Win Rate</div>
-        </div>
-        <div class="port-stat">
-          <div class="port-stat-val">${tickers.length}</div>
-          <div class="port-stat-lbl">Active Tickers</div>
-        </div>
-        <div class="port-stat">
-          <div class="port-stat-val">${active.length}</div>
-          <div class="port-stat-lbl">Total Positions</div>
-        </div>
-      </div>
-      <div class="port-breakdown">
-        <div class="breakdown-row">
-          <span class="breakdown-lbl" style="color:var(--dn)">PUTS</span>
-          <div class="breakdown-bar-wrap">
-            <div class="breakdown-bar put-bar" style="width:${putPct}%"></div>
-          </div>
-          <span class="breakdown-val">${fmtMoney(putMV)}</span>
-        </div>
-        <div class="breakdown-row">
-          <span class="breakdown-lbl" style="color:var(--call)">CALLS</span>
-          <div class="breakdown-bar-wrap">
-            <div class="breakdown-bar call-bar" style="width:${callPct}%"></div>
-          </div>
-          <span class="breakdown-val">${fmtMoney(callMV)}</span>
-        </div>
-      </div>
-    `;
-  } catch (err) {
-    el.innerHTML = `<div class="port-empty" style="color:var(--dn)">${err.message}</div>`;
-  }
-}
-
 // ── Entry point ───────────────────────────────────────────────────────────────
 
 async function load(raw) {
@@ -609,7 +507,6 @@ async function load(raw) {
 document.addEventListener('DOMContentLoaded', () => {
   startClock();
   initCollapsibles();
-  buildPortfolio();
 
   const input = document.getElementById('ticker-input');
   const btn   = document.getElementById('load-btn');
