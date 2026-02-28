@@ -192,8 +192,9 @@ function createLabels(positions) {
     const el = document.createElement('div');
     el.className    = 'strike-label';
     el.style.color  = color;
-    // Puts: label sits just below the line. Calls keep the default centered-on-line position.
-    if (p.type === 'put') el.style.transform = 'translateY(3px)';
+    // Puts: centered horizontally under the line midpoint.
+    // Calls: keep the default right-side, vertically-centered position.
+    if (p.type === 'put') el.style.transform = 'translateX(-50%) translateY(3px)';
     el.textContent  = text;
     container.appendChild(el);
 
@@ -212,13 +213,22 @@ function updateLabelPositions() {
   // Approximate rendered label height (10px font × 1.6 line-height + 2px padding)
   const LABEL_H     = 18;
 
-  // Compute natural positions — each label sits at the right end of its line (expiry date).
-  // x is clamped to maxLabelX later, so far-future expiries always show near the right edge.
-  const items = _labelData.map(({ p, el }) => ({
-    el,
-    x: _chart.timeScale().timeToCoordinate(dateToStr(p.expiry)),
-    y: _candlesSeries.priceToCoordinate(p.strike),
-  }));
+  // Compute x per type:
+  //   Puts  → midpoint of the line (trade date … expiry), label is translateX(-50%) centered
+  //   Calls → right end (expiry) + 4 px offset, label is left-aligned
+  const items = _labelData.map(({ p, el }) => {
+    const y = _candlesSeries.priceToCoordinate(p.strike);
+    let x;
+    if (p.type === 'put') {
+      const x1 = _chart.timeScale().timeToCoordinate(dateToStr(p.tradeDate));
+      const x2 = _chart.timeScale().timeToCoordinate(dateToStr(p.expiry));
+      x = (x1 !== null && x2 !== null) ? (x1 + x2) / 2 : (x2 ?? x1);
+    } else {
+      const xe = _chart.timeScale().timeToCoordinate(dateToStr(p.expiry));
+      x = xe !== null ? Math.min(xe + 4, maxLabelX) : null;
+    }
+    return { el, x, y };
+  });
 
   // Hide anything off-screen
   for (const item of items) {
@@ -239,7 +249,7 @@ function updateLabelPositions() {
 
   for (const item of visible) {
     item.el.style.display = 'block';
-    item.el.style.left    = `${Math.min(item.x + 4, maxLabelX)}px`;
+    item.el.style.left    = `${item.x}px`;
     item.el.style.top     = `${item.adjY}px`;
   }
 }
