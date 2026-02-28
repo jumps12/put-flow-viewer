@@ -50,7 +50,7 @@ body::before {
 }
 
 /* Keep everything above the grid */
-#header, .terminal, .hdr-rule { position: relative; z-index: 1; }
+#header, .layout-wrap, .hdr-rule { position: relative; z-index: 1; }
 
 /* ── Header ──────────────────────────────────────────────── */
 #header {
@@ -61,6 +61,9 @@ body::before {
   padding: 0 28px;
   background: var(--bg2);
   border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .hdr-left {
@@ -132,12 +135,22 @@ body::before {
     transparent 100%
   );
   opacity: 0.7;
+  position: sticky;
+  top: var(--hdr-h);
+  z-index: 99;
 }
 
-/* ── Terminal body ───────────────────────────────────────── */
-.terminal {
+/* ── Layout wrapper + main column ────────────────────────── */
+.layout-wrap {
+  display: flex;
+  align-items: flex-start;
   max-width: 1680px;
   margin: 0 auto;
+}
+
+.main-col {
+  flex: 1;
+  min-width: 0;
   padding: 24px 24px 60px;
   display: flex;
   flex-direction: column;
@@ -271,33 +284,133 @@ body::before {
 #status.warning, #sig-status.warning { color: var(--warn);   border-left-color: var(--warn);   background: rgba(255,179,0,0.05); }
 #status.error,   #sig-status.error   { color: var(--dn);     border-left-color: var(--dn);     background: rgba(255,51,85,0.05); }
 
-/* ── Ticker info bar ─────────────────────────────────────── */
-#ticker-bar {
+/* ── Sidebar (section 02 — Active Positions) ─────────────── */
+#positions-sidebar {
+  flex: 0 0 25%;
+  min-width: 260px;
+  max-width: 380px;
+  position: sticky;
+  top: calc(var(--hdr-h) + 2px);
+  height: calc(100vh - var(--hdr-h) - 2px);
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+  background: var(--bg2);
+  overflow: hidden;
+}
+
+.sidebar-hdr {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 0;
-  padding: 0;
+  gap: 14px;
+  padding: 14px 16px 12px;
   border-bottom: 1px solid var(--border);
-  font-size: 11px;
-  letter-spacing: 0.06em;
 }
-.tb-ticker {
+
+#positions-sidebar .sec-num {
+  font-size: 20px;
+  width: 30px;
+  flex-shrink: 0;
+}
+
+.sidebar-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-sec-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg1);
+  letter-spacing: 0.12em;
+  font-variant: small-caps;
+}
+
+#sidebar-info {
+  font-size: 9px;
+  color: var(--fg3);
+  letter-spacing: 0.1em;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-body {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+}
+
+/* ── Position cards ──────────────────────────────────────── */
+.pos-card {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.12s;
+}
+.pos-card:hover { background: var(--bg4); }
+.pos-card:last-child { border-bottom: none; }
+
+.pos-card-top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 6px;
+}
+
+.pos-type-badge {
+  font-size: 8px;
+  font-family: var(--mono);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  padding: 1px 5px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.pos-strike {
   font-size: 14px;
   font-weight: 700;
+  flex: 1;
   color: var(--fg1);
-  letter-spacing: 0.1em;
-  padding: 8px 20px;
-  border-right: 1px solid var(--border);
+  letter-spacing: 0.04em;
 }
-.tb-sep  { display: none; }
-.tb-stat {
+
+.pos-pl {
+  font-size: 10px;
+  text-align: right;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.pos-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px 8px;
+  font-size: 9px;
+}
+
+.pos-detail-lbl {
   color: var(--fg3);
-  padding: 8px 16px;
-  border-right: 1px solid var(--border);
+  letter-spacing: 0.08em;
 }
-.tb-stat b { color: var(--fg2); font-weight: 600; }
-.tb-mv     { color: var(--accent); font-weight: 600; }
+
+.pos-detail-val {
+  color: var(--fg2);
+  text-align: right;
+  letter-spacing: 0.04em;
+}
+
+.sidebar-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--fg3);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
 
 /* ── Legend bar ──────────────────────────────────────────── */
 .legend-bar {

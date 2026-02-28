@@ -27,115 +27,98 @@
 
   <div class="hdr-rule"></div>
 
-  <div class="terminal">
+  <div class="layout-wrap">
 
-    <!-- ── 01 Price Chart ─────────────────────────────────────────── -->
-    <section class="section">
-      <div class="section-hdr">
-        <span class="sec-num">01</span>
-        <div class="sec-meta">
-          <div class="sec-title">Price Chart</div>
-          <div class="sec-sub">PRICE ACTION · STRIKE LEVELS · TRADE MARKERS · UPDATED DAILY</div>
-        </div>
-        <div class="sec-controls">
-          <input type="text" id="ticker-input" placeholder="TICKER…" maxlength="10"
-                 autocomplete="off" spellcheck="false">
-          <button id="load-btn">LOAD</button>
-        </div>
-        <button class="collapse-btn open" data-target="sec01-body">▸</button>
-      </div>
-      <div class="section-body" id="sec01-body">
-        <div id="status" hidden></div>
-        <div id="ticker-bar" hidden></div>
-        <div class="legend-bar">
-          <div class="lg-group">
-            <span class="dte-item" style="color:#00c8ff">180+ DTE</span>
-            <span class="dte-item" style="color:#00e676">90–180 DTE</span>
-            <span class="dte-item" style="color:#ffb300">30–90 DTE</span>
-            <span class="dte-item" style="color:#ff3355">&lt;30 DTE</span>
-          </div>
-          <span class="lg-sep"></span>
-          <div class="lg-group">
-            <span class="lw-item"><span class="lw lw3"></span>&gt;$2M</span>
-            <span class="lw-item"><span class="lw lw2"></span>&gt;$500K</span>
-            <span class="lw-item"><span class="lw lw1"></span>&lt;$500K</span>
-          </div>
-        </div>
-        <div id="chart-container"></div>
-      </div>
-    </section>
+    <div class="main-col">
 
-    <!-- ── 02 Active Positions ────────────────────────────────────── -->
-    <section class="section">
-      <div class="section-hdr">
+      <!-- ── 01 Price Chart ─────────────────────────────────────────── -->
+      <section class="section">
+        <div class="section-hdr">
+          <span class="sec-num">01</span>
+          <div class="sec-meta">
+            <div class="sec-title">Price Chart</div>
+            <div class="sec-sub">PRICE ACTION · STRIKE LEVELS · TRADE MARKERS · UPDATED DAILY</div>
+          </div>
+          <div class="sec-controls">
+            <input type="text" id="ticker-input" placeholder="TICKER…" maxlength="10"
+                   autocomplete="off" spellcheck="false">
+            <button id="load-btn">LOAD</button>
+          </div>
+          <button class="collapse-btn open" data-target="sec01-body">▸</button>
+        </div>
+        <div class="section-body" id="sec01-body">
+          <div id="status" hidden></div>
+          <div class="legend-bar">
+            <div class="lg-group">
+              <span class="dte-item" style="color:#00c8ff">180+ DTE</span>
+              <span class="dte-item" style="color:#00e676">90–180 DTE</span>
+              <span class="dte-item" style="color:#ffb300">30–90 DTE</span>
+              <span class="dte-item" style="color:#ff3355">&lt;30 DTE</span>
+            </div>
+            <span class="lg-sep"></span>
+            <div class="lg-group">
+              <span class="lw-item"><span class="lw lw3"></span>&gt;$2M</span>
+              <span class="lw-item"><span class="lw lw2"></span>&gt;$500K</span>
+              <span class="lw-item"><span class="lw lw1"></span>&lt;$500K</span>
+            </div>
+          </div>
+          <div id="chart-container"></div>
+        </div>
+      </section>
+
+      <!-- ── 03 Confluence Signals ──────────────────────────────────── -->
+      <section class="section">
+        <div class="section-hdr">
+          <span class="sec-num">03</span>
+          <div class="sec-meta">
+            <div class="sec-title">Confluence Signals</div>
+            <div class="sec-sub">TICKERS WITH COORDINATED PUT &amp; CALL ACTIVITY WITHIN 7-DAY WINDOW · SORTED BY CONVICTION SCORE</div>
+          </div>
+          <button class="collapse-btn open" data-target="sec03-body">▸</button>
+        </div>
+        <div class="section-body" id="sec03-body">
+          <div id="sig-status" hidden></div>
+          <div class="sig-header-strip" id="sig-summary" hidden></div>
+          <div id="signals-grid" class="signals-grid">
+            <div class="sig-loading">Loading signals…</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 04 Portfolio Summary ───────────────────────────────────── -->
+      <section class="section">
+        <div class="section-hdr">
+          <span class="sec-num">04</span>
+          <div class="sec-meta">
+            <div class="sec-title">Portfolio Summary</div>
+            <div class="sec-sub">ALL ACTIVE POSITIONS ACROSS ALL TICKERS</div>
+          </div>
+          <button class="collapse-btn open" data-target="sec04-body">▸</button>
+        </div>
+        <div class="section-body" id="sec04-body">
+          <div id="portfolio-body">
+            <div class="port-empty">Loading portfolio…</div>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /.main-col -->
+
+    <!-- ── 02 Active Positions (sidebar) ─────────────────────────── -->
+    <aside id="positions-sidebar">
+      <div class="sidebar-hdr">
         <span class="sec-num">02</span>
-        <div class="sec-meta">
-          <div class="sec-title">Active Positions</div>
-          <div class="sec-sub">STRIKE · TYPE · EXPIRY · DTE · CONTRACTS · P&amp;L</div>
-        </div>
-        <button class="collapse-btn open" data-target="sec02-body">▸</button>
-      </div>
-      <div class="section-body" id="sec02-body">
-        <div class="table-outer">
-          <table id="positions-table">
-            <thead>
-              <tr>
-                <th>Strike</th>
-                <th>Type</th>
-                <th>Expiry</th>
-                <th>DTE</th>
-                <th>Contracts</th>
-                <th>Orig $</th>
-                <th>Curr $</th>
-                <th>P&amp;L / ct</th>
-                <th>Total P&amp;L</th>
-                <th>P&amp;L %</th>
-                <th>Trade Date</th>
-              </tr>
-            </thead>
-            <tbody id="positions-body"></tbody>
-          </table>
+        <div class="sidebar-meta">
+          <div class="sidebar-sec-title">Active Positions</div>
+          <div id="sidebar-info">Load a ticker…</div>
         </div>
       </div>
-    </section>
+      <div class="sidebar-body">
+        <div id="sidebar-cards"></div>
+      </div>
+    </aside>
 
-    <!-- ── 03 Confluence Signals ──────────────────────────────────── -->
-    <section class="section">
-      <div class="section-hdr">
-        <span class="sec-num">03</span>
-        <div class="sec-meta">
-          <div class="sec-title">Confluence Signals</div>
-          <div class="sec-sub">TICKERS WITH COORDINATED PUT &amp; CALL ACTIVITY WITHIN 7-DAY WINDOW · SORTED BY CONVICTION SCORE</div>
-        </div>
-        <button class="collapse-btn open" data-target="sec03-body">▸</button>
-      </div>
-      <div class="section-body" id="sec03-body">
-        <div id="sig-status" hidden></div>
-        <div class="sig-header-strip" id="sig-summary" hidden></div>
-        <div id="signals-grid" class="signals-grid">
-          <div class="sig-loading">Loading signals…</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── 04 Portfolio Summary ───────────────────────────────────── -->
-    <section class="section">
-      <div class="section-hdr">
-        <span class="sec-num">04</span>
-        <div class="sec-meta">
-          <div class="sec-title">Portfolio Summary</div>
-          <div class="sec-sub">ALL ACTIVE POSITIONS ACROSS ALL TICKERS</div>
-        </div>
-        <button class="collapse-btn open" data-target="sec04-body">▸</button>
-      </div>
-      <div class="section-body" id="sec04-body">
-        <div id="portfolio-body">
-          <div class="port-empty">Loading portfolio…</div>
-        </div>
-      </div>
-    </section>
-
-  </div>
+  </div><!-- /.layout-wrap -->
 
   <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
   <script src="config.js"></script>

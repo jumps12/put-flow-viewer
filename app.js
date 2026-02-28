@@ -357,64 +357,71 @@ function buildChart(ohlcv, positions) {
   requestAnimationFrame(() => createLabels(positions));
 }
 
-// ── Positions table ───────────────────────────────────────────────────────────
+// ── Sidebar (section 02 — Active Positions) ───────────────────────────────────
 
-function buildTable(positions) {
-  const tbody = document.getElementById('positions-body');
-  tbody.innerHTML = '';
+function buildSidebar(ticker, positions) {
+  const infoEl  = document.getElementById('sidebar-info');
+  const cardsEl = document.getElementById('sidebar-cards');
 
   if (!positions.length) {
-    tbody.innerHTML = `<tr><td colspan="11" class="empty">No positions on record for this ticker</td></tr>`;
+    infoEl.textContent  = `${ticker} · no positions`;
+    cardsEl.innerHTML   = '<div class="sidebar-empty">No positions on record</div>';
     return;
   }
 
+  const totalMV = positions.reduce((s, p) => s + p.contracts * p.originalPremium * 100, 0);
+  infoEl.textContent = `${ticker} · ${fmtMoney(totalMV)} deployed`;
+
+  const fmtPl = v => {
+    const sign = v >= 0 ? '+' : '−';
+    const abs  = Math.abs(v);
+    if (abs >= 1e6) return `${sign}$${(abs / 1e6).toFixed(2)}M`;
+    if (abs >= 1e3) return `${sign}$${(abs / 1e3).toFixed(0)}K`;
+    return `${sign}$${abs.toFixed(0)}`;
+  };
+
+  cardsEl.innerHTML = '';
+
   [...positions]
-    .sort((a, b) => b.strike - a.strike)
+    .sort((a, b) => b.tradeDate - a.tradeDate)
     .forEach(p => {
-      const dte  = getDTE(p.expiry);
-      const col  = dteColor(dte);
-
-      const orig = p.originalPremium;
-      const curr = p.currentPremium;
-
-      const plPerCt = (orig - curr) * 100;
-      const plTotal = plPerCt * p.contracts;
-      const plPct   = orig > 0 ? (orig - curr) / orig * 100 : null;
-
-      // Green when premium has decayed (winning), red when it has grown (losing)
-      const plCol = plTotal >= 0 ? '#00e676' : '#ff3355';
-
-      const fmtPl = v => {
-        const sign = v >= 0 ? '+' : '−';
-        const abs  = Math.abs(v);
-        if (abs >= 1e6) return `${sign}$${(abs / 1e6).toFixed(2)}M`;
-        if (abs >= 1e3) return `${sign}$${(abs / 1e3).toFixed(0)}K`;
-        return `${sign}$${abs.toFixed(0)}`;
-      };
-
-      const plPctStr = plPct !== null
-        ? `${plPct >= 0 ? '+' : '−'}${Math.abs(plPct).toFixed(1)}%`
-        : '—';
-
+      const dte      = getDTE(p.expiry);
       const isCall   = p.type === 'call';
-      const typeCol  = isCall ? '#aa44ff' : col;
+      const typeCol  = isCall ? '#aa44ff' : dteColor(dte);
       const typeStr  = isCall ? 'CALL' : 'PUT';
 
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td><b style="color:${col}">$${p.strike.toFixed(2)}</b></td>
-        <td style="color:${typeCol};font-weight:600">${typeStr}</td>
-        <td>${p.expiry.toLocaleDateString()}</td>
-        <td style="color:${col}">${dte}d</td>
-        <td>${p.contracts.toLocaleString()}</td>
-        <td>$${orig.toFixed(2)}</td>
-        <td style="color:${plCol}">$${curr.toFixed(2)}</td>
-        <td style="color:${plCol}">${plPerCt >= 0 ? '+' : '−'}$${Math.abs(plPerCt).toFixed(2)}</td>
-        <td style="color:${plCol}">${fmtPl(plTotal)}</td>
-        <td style="color:${plCol}">${plPctStr}</td>
-        <td>${p.tradeDate.toLocaleDateString()}</td>
+      const orig     = p.originalPremium;
+      const curr     = p.currentPremium;
+      const plTotal  = (orig - curr) * 100 * p.contracts;
+      const plPct    = orig > 0 ? (orig - curr) / orig * 100 : null;
+      const plCol    = plTotal >= 0 ? '#00e676' : '#ff3355';
+
+      const plPctStr = plPct !== null
+        ? ` (${plPct >= 0 ? '+' : '−'}${Math.abs(plPct).toFixed(1)}%)`
+        : '';
+
+      const strikeStr = p.strike % 1 === 0 ? p.strike.toFixed(0) : p.strike.toFixed(2);
+
+      const card = document.createElement('div');
+      card.className = 'pos-card';
+      card.innerHTML = `
+        <div class="pos-card-top">
+          <span class="pos-type-badge" style="color:${typeCol}">${typeStr}</span>
+          <span class="pos-strike" style="color:${typeCol}">$${strikeStr}</span>
+          <span class="pos-pl" style="color:${plCol}">${fmtPl(plTotal)}${plPctStr}</span>
+        </div>
+        <div class="pos-details">
+          <span class="pos-detail-lbl">Expiry</span>
+          <span class="pos-detail-val">${p.expiry.toLocaleDateString()}</span>
+          <span class="pos-detail-lbl">DTE</span>
+          <span class="pos-detail-val" style="color:${dteColor(dte)}">${dte}d</span>
+          <span class="pos-detail-lbl">Contracts</span>
+          <span class="pos-detail-val">${p.contracts.toLocaleString()}</span>
+          <span class="pos-detail-lbl">Traded</span>
+          <span class="pos-detail-val">${p.tradeDate.toLocaleDateString()}</span>
+        </div>
       `;
-      tbody.appendChild(tr);
+      cardsEl.appendChild(card);
     });
 }
 
@@ -425,20 +432,6 @@ function setStatus(msg, cls = '') {
   el.textContent = msg;
   el.className   = cls;
   el.hidden      = !msg;
-}
-
-function setTickerBar(ticker, positions) {
-  const el = document.getElementById('ticker-bar');
-  if (!positions.length) { el.hidden = true; return; }
-  const totalMV = positions.reduce((s, p) => s + p.contracts * p.originalPremium * 100, 0);
-  el.innerHTML = `
-    <span class="tb-ticker">${ticker}</span>
-    <span class="tb-sep">·</span>
-    <span class="tb-stat"><b>${positions.length}</b> position${positions.length !== 1 ? 's' : ''}</span>
-    <span class="tb-sep">·</span>
-    <span class="tb-stat">Deployed: <b class="tb-mv">${fmtMoney(totalMV)}</b></span>
-  `;
-  el.hidden = false;
 }
 
 // ── Live clock ────────────────────────────────────────────────────────────────
@@ -585,7 +578,8 @@ async function load(raw) {
   history.replaceState(null, '', `#${ticker}`);
 
   setStatus(`Loading ${ticker}…`, 'info');
-  document.getElementById('ticker-bar').hidden = true;
+  document.getElementById('sidebar-info').textContent = 'Loading…';
+  document.getElementById('sidebar-cards').innerHTML  = '<div class="sidebar-empty">Loading…</div>';
   document.getElementById('load-btn').disabled = true;
 
   try {
@@ -597,11 +591,10 @@ async function load(raw) {
     if (!ohlcv.length) throw new Error(`No price data returned for "${ticker}"`);
 
     buildChart(ohlcv, positions);
-    buildTable(positions);
-    setTickerBar(ticker, positions);
+    buildSidebar(ticker, positions);
 
     if (!positions.length) {
-      setStatus(`No put positions on record for ${ticker}`, 'warning');
+      setStatus(`No positions on record for ${ticker}`, 'warning');
     } else {
       setStatus('', '');
     }
