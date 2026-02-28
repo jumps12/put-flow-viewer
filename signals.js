@@ -216,7 +216,7 @@ function renderSignals(signals) {
             <div class="ratio-seg calls-seg" style="flex:${s.totalCalls}"></div>
           </div>
           <div class="ratio-labels">
-            <span class="put-color">${putPct}% puts sold</span>
+            <span style="color:var(--accent)">${putPct}% puts sold</span>
             <span class="call-color">${callPct}% calls bought</span>
           </div>
         </div>
