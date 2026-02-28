@@ -181,11 +181,13 @@ function createLabels(positions) {
     // Market value uses original premium — what was paid at trade time
     const mv    = p.contracts * p.originalPremium * 100;
 
-    // Format: 2027-01-15 | 300P | 4,000x | $36.3M  (C for calls, P for puts)
+    // Format: Jan 26 2027 · 95C · 20,000x · $18.9M  (C for calls, P for puts)
     const typeChar  = p.type === 'call' ? 'C' : 'P';
     const strikeStr = p.strike % 1 === 0 ? p.strike.toFixed(0) : p.strike.toFixed(2);
     const mvStr     = fmtMoney(mv);
-    const text      = `${dateToStr(p.expiry)} | ${strikeStr}${typeChar} | ${p.contracts.toLocaleString()}x | ${mvStr}`;
+    const months    = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const dateLabel = `${months[p.expiry.getMonth()]} ${p.expiry.getDate()} ${p.expiry.getFullYear()}`;
+    const text      = `${dateLabel} · ${strikeStr}${typeChar} · ${p.contracts.toLocaleString()}x · ${mvStr}`;
 
     const el = document.createElement('div');
     el.className    = 'strike-label';
