@@ -155,6 +155,14 @@ async function loadSignals() {
       }
     }
 
+    const parsePos = p => ({
+      strike:          parseFloat(p.strike),
+      expiry:          parseDate(p.expiry),
+      contracts:       parseInt(p.contracts) || 0,
+      originalPremium: parseFloat(p.original_premium ?? p.current_premium ?? p.premium),
+      tradeDate:       parseDate(p.trade_date),
+    });
+
     signals.push({
       ticker,
       totalPuts,
@@ -171,6 +179,8 @@ async function loadSignals() {
       maxExpiry,
       confluenceDate,
       score,
+      rawPuts:  puts.map(parsePos),
+      rawCalls: calls.map(parsePos),
     });
   }
 
@@ -184,6 +194,66 @@ async function loadSignals() {
   });
 
   return signals;
+}
+
+// ── AI Analysis ───────────────────────────────────────────────────────────────
+
+const aiCache    = new Map(); // ticker → analysis text (session cache)
+const signalMap  = new Map(); // ticker → signal object (populated in renderSignals)
+
+function buildAiPrompt(s) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+
+  const fmtPos = (p, type) => {
+    const dte  = p.expiry ? Math.floor((p.expiry - today) / 86_400_000) : '?';
+    const prem = isFinite(p.originalPremium) && p.originalPremium > 0
+      ? `$${p.originalPremium.toFixed(2)}`
+      : 'N/A';
+    const strike = isFinite(p.strike) ? `$${p.strike}` : '?';
+    return `  ${type}: ${strike} strike | ${p.contracts.toLocaleString()} contracts | ` +
+           `${prem} premium | expiry ${p.expiry ? p.expiry.toLocaleDateString() : '?'} ` +
+           `(${dte} DTE) | traded ${p.tradeDate ? p.tradeDate.toLocaleDateString() : '?'}`;
+  };
+
+  const putLines  = s.rawPuts.map(p  => fmtPos(p, 'PUT SOLD'));
+  const callLines = s.rawCalls.map(p => fmtPos(p, 'CALL BOUGHT'));
+
+  return [
+    `Ticker: ${s.ticker}`,
+    `Signal strength: ${s.badge} (Bullish Conviction Score: ${fmtScore(s.score)})`,
+    `${s.putCount} put-sold position(s) | ${s.callCount} call-bought position(s) | ${s.totalContracts.toLocaleString()} total contracts`,
+    `Active for ${s.daysActive} days`,
+    ``,
+    `Puts sold:`,
+    ...putLines,
+    ``,
+    `Calls bought:`,
+    ...callLines,
+  ].join('\n');
+}
+
+async function fetchAiAnalysis(ticker) {
+  if (aiCache.has(ticker)) return aiCache.get(ticker);
+
+  const s = signalMap.get(ticker);
+  if (!s) throw new Error('Signal data not found');
+
+  const res = await fetch(`${CONFIG.AI_PROXY}/analyze`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ prompt: buildAiPrompt(s) }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.error?.message ?? data?.error ?? `HTTP ${res.status}`);
+  }
+
+  const text = data.content?.[0]?.text;
+  if (!text) throw new Error('Empty response from AI');
+
+  aiCache.set(ticker, text);
+  return text;
 }
 
 // ── Rendering ─────────────────────────────────────────────────────────────────
@@ -213,12 +283,14 @@ function renderSignals(signals) {
   `;
   summary.hidden = false;
 
+  signalMap.clear();
+  signals.forEach(s => signalMap.set(s.ticker, s));
+
   grid.innerHTML = signals.map(s => {
     const putPct  = Math.round(s.totalPuts / (s.totalPuts + s.totalCalls) * 100);
     const callPct = 100 - putPct;
-    const badgeCls    = s.badge === 'STRONG' ? 'badge-strong' : 'badge-notable';
-    const dateRange   = `${fmtDate(s.minTradeDate)} → ${fmtDate(s.maxExpiry)}`;
-
+    const badgeCls  = s.badge === 'STRONG' ? 'badge-strong' : 'badge-notable';
+    const dateRange = `${fmtDate(s.minTradeDate)} → ${fmtDate(s.maxExpiry)}`;
 
     return `
       <div class="signal-card">
@@ -259,6 +331,11 @@ function renderSignals(signals) {
             <a class="card-link" href="#" data-ticker="${s.ticker}">View chart →</a>
           </div>
         </div>
+
+        <div class="card-ai">
+          <button class="ai-btn" data-ticker="${s.ticker}">◈ AI ANALYSIS</button>
+          <div class="ai-result" id="ai-${s.ticker}" hidden></div>
+        </div>
       </div>`;
   }).join('');
 }
@@ -283,13 +360,53 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error(err);
   }
 
-  // "View chart →" — load ticker and scroll to chart
-  document.getElementById('signals-grid').addEventListener('click', e => {
+  document.getElementById('signals-grid').addEventListener('click', async e => {
+    // "View chart →"
     const link = e.target.closest('a[data-ticker]');
-    if (!link) return;
-    e.preventDefault();
-    const ticker = link.dataset.ticker;
-    load(ticker);
-    document.getElementById('sec01-body').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (link) {
+      e.preventDefault();
+      load(link.dataset.ticker);
+      document.getElementById('sec01-body').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+
+    // "AI ANALYSIS"
+    const btn = e.target.closest('.ai-btn');
+    if (!btn) return;
+
+    const ticker   = btn.dataset.ticker;
+    const resultEl = document.getElementById(`ai-${ticker}`);
+    if (!resultEl) return;
+
+    // Already showing a result — toggle visibility
+    if (!resultEl.hidden && resultEl.dataset.state === 'done') {
+      resultEl.hidden = true;
+      btn.textContent = '◈ AI ANALYSIS';
+      return;
+    }
+
+    // Show spinner
+    btn.disabled    = true;
+    btn.textContent = '◈ GENERATING…';
+    resultEl.hidden = false;
+    resultEl.dataset.state = 'loading';
+    resultEl.innerHTML = `
+      <div class="ai-loading">
+        <div class="ai-spinner"></div>
+        <span>Analysing flow data…</span>
+      </div>`;
+
+    try {
+      const text = await fetchAiAnalysis(ticker);
+      resultEl.innerHTML     = `<p class="ai-text">${text.replace(/\n/g, '<br>')}</p>`;
+      resultEl.dataset.state = 'done';
+      btn.disabled    = false;
+      btn.textContent = '◈ HIDE ANALYSIS';
+    } catch (err) {
+      resultEl.innerHTML     = `<p class="ai-error">Error: ${err.message}</p>`;
+      resultEl.dataset.state = 'error';
+      btn.disabled    = false;
+      btn.textContent = '◈ AI ANALYSIS';
+    }
   });
 });

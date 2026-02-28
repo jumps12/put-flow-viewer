@@ -12,4 +12,5 @@
 
 const CONFIG = {
   CORS_PROXY: 'https://corsproxy.io/?',
+  AI_PROXY:   'http://localhost:3001',
 };
