@@ -29,6 +29,31 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ── Nav links (shared by both pages) ───────────────────── */
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 8px;
+}
+.nav-link {
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 5px 13px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: color 0.15s, background 0.15s;
+}
+.nav-link:hover  { color: var(--text); background: var(--surface2); }
+.nav-link.active { color: var(--text); background: var(--surface);  }
+
+.nav-subtitle {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
 /* ── Top nav ─────────────────────────────────────────────── */
 #topnav {
   position: sticky;
@@ -303,3 +328,204 @@ body {
   font-style: italic;
   font-family: inherit !important;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   SIGNALS PAGE
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Shared status block (signals page uses #sig-status) ── */
+#sig-status {
+  padding: 9px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  font-weight: 500;
+}
+#sig-status.error { background: rgba(248,81,73,0.07); color: var(--red); border: 1px solid rgba(248,81,73,0.2); }
+
+/* ── Page header ─────────────────────────────────────────── */
+.sig-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.sig-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.sig-desc {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  max-width: 540px;
+}
+.sig-desc .amp { color: var(--text-dim); }
+
+.sig-summary-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.sum-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.04em;
+}
+.sum-pill.strong  { color: var(--accent); background: rgba(0,188,212,0.1);  border: 1px solid rgba(0,188,212,0.2);  }
+.sum-pill.notable { color: var(--yellow); background: rgba(210,153,34,0.1); border: 1px solid rgba(210,153,34,0.2); }
+.sum-pill.total   { color: var(--text-muted); background: var(--surface); border: 1px solid var(--border-sub); }
+
+/* ── Signals grid ────────────────────────────────────────── */
+.signals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 14px;
+}
+
+.sig-loading {
+  grid-column: 1 / -1;
+  padding: 48px;
+  text-align: center;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.sig-empty {
+  grid-column: 1 / -1;
+  padding: 60px 24px;
+  text-align: center;
+  color: var(--text-muted);
+}
+.sig-empty-icon { font-size: 32px; color: var(--text-dim); margin-bottom: 12px; }
+.sig-empty-sub  { margin-top: 8px; font-size: 12px; color: var(--text-dim); max-width: 400px; margin-inline: auto; }
+
+/* ── Signal card ─────────────────────────────────────────── */
+.signal-card {
+  background: var(--surface);
+  border: 1px solid var(--border-sub);
+  border-radius: 10px;
+  padding: 18px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: border-color 0.15s;
+}
+.signal-card:hover { border-color: var(--border); }
+
+/* Card top row: ticker + badge */
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.card-ticker {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.04em;
+  font-family: var(--mono);
+}
+.card-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 20px;
+  letter-spacing: 0.07em;
+}
+.badge-strong  { color: var(--accent); background: rgba(0,188,212,0.12);  border: 1px solid rgba(0,188,212,0.25);  }
+.badge-notable { color: var(--yellow); background: rgba(210,153,34,0.1);  border: 1px solid rgba(210,153,34,0.22); }
+
+/* Three-column stats row */
+.card-stats {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.stat {
+  flex: 1;
+  text-align: center;
+}
+.stat-val {
+  font-size: 20px;
+  font-weight: 700;
+  font-family: var(--mono);
+  color: var(--text);
+  line-height: 1.1;
+}
+.stat-lbl {
+  font-size: 10.5px;
+  color: var(--text-dim);
+  margin-top: 3px;
+  letter-spacing: 0.03em;
+}
+.stat-divider {
+  width: 1px;
+  height: 36px;
+  background: var(--border-sub);
+  flex-shrink: 0;
+}
+
+/* Put/call color helpers */
+.put-color  { color: #ef5350; }
+.call-color { color: #AA00FF; }
+
+/* Put/call ratio bar */
+.ratio-wrap {}
+.ratio-bar {
+  display: flex;
+  height: 5px;
+  border-radius: 3px;
+  overflow: hidden;
+  gap: 1px;
+  margin-bottom: 6px;
+}
+.ratio-seg { border-radius: 2px; }
+.puts-seg  { background: #ef5350; }
+.calls-seg { background: #AA00FF; }
+
+.ratio-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10.5px;
+  font-weight: 500;
+}
+
+/* Footer */
+.card-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid var(--border-sub);
+  padding-top: 12px;
+  margin-top: 2px;
+}
+.card-dates {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+.card-row2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-score {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+}
+.card-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.card-link:hover { color: #26c6da; }

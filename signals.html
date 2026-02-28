@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Put Flow — Signals</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <nav id="topnav">
+    <div class="nav-brand">
+      <span class="brand-icon">▼</span>
+      <span class="brand-name">Put Flow</span>
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Chart</a>
+      <a href="signals.html" class="nav-link active">Signals</a>
+    </div>
+    <div class="nav-controls">
+      <span class="nav-subtitle">Confluence Signals</span>
+    </div>
+  </nav>
+
+  <main class="page">
+
+    <div id="sig-status" hidden></div>
+
+    <div class="sig-header">
+      <div>
+        <h2 class="sig-title">Flow Confluence Signals</h2>
+        <p class="sig-desc">Tickers with coordinated put <span class="amp">&amp;</span> call activity within a 7-day window — sorted by conviction score</p>
+      </div>
+      <div id="sig-summary" hidden class="sig-summary-pills"></div>
+    </div>
+
+    <div id="signals-grid" class="signals-grid">
+      <div class="sig-loading">Loading positions…</div>
+    </div>
+
+  </main>
+
+  <script src="signals.js"></script>
+</body>
+</html>
