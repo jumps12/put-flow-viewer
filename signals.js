@@ -103,10 +103,12 @@ async function loadSignals() {
 
     const daysActive = Math.max(1, Math.ceil((today - minTradeDate) / 86_400_000));
 
-    const totalPuts  = puts.reduce((s, p)  => s + (parseInt(p.contracts)  || 0), 0);
-    const totalCalls = calls.reduce((s, p) => s + (parseInt(p.contracts) || 0), 0);
+    const totalPuts      = puts.reduce((s, p)  => s + (parseInt(p.contracts) || 0), 0);
+    const totalCalls     = calls.reduce((s, p) => s + (parseInt(p.contracts) || 0), 0);
+    const totalContracts = totalPuts + totalCalls;
 
-    const score = (totalPuts + totalCalls) * daysActive;
+    // All position types are bullish — score is total bullish contracts × days active
+    const score = totalContracts * daysActive;
 
     // Earliest confluence window — find the closest put-call pair dates
     let closestGap = Infinity;
@@ -129,6 +131,7 @@ async function loadSignals() {
       ticker,
       totalPuts,
       totalCalls,
+      totalContracts,
       putCount:  puts.length,
       callCount: calls.length,
       daysActive,
@@ -195,13 +198,8 @@ function renderSignals(signals) {
 
         <div class="card-stats">
           <div class="stat">
-            <div class="stat-val" style="color:var(--accent)">${fmtNum(s.totalPuts)}</div>
-            <div class="stat-lbl">Puts Sold</div>
-          </div>
-          <div class="stat-divider"></div>
-          <div class="stat">
-            <div class="stat-val call-color">${fmtNum(s.totalCalls)}</div>
-            <div class="stat-lbl">Calls Bought</div>
+            <div class="stat-val" style="color:var(--up)">${fmtNum(s.totalContracts)}</div>
+            <div class="stat-lbl">Bullish Contracts</div>
           </div>
           <div class="stat-divider"></div>
           <div class="stat">
@@ -224,7 +222,7 @@ function renderSignals(signals) {
         <div class="card-footer">
           <div class="card-dates">${dateRange}</div>
           <div class="card-row2">
-            <span class="card-score">Score: ${fmtScore(s.score)}</span>
+            <span class="card-score">Bullish Conviction Score: ${fmtScore(s.score)}</span>
             <a class="card-link" href="#" data-ticker="${s.ticker}">View chart →</a>
           </div>
         </div>
