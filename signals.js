@@ -71,10 +71,12 @@ async function loadSignals() {
   }
 
   const signals = [];
+  let totalCandidates = 0; // tickers that passed basic grouping before quality filters
 
   for (const [ticker, { puts, calls }] of Object.entries(byTicker)) {
-    // Confluence requires at least one put AND one call
+    // Criterion 1: MUST have both puts sold AND calls bought
     if (!puts.length || !calls.length) continue;
+    totalCandidates++;
 
     // Check: any put-call pair with trade dates within 7 days of each other
     let hasConfluence = false;
@@ -92,9 +94,21 @@ async function loadSignals() {
     }
     if (!hasConfluence) continue;
 
-    // Aggregate stats
+    // Criterion 2: activity on at least 2 different trade dates
     const allPos = [...puts, ...calls];
+    const uniqueTradeDates = new Set(
+      allPos.map(p => parseDate(p.trade_date)).filter(Boolean).map(d => d.toDateString())
+    );
+    if (uniqueTradeDates.size < 2) continue;
 
+    // Criterion 3: at least one put with 90+ DTE
+    const has90DtePut = puts.some(p => {
+      const exp = parseDate(p.expiry);
+      return exp && Math.floor((exp - today) / 86_400_000) >= 90;
+    });
+    if (!has90DtePut) continue;
+
+    // Aggregate stats
     const tradeDates = allPos.map(p => parseDate(p.trade_date)).filter(Boolean);
     const expiries   = allPos.map(p => parseDate(p.expiry)).filter(Boolean);
 
@@ -184,16 +198,21 @@ async function loadSignals() {
     });
   }
 
-  // Sort by score descending
+  // Sort by score descending, hard cap at 8
   signals.sort((a, b) => b.score - a.score);
+  const qualified = signals.length;
+  const capped = signals.slice(0, 8);
 
-  // Assign STRONG (top 25%) / NOTABLE (rest)
-  const strongCount = Math.max(1, Math.ceil(signals.length * 0.25));
-  signals.forEach((s, i) => {
-    s.badge = i < strongCount ? 'STRONG' : 'NOTABLE';
+  // Criterion 4: badge by absolute score threshold
+  capped.forEach(s => {
+    s.badge = s.score > 150_000 ? 'STRONG' : s.score > 75_000 ? 'NOTABLE' : 'WATCH';
   });
 
-  return signals;
+  // Attach qualifying metadata for the header
+  capped._qualified     = qualified;      // passed all filters before cap
+  capped._totalCandidates = totalCandidates; // had both puts + calls
+
+  return capped;
 }
 
 // ── AI Analysis ───────────────────────────────────────────────────────────────
@@ -271,15 +290,17 @@ function renderSignals(signals) {
     return;
   }
 
-  // Summary pills
+  // Header strip
   const strongN  = signals.filter(s => s.badge === 'STRONG').length;
-  const notableN = signals.length - strongN;
-  const summary  = document.getElementById('sig-summary');
+  const notableN = signals.filter(s => s.badge === 'NOTABLE').length;
+  const qualified = signals._qualified ?? signals.length;
+  const total     = signals._totalCandidates ?? qualified;
+  const dateStr   = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
+  const summary   = document.getElementById('sig-summary');
   summary.innerHTML = `
-    <span class="sum-pill bull-key">PUT SOLD + CALL BOUGHT = BULL CONFLUENCE</span>
+    <span class="sum-pill bull-key">TOP SIGNALS · ${dateStr} · ${signals.length} of ${total} tickers qualified</span>
     <span class="sum-pill strong">${strongN} STRONG</span>
     <span class="sum-pill notable">${notableN} NOTABLE</span>
-    <span class="sum-pill total">${signals.length} total tickers</span>
   `;
   summary.hidden = false;
 
@@ -289,7 +310,7 @@ function renderSignals(signals) {
   grid.innerHTML = signals.map(s => {
     const putPct  = Math.round(s.totalPuts / (s.totalPuts + s.totalCalls) * 100);
     const callPct = 100 - putPct;
-    const badgeCls  = s.badge === 'STRONG' ? 'badge-strong' : 'badge-notable';
+    const badgeCls  = s.badge === 'STRONG' ? 'badge-strong' : s.badge === 'NOTABLE' ? 'badge-notable' : 'badge-watch';
     const dateRange = `${fmtDate(s.minTradeDate)} → ${fmtDate(s.maxExpiry)}`;
 
     return `
