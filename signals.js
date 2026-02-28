@@ -218,7 +218,7 @@ function renderSignals(signals) {
     const callPct = 100 - putPct;
     const badgeCls    = s.badge === 'STRONG' ? 'badge-strong' : 'badge-notable';
     const dateRange   = `${fmtDate(s.minTradeDate)} → ${fmtDate(s.maxExpiry)}`;
-    const breakdown   = `Puts: ${fmtScore(s.putScore)} + Calls: ${fmtScore(s.callScore)} × ${s.confluenceBonus} confluence = ${fmtScore(s.score)}`;
+
 
     return `
       <div class="signal-card">
@@ -254,9 +254,8 @@ function renderSignals(signals) {
 
         <div class="card-footer">
           <div class="card-dates">${dateRange}</div>
-          <div class="card-score-breakdown">${breakdown}</div>
           <div class="card-row2">
-            <span class="card-score">Bullish Conviction Score: ${fmtScore(s.score)}</span>
+            <span class="card-score">${fmtScore(s.score)}</span>
             <a class="card-link" href="#" data-ticker="${s.ticker}">View chart →</a>
           </div>
         </div>

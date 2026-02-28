@@ -664,7 +664,7 @@ body::before {
 }
 .card-dates {
   font-size: 10px;
-  color: var(--fg3);
+  color: var(--fg2);
   letter-spacing: 0.06em;
 }
 .card-row2 {
@@ -672,17 +672,11 @@ body::before {
   align-items: center;
   justify-content: space-between;
 }
-.card-score-breakdown {
-  font-size: 9px;
-  color: var(--fg3);
-  letter-spacing: 0.04em;
-  margin-top: 4px;
-  font-style: italic;
-}
-
 .card-score {
-  font-size: 10px;
-  color: var(--fg3);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--fg1);
+  letter-spacing: 0.04em;
 }
 .card-link {
   font-size: 10px;
