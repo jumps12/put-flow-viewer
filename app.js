@@ -29,16 +29,11 @@ async function fetchPutFlowData(ticker) {
         type:            (p.type ?? 'put').toLowerCase(), // 'put' or 'call'
       };
     })
-    .filter(d => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return (
-        isFinite(d.strike) && isFinite(d.contracts) && isFinite(d.originalPremium) &&
-        d.expiry instanceof Date && d.tradeDate instanceof Date &&
-        d.expiry > d.tradeDate &&
-        d.expiry >= today
-      );
-    });
+    .filter(d =>
+      isFinite(d.strike) && isFinite(d.contracts) && isFinite(d.originalPremium) &&
+      d.expiry instanceof Date && d.tradeDate instanceof Date &&
+      d.expiry > d.tradeDate
+    );
 }
 
 // ── Yahoo Finance ──────────────────────────────────────────────────────────────
@@ -359,18 +354,13 @@ function buildChart(ohlcv, positions) {
 
 // ── Sidebar (section 02 — Active Positions) ───────────────────────────────────
 
-function buildSidebar(ticker, positions) {
-  const infoEl  = document.getElementById('sidebar-info');
+function renderSidebarCards(positions, isExpired) {
   const cardsEl = document.getElementById('sidebar-cards');
 
   if (!positions.length) {
-    infoEl.textContent  = `${ticker} · no positions`;
-    cardsEl.innerHTML   = '<div class="sidebar-empty">No positions on record</div>';
+    cardsEl.innerHTML = `<div class="sidebar-empty">${isExpired ? 'No expired positions' : 'No active positions'}</div>`;
     return;
   }
-
-  const totalMV = positions.reduce((s, p) => s + p.contracts * p.originalPremium * 100, 0);
-  infoEl.textContent = `${ticker} · ${fmtMoney(totalMV)} deployed`;
 
   const fmtPl = v => {
     const sign = v >= 0 ? '+' : '−';
@@ -401,9 +391,13 @@ function buildSidebar(ticker, positions) {
         : '';
 
       const strikeStr = p.strike % 1 === 0 ? p.strike.toFixed(0) : p.strike.toFixed(2);
+      const dteLabel  = isExpired ? 'Expired' : 'DTE';
+      const dteVal    = isExpired
+        ? p.expiry.toLocaleDateString()
+        : `<span style="color:${dteColor(dte)}">${dte}d</span>`;
 
       const card = document.createElement('div');
-      card.className = 'pos-card';
+      card.className = isExpired ? 'pos-card pos-card--expired' : 'pos-card';
       card.innerHTML = `
         <div class="pos-card-top">
           <span class="pos-type-badge" style="color:${typeCol}">${typeStr}</span>
@@ -413,8 +407,8 @@ function buildSidebar(ticker, positions) {
         <div class="pos-details">
           <span class="pos-detail-lbl">Expiry</span>
           <span class="pos-detail-val">${p.expiry.toLocaleDateString()}</span>
-          <span class="pos-detail-lbl">DTE</span>
-          <span class="pos-detail-val" style="color:${dteColor(dte)}">${dte}d</span>
+          <span class="pos-detail-lbl">${dteLabel}</span>
+          <span class="pos-detail-val">${dteVal}</span>
           <span class="pos-detail-lbl">Contracts</span>
           <span class="pos-detail-val">${p.contracts.toLocaleString()}</span>
           <span class="pos-detail-lbl">Traded</span>
@@ -423,6 +417,29 @@ function buildSidebar(ticker, positions) {
       `;
       cardsEl.appendChild(card);
     });
+}
+
+function buildSidebar(ticker, active, expired) {
+  const infoEl = document.getElementById('sidebar-info');
+  const totalMV = active.reduce((s, p) => s + p.contracts * p.originalPremium * 100, 0);
+  infoEl.textContent = active.length
+    ? `${ticker} · ${fmtMoney(totalMV)} deployed`
+    : `${ticker} · no active positions`;
+
+  // Reset to ACTIVE tab
+  document.querySelectorAll('.stab').forEach(t => t.classList.remove('stab-on'));
+  document.querySelector('.stab[data-tab="active"]').classList.add('stab-on');
+
+  // Wire tabs — reassigning onclick replaces any previous handler
+  document.querySelectorAll('.stab').forEach(tab => {
+    tab.onclick = () => {
+      document.querySelectorAll('.stab').forEach(t => t.classList.remove('stab-on'));
+      tab.classList.add('stab-on');
+      renderSidebarCards(tab.dataset.tab === 'expired' ? expired : active, tab.dataset.tab === 'expired');
+    };
+  });
+
+  renderSidebarCards(active, false);
 }
 
 // ── Status bar ────────────────────────────────────────────────────────────────
@@ -481,18 +498,22 @@ async function load(raw) {
   document.getElementById('load-btn').disabled = true;
 
   try {
-    const [positions, ohlcv] = await Promise.all([
+    const [allPositions, ohlcv] = await Promise.all([
       fetchPutFlowData(ticker),
       fetchOHLCV(ticker),
     ]);
 
     if (!ohlcv.length) throw new Error(`No price data returned for "${ticker}"`);
 
-    buildChart(ohlcv, positions);
-    buildSidebar(ticker, positions);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const active  = allPositions.filter(p => p.expiry >= today);
+    const expired = allPositions.filter(p => p.expiry <  today);
 
-    if (!positions.length) {
-      setStatus(`No positions on record for ${ticker}`, 'warning');
+    buildChart(ohlcv, active);
+    buildSidebar(ticker, active, expired);
+
+    if (!active.length) {
+      setStatus(`No active positions on record for ${ticker}`, 'warning');
     } else {
       setStatus('', '');
     }

@@ -337,6 +337,31 @@ body::before {
   text-overflow: ellipsis;
 }
 
+/* Sidebar tabs */
+.sidebar-tabs {
+  flex-shrink: 0;
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+
+.stab {
+  flex: 1;
+  background: none;
+  border: none;
+  border-right: 1px solid var(--border);
+  color: var(--fg3);
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  padding: 8px 0;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.stab:last-child { border-right: none; }
+.stab:hover      { color: var(--fg2); background: var(--bg3); }
+.stab.stab-on    { color: var(--accent); background: var(--bg3); }
+
 .sidebar-body {
   flex: 1;
   overflow-y: auto;
@@ -403,6 +428,8 @@ body::before {
   text-align: right;
   letter-spacing: 0.04em;
 }
+
+.pos-card--expired { opacity: 0.45; }
 
 .sidebar-empty {
   padding: 40px 20px;
