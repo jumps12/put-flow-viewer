@@ -205,23 +205,41 @@ function updateLabelPositions() {
   if (!_chart || !_candlesSeries || !_labelData.length) return;
 
   const container   = document.getElementById('chart-container');
-  // Keep labels inside the chart pane — the right price scale is ~70 px wide.
-  // Labels start at x+4 and can be ~200 px wide, so guard against the right edge.
   const priceScaleW = 75;
   const maxLabelX   = container.clientWidth - priceScaleW;
+  // Approximate rendered label height (10px font × 1.6 line-height + 2px padding)
+  const LABEL_H     = 18;
 
-  for (const { p, el } of _labelData) {
-    const x = _chart.timeScale().timeToCoordinate(dateToStr(lineEndDate()));
-    const y = _candlesSeries.priceToCoordinate(p.strike);
+  const xPos = _chart.timeScale().timeToCoordinate(dateToStr(lineEndDate()));
 
-    if (x === null || y === null) {
-      el.style.display = 'none';
-      continue;
-    }
+  // Compute natural Y for every label
+  const items = _labelData.map(({ p, el }) => ({
+    el,
+    x: xPos,
+    y: _candlesSeries.priceToCoordinate(p.strike),
+  }));
 
-    el.style.display = 'block';
-    el.style.left    = `${Math.min(x + 4, maxLabelX)}px`;
-    el.style.top     = `${y}px`;
+  // Hide anything off-screen
+  for (const item of items) {
+    if (item.x === null || item.y === null) item.el.style.display = 'none';
+  }
+
+  // Resolve overlaps: sort visible labels by Y, then push each one down
+  // if it would collide with the one above it.
+  const visible = items
+    .filter(i => i.x !== null && i.y !== null)
+    .sort((a, b) => a.y - b.y);
+
+  for (let i = 0; i < visible.length; i++) {
+    visible[i].adjY = i === 0
+      ? visible[i].y
+      : Math.max(visible[i].y, visible[i - 1].adjY + LABEL_H);
+  }
+
+  for (const item of visible) {
+    item.el.style.display = 'block';
+    item.el.style.left    = `${Math.min(item.x + 4, maxLabelX)}px`;
+    item.el.style.top     = `${item.adjY}px`;
   }
 }
 
@@ -230,6 +248,7 @@ function updateLabelPositions() {
 let _chart        = null;
 let _candlesSeries = null;
 let _labelData     = []; // [{ p, el }] — kept in sync with the current chart
+let _strikeData    = []; // [{ p, series, color, width }] — one entry per strike line
 
 function buildChart(ohlcv, positions) {
   const container = document.getElementById('chart-container');
@@ -285,6 +304,19 @@ function buildChart(ohlcv, positions) {
   candles.setData(ohlcv);
   _candlesSeries = candles;
 
+  // ── Trade-entry markers — subtle arrowUp triangles below each trade-date candle ──
+  const tradeMarkers = positions
+    .map(p => ({
+      time:     dateToStr(p.tradeDate),
+      position: 'belowBar',
+      color:    p.type === 'call' ? '#7722bb' : '#0088aa',
+      shape:    'arrowUp',
+      text:     '',
+      size:     1,
+    }))
+    .sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
+  candles.setMarkers(tradeMarkers);
+
   // ── Invisible future line — forces the time axis to render 90 days ahead ──
   // LightweightCharts only allocates time slots for dates present in series data.
   // Without this, the axis stops at the last candle and right-scroll is blocked.
@@ -320,6 +352,8 @@ function buildChart(ohlcv, positions) {
 
   // ── Strike lines ─────────────────────────────────────────
   // Puts: solid line, DTE color. Calls: dashed purple.
+  // Store refs so sidebar hover can brighten/restore each line.
+  _strikeData = [];
   for (const p of positions) {
     const isCall  = p.type === 'call';
     const dte     = getDTE(p.expiry);
@@ -329,7 +363,7 @@ function buildChart(ohlcv, positions) {
       ? LightweightCharts.LineStyle.Dashed
       : LightweightCharts.LineStyle.Solid;
 
-    const line = _chart.addLineSeries({
+    const series = _chart.addLineSeries({
       color,
       lineWidth:              width,
       lineStyle:              style,
@@ -338,11 +372,13 @@ function buildChart(ohlcv, positions) {
       crosshairMarkerVisible: false,
     });
 
-    line.setData([
+    series.setData([
       { time: dateToStr(p.tradeDate),   value: p.strike },
       { time: dateToStr(lineEndDate()), value: p.strike },
       { time: dateToStr(lineFarDate()), value: p.strike },
     ]);
+
+    _strikeData.push({ p, series, color, width });
   }
 
   // Default view: scroll to right edge (rightOffset:30 gives 30-bar buffer past last candle).
@@ -418,6 +454,19 @@ function renderSidebarCards(positions, isExpired) {
         </div>
       `;
       cardsEl.appendChild(card);
+
+      // Highlight the corresponding strike line when hovering this card
+      card.addEventListener('mouseenter', () => {
+        const entry = _strikeData.find(d => d.p === p);
+        if (!entry) return;
+        const hoverColor = p.type === 'call' ? '#cc66ff' : '#40dfff';
+        entry.series.applyOptions({ color: hoverColor, lineWidth: Math.min(entry.width + 2, 4) });
+      });
+      card.addEventListener('mouseleave', () => {
+        const entry = _strikeData.find(d => d.p === p);
+        if (!entry) return;
+        entry.series.applyOptions({ color: entry.color, lineWidth: entry.width });
+      });
     });
 }
 

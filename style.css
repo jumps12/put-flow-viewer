@@ -374,6 +374,7 @@ body::before {
   padding: 10px 14px;
   border-bottom: 1px solid var(--border);
   transition: background 0.12s;
+  cursor: pointer;
 }
 .pos-card:hover { background: var(--bg4); }
 .pos-card:last-child { border-bottom: none; }
