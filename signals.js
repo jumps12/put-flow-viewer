@@ -195,7 +195,7 @@ function renderSignals(signals) {
 
         <div class="card-stats">
           <div class="stat">
-            <div class="stat-val put-color">${fmtNum(s.totalPuts)}</div>
+            <div class="stat-val" style="color:var(--accent)">${fmtNum(s.totalPuts)}</div>
             <div class="stat-lbl">Puts Sold</div>
           </div>
           <div class="stat-divider"></div>
