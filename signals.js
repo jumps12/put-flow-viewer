@@ -32,6 +32,12 @@ function fmtScore(s) {
   return String(s);
 }
 
+function fmtNotional(v) {
+  if (v >= 1e6) return `$${(v / 1e6).toFixed(1)}M`;
+  if (v >= 1e3) return `$${Math.round(v / 1e3)}K`;
+  return `$${Math.round(v)}`;
+}
+
 // ── Signal analysis ───────────────────────────────────────────────────────────
 
 async function loadSignals() {
@@ -41,275 +47,188 @@ async function loadSignals() {
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const thirtyDaysAgo = new Date(today);
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  // Filter to active, valid positions only
-  const active = all.filter(p => {
-    const expiry    = parseDate(p.expiry);
-    const tradeDate = parseDate(p.trade_date);
-    const orig      = parseFloat(p.original_premium ?? p.current_premium ?? p.premium);
-    const contracts = parseInt(p.contracts);
-    return (
-      expiry && tradeDate &&
-      expiry >= today &&
-      expiry > tradeDate &&
-      isFinite(orig) &&
-      isFinite(contracts) && contracts > 0
-    );
-  });
+  // Parse and validate all active positions
+  const active = all
+    .filter(p => {
+      const expiry    = parseDate(p.expiry);
+      const tradeDate = parseDate(p.trade_date);
+      const orig      = parseFloat(p.original_premium ?? p.current_premium ?? p.premium);
+      const contracts = parseInt(p.contracts);
+      return (
+        expiry && tradeDate &&
+        expiry >= today &&
+        expiry > tradeDate &&
+        isFinite(orig) &&
+        isFinite(contracts) && contracts > 0
+      );
+    })
+    .map(p => {
+      const orig      = parseFloat(p.original_premium ?? p.current_premium ?? p.premium);
+      const contracts = parseInt(p.contracts) || 0;
+      return {
+        type:            (p.type ?? 'put').toLowerCase(),
+        strike:          parseFloat(p.strike),
+        expiry:          parseDate(p.expiry),
+        contracts,
+        originalPremium: orig,
+        tradeDate:       parseDate(p.trade_date),
+        notional:        contracts * orig * 100,
+        symbol:          String(p.symbol ?? '').trim().toUpperCase(),
+      };
+    });
 
-  // Group by ticker → { puts: [], calls: [] }
+  // Group by ticker
   const byTicker = {};
   for (const p of active) {
-    const sym = String(p.symbol ?? '').trim().toUpperCase();
-    if (!sym) continue;
-    if (!byTicker[sym]) byTicker[sym] = { puts: [], calls: [] };
-    if ((p.type ?? 'put').toLowerCase() === 'call') {
-      byTicker[sym].calls.push(p);
-    } else {
-      byTicker[sym].puts.push(p);
-    }
+    if (!p.symbol) continue;
+    if (!byTicker[p.symbol]) byTicker[p.symbol] = { puts: [], calls: [] };
+    (p.type === 'call' ? byTicker[p.symbol].calls : byTicker[p.symbol].puts).push(p);
   }
 
+  const totalTracked = Object.keys(byTicker).length;
+
+  // 30-day notional per ticker — used for T1.3 "most active" check
+  const notional30d = {};
+  for (const [sym, { puts, calls }] of Object.entries(byTicker)) {
+    notional30d[sym] = [...puts, ...calls]
+      .filter(p => p.tradeDate >= thirtyDaysAgo)
+      .reduce((s, p) => s + p.notional, 0);
+  }
+  const maxNotional30d = Math.max(0, ...Object.values(notional30d));
+
   const signals = [];
-  let totalCandidates = 0; // tickers that passed basic grouping before quality filters
 
   for (const [ticker, { puts, calls }] of Object.entries(byTicker)) {
-    // Criterion 1: MUST have both puts sold AND calls bought
-    if (!puts.length || !calls.length) continue;
-    totalCandidates++;
+    const allPos       = [...puts, ...calls];
+    const totalNotional = allPos.reduce((s, p) => s + p.notional, 0);
+    const putNotional   = puts.reduce((s, p) => s + p.notional, 0);
+    const callNotional  = calls.reduce((s, p) => s + p.notional, 0);
 
-    // Check: any put-call pair with trade dates within 7 days of each other
-    let hasConfluence = false;
-    outer: for (const put of puts) {
-      const pd = parseDate(put.trade_date);
-      if (!pd) continue;
-      for (const call of calls) {
-        const cd = parseDate(call.trade_date);
-        if (!cd) continue;
-        if (Math.abs(pd - cd) <= 7 * 86_400_000) {
-          hasConfluence = true;
-          break outer;
-        }
-      }
-    }
-    if (!hasConfluence) continue;
+    const tradeDateKeys = new Set(allPos.map(p => p.tradeDate?.toDateString()).filter(Boolean));
+    const daysActive    = tradeDateKeys.size;
 
-    // Criterion 2: activity on at least 2 different trade dates
-    const allPos = [...puts, ...calls];
-    const uniqueTradeDates = new Set(
-      allPos.map(p => parseDate(p.trade_date)).filter(Boolean).map(d => d.toDateString())
-    );
-    if (uniqueTradeDates.size < 2) continue;
-
-    // Criterion 3: at least one put with 90+ DTE
-    const has90DtePut = puts.some(p => {
-      const exp = parseDate(p.expiry);
-      return exp && Math.floor((exp - today) / 86_400_000) >= 90;
-    });
-    if (!has90DtePut) continue;
-
-    // Aggregate stats
-    const tradeDates = allPos.map(p => parseDate(p.trade_date)).filter(Boolean);
-    const expiries   = allPos.map(p => parseDate(p.expiry)).filter(Boolean);
-
+    const tradeDates = allPos.map(p => p.tradeDate).filter(Boolean);
+    const expiries   = allPos.map(p => p.expiry).filter(Boolean);
     const minTradeDate = new Date(Math.min(...tradeDates));
     const maxExpiry    = new Date(Math.max(...expiries));
 
-    const daysActive = Math.max(1, Math.ceil((today - minTradeDate) / 86_400_000));
+    // ── TIER 1 — any single trigger → STRONG ─────────────────
+    const tier1 = [];
 
-    const totalPuts  = puts.reduce((s, p)  => s + (parseInt(p.contracts) || 0), 0);
-    const totalCalls = calls.reduce((s, p) => s + (parseInt(p.contracts) || 0), 0);
-    const totalContracts = totalPuts + totalCalls;
+    // T1.1: Same day has both puts AND calls
+    const putDayKeys  = new Set(puts.map(p => p.tradeDate?.toDateString()).filter(Boolean));
+    const callDayKeys = new Set(calls.map(p => p.tradeDate?.toDateString()).filter(Boolean));
+    if ([...putDayKeys].some(d => callDayKeys.has(d)))
+      tier1.push('same_day_both');
 
-    // ── Weighted put score by DTE ────────────────────────────
-    // Longer DTE = stronger conviction (more premium at risk, further out)
-    let putScore = 0;
-    for (const p of puts) {
-      const contracts = parseInt(p.contracts) || 0;
-      const expiry    = parseDate(p.expiry);
-      const dte       = expiry ? Math.floor((expiry - today) / 86_400_000) : 0;
-      const weight    = dte >= 180 ? 3 : dte >= 90 ? 2 : dte >= 30 ? 1.5 : 1;
-      putScore += contracts * weight;
+    // T1.2: Any single day's total notional > $5M
+    const dailyNotional = {};
+    for (const p of allPos) {
+      const k = p.tradeDate?.toDateString();
+      if (k) dailyNotional[k] = (dailyNotional[k] || 0) + p.notional;
+    }
+    if (Object.values(dailyNotional).some(n => n > 5_000_000))
+      tier1.push('daily_notional_5m');
+
+    // T1.3: Most active ticker over rolling 30-day window
+    if (maxNotional30d > 0 && notional30d[ticker] === maxNotional30d)
+      tier1.push('most_active_30d');
+
+    // T1.4: Calls rolled to progressively higher strikes over time
+    if (calls.length >= 2) {
+      const sorted = [...calls].sort((a, b) => a.tradeDate - b.tradeDate);
+      if (sorted.some((c, i) => i > 0 && c.strike > sorted[i - 1].strike))
+        tier1.push('rolled_higher');
     }
 
-    // ── Weighted call score by original premium ──────────────
-    // Higher premium = bigger directional bet
-    let callScore = 0;
-    for (const p of calls) {
-      const contracts = parseInt(p.contracts) || 0;
-      const orig      = parseFloat(p.original_premium ?? p.current_premium ?? p.premium);
-      // 0 or unparseable = not yet fetched → use 1.5 as neutral default
-      const weight    = (!isFinite(orig) || orig === 0) ? 1.5
-                      : orig > 5  ? 2
-                      : orig >= 1 ? 1.5
-                      : 1;
-      callScore += contracts * weight;
-    }
+    // T1.5: Both types present AND active 4+ distinct days
+    if (puts.length && calls.length && daysActive >= 4)
+      tier1.push('both_types_4days');
 
-    // ── Confluence bonus ─────────────────────────────────────
-    // Having both puts sold AND calls bought signals coordinated conviction
-    const rawScore      = putScore + callScore;
-    const confluenceBonus = 1.5; // always true here — confluence is required to reach this point
-    const score         = rawScore * confluenceBonus;
+    // ── TIER 2 — needs 2+ triggers → NOTABLE ─────────────────
+    const tier2 = [];
 
-    // Earliest confluence window — find the closest put-call pair dates
-    let closestGap = Infinity;
-    let confluenceDate = minTradeDate;
-    for (const put of puts) {
-      const pd = parseDate(put.trade_date);
-      if (!pd) continue;
-      for (const call of calls) {
-        const cd = parseDate(call.trade_date);
-        if (!cd) continue;
-        const gap = Math.abs(pd - cd);
-        if (gap < closestGap) {
-          closestGap = gap;
-          confluenceDate = pd < cd ? pd : cd;
-        }
+    // T2.1: Put + call within any 5-day window
+    let has5day = false;
+    outer5: for (const p of puts) {
+      for (const c of calls) {
+        if (Math.abs(p.tradeDate - c.tradeDate) <= 5 * 86_400_000) { has5day = true; break outer5; }
       }
     }
+    if (has5day) tier2.push('5day_confluence');
 
-    const parsePos = p => ({
-      strike:          parseFloat(p.strike),
-      expiry:          parseDate(p.expiry),
-      contracts:       parseInt(p.contracts) || 0,
-      originalPremium: parseFloat(p.original_premium ?? p.current_premium ?? p.premium),
-      tradeDate:       parseDate(p.trade_date),
-    });
+    // T2.2: Flow on 3+ distinct days
+    if (daysActive >= 3) tier2.push('repeat_3days');
+
+    // T2.3: High premium (put >$5 or call >$3)
+    if (puts.some(p => p.originalPremium > 5) || calls.some(p => p.originalPremium > 3))
+      tier2.push('high_premium');
+
+    // T2.4: Any single position notional > $1M
+    if (allPos.some(p => p.notional > 1_000_000))
+      tier2.push('large_single_notional');
+
+    // T2.5: Active 2+ distinct days
+    if (daysActive >= 2) tier2.push('active_2days');
+
+    // T2.6: Risk reversal — put sold + call bought in same expiry month
+    let hasRR = false;
+    outerRR: for (const p of puts) {
+      for (const c of calls) {
+        if (p.expiry && c.expiry &&
+            p.expiry.getFullYear() === c.expiry.getFullYear() &&
+            p.expiry.getMonth()    === c.expiry.getMonth()) { hasRR = true; break outerRR; }
+      }
+    }
+    if (hasRR) tier2.push('risk_reversal');
+
+    // T2.7: Short-dated catalyst — expiry within 45 days of trade date
+    if (allPos.some(p => p.expiry && p.tradeDate &&
+        Math.floor((p.expiry - p.tradeDate) / 86_400_000) <= 45))
+      tier2.push('catalyst_expiry');
+
+    // ── DEPRIORITIZE ──────────────────────────────────────────
+    const dep = [];
+    if (daysActive <= 1)                                 dep.push('one_day');
+    if (allPos.every(p => p.originalPremium < 0.50))    dep.push('all_cheap');
+    if (puts.length === 0)                               dep.push('no_puts');
+    if (totalNotional < 100_000)                         dep.push('low_notional');
+
+    // ── Tier determination ────────────────────────────────────
+    const t1 = tier1.length, t2 = tier2.length, d = dep.length;
+    let badge = null;
+
+    if      (t1 >= 1 && d === 0)              badge = 'STRONG';
+    else if (t1 >= 1 && d === 1 && t2 >= 1)  badge = 'STRONG';
+    else if (t2 >= 2 && d === 0)              badge = 'NOTABLE';
+    else if (t2 >= 3 && d <= 1)              badge = 'NOTABLE';
+    else if (t2 >= 2 && d === 1)             badge = 'NOTABLE';
+
+    if (!badge) continue;
 
     signals.push({
-      ticker,
-      totalPuts,
-      totalCalls,
-      totalContracts,
-      putScore,
-      callScore,
-      rawScore,
-      confluenceBonus,
-      putCount:  puts.length,
-      callCount: calls.length,
-      daysActive,
-      minTradeDate,
-      maxExpiry,
-      confluenceDate,
-      score,
-      rawPuts:  puts.map(parsePos),
-      rawCalls: calls.map(parsePos),
+      ticker, badge,
+      totalNotional, putNotional, callNotional,
+      puts, calls,
+      daysActive, minTradeDate, maxExpiry,
+      tier1Triggers: tier1, tier2Triggers: tier2, deprioritize: dep,
     });
   }
 
-  // Sort by score descending, hard cap at 8
-  signals.sort((a, b) => b.score - a.score);
+  // Sort: STRONG before NOTABLE, then by total notional descending
+  signals.sort((a, b) => {
+    const order = { STRONG: 2, NOTABLE: 1 };
+    return (order[b.badge] - order[a.badge]) || (b.totalNotional - a.totalNotional);
+  });
+
   const qualified = signals.length;
-  const capped = signals.slice(0, 8);
-
-  // Criterion 4: badge by absolute score threshold
-  capped.forEach(s => {
-    s.badge = s.score > 150_000 ? 'STRONG' : s.score > 75_000 ? 'NOTABLE' : 'WATCH';
-  });
-
-  // Attach qualifying metadata for the header
-  capped._qualified     = qualified;      // passed all filters before cap
-  capped._totalCandidates = totalCandidates; // had both puts + calls
-
+  const capped    = signals.slice(0, 5);
+  capped._qualified    = qualified;
+  capped._totalTracked = totalTracked;
   return capped;
-}
-
-// ── AI Analysis ───────────────────────────────────────────────────────────────
-
-const aiCache    = new Map(); // ticker → analysis text (session cache)
-const signalMap  = new Map(); // ticker → signal object (populated in renderSignals)
-
-function buildAiPrompt(s) {
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-
-  const fmtPos = (p, type) => {
-    const dte  = p.expiry ? Math.floor((p.expiry - today) / 86_400_000) : '?';
-    const prem = isFinite(p.originalPremium) && p.originalPremium > 0
-      ? `$${p.originalPremium.toFixed(2)}`
-      : 'N/A';
-    const strike = isFinite(p.strike) ? `$${p.strike}` : '?';
-    return `  ${type}: ${strike} strike | ${p.contracts.toLocaleString()} contracts | ` +
-           `${prem} premium | expiry ${p.expiry ? p.expiry.toLocaleDateString() : '?'} ` +
-           `(${dte} DTE) | traded ${p.tradeDate ? p.tradeDate.toLocaleDateString() : '?'}`;
-  };
-
-  const putLines  = s.rawPuts.map(p  => fmtPos(p, 'PUT SOLD'));
-  const callLines = s.rawCalls.map(p => fmtPos(p, 'CALL BOUGHT'));
-
-  return [
-    `Ticker: ${s.ticker}`,
-    `Signal strength: ${s.badge} (Bullish Conviction Score: ${fmtScore(s.score)})`,
-    `${s.putCount} put-sold position(s) | ${s.callCount} call-bought position(s) | ${s.totalContracts.toLocaleString()} total contracts`,
-    `Active for ${s.daysActive} days`,
-    ``,
-    `Puts sold:`,
-    ...putLines,
-    ``,
-    `Calls bought:`,
-    ...callLines,
-  ].join('\n');
-}
-
-const AI_SYSTEM_PROMPT =
-  'You are an expert options flow analyst. Analyze the following institutional ' +
-  'options flow data and write a concise 3-4 sentence trade narrative in the ' +
-  'style of a professional trader. Focus on: what the flow implies directionally, ' +
-  'key strike levels to watch, any notable patterns (repeat flow, large size, ' +
-  'unusual expiry), and a specific actionable idea. Be direct and confident. ' +
-  'Do not use bullet points. Write in plain conversational trader language.';
-
-async function fetchAiAnalysis(ticker) {
-  if (aiCache.has(ticker)) return aiCache.get(ticker);
-
-  const s = signalMap.get(ticker);
-  if (!s) throw new Error('Signal data not found');
-
-  const payload = JSON.stringify({
-    model:      'claude-sonnet-4-6',
-    max_tokens: 400,
-    system:     AI_SYSTEM_PROMPT,
-    messages:   [{ role: 'user', content: buildAiPrompt(s) }],
-  });
-
-  const aiUrl = CONFIG.AI_WORKER;
-  console.log('[AI] Fetching:', aiUrl);
-
-  let res;
-  try {
-    res = await fetch(aiUrl, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: payload,
-    });
-  } catch (netErr) {
-    console.error('[AI] Network error:', netErr);
-    throw new Error(`Network error: ${netErr.message}`);
-  }
-
-  let data;
-  try {
-    data = await res.json();
-  } catch (parseErr) {
-    const raw = await res.text().catch(() => '(unreadable)');
-    console.error('[AI] Non-JSON response (HTTP ' + res.status + '):', raw);
-    throw new Error(`Non-JSON response (HTTP ${res.status})`);
-  }
-
-  if (!res.ok) {
-    const msg = data?.error?.message ?? JSON.stringify(data?.error) ?? `HTTP ${res.status}`;
-    console.error('[AI] API error:', res.status, data);
-    throw new Error(`API ${res.status}: ${msg}`);
-  }
-
-  const text = data.content?.[0]?.text;
-  if (!text) {
-    console.error('[AI] Unexpected response shape:', JSON.stringify(data).slice(0, 300));
-    throw new Error('Empty response from AI');
-  }
-
-  aiCache.set(ticker, text);
-  return text;
 }
 
 // ── Rendering ─────────────────────────────────────────────────────────────────
@@ -321,34 +240,38 @@ function renderSignals(signals) {
     grid.innerHTML = `
       <div class="sig-empty">
         <div class="sig-empty-icon">◈</div>
-        <div>No confluence signals found</div>
-        <div class="sig-empty-sub">Signals appear when a ticker has puts sold and calls bought within a 7-day window — a bullish confluence pattern.</div>
+        <div>No signals found</div>
+        <div class="sig-empty-sub">Signals appear when a ticker meets STRONG or NOTABLE conviction criteria based on notional value, flow frequency, and premium quality.</div>
       </div>`;
     return;
   }
 
-  // Header strip
-  const strongN  = signals.filter(s => s.badge === 'STRONG').length;
-  const notableN = signals.filter(s => s.badge === 'NOTABLE').length;
-  const qualified = signals._qualified ?? signals.length;
-  const total     = signals._totalCandidates ?? qualified;
+  const strongN   = signals.filter(s => s.badge === 'STRONG').length;
+  const notableN  = signals.filter(s => s.badge === 'NOTABLE').length;
+  const qualified = signals._qualified    ?? signals.length;
+  const tracked   = signals._totalTracked ?? qualified;
   const dateStr   = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
   const summary   = document.getElementById('sig-summary');
   summary.innerHTML = `
-    <span class="sum-pill bull-key">TOP SIGNALS · ${dateStr} · ${signals.length} of ${total} tickers qualified</span>
+    <span class="sum-pill bull-key">TOP SIGNALS · ${dateStr} · ${qualified} tickers qualified out of ${tracked} tracked</span>
     <span class="sum-pill strong">${strongN} STRONG</span>
     <span class="sum-pill notable">${notableN} NOTABLE</span>
   `;
   summary.hidden = false;
 
-  signalMap.clear();
-  signals.forEach(s => signalMap.set(s.ticker, s));
-
   grid.innerHTML = signals.map(s => {
-    const putPct  = Math.round(s.totalPuts / (s.totalPuts + s.totalCalls) * 100);
-    const callPct = 100 - putPct;
-    const badgeCls  = s.badge === 'STRONG' ? 'badge-strong' : s.badge === 'NOTABLE' ? 'badge-notable' : 'badge-watch';
+    const badgeCls  = s.badge === 'STRONG' ? 'badge-strong' : 'badge-notable';
     const dateRange = `${fmtDate(s.minTradeDate)} → ${fmtDate(s.maxExpiry)}`;
+
+    const hasBoth = s.puts.length > 0 && s.calls.length > 0;
+    const stratLine = hasBoth
+      ? `PUT SOLD <span class="card-strat-bull">▲ BULLISH</span> + CALL BOUGHT`
+      : s.puts.length
+        ? `PUT SOLD <span class="card-strat-bull">▲ BULLISH</span>`
+        : `CALL BOUGHT <span class="card-strat-bull">▲ BULLISH</span>`;
+
+    const putPct  = s.totalNotional > 0 ? Math.round(s.putNotional  / s.totalNotional * 100) : 0;
+    const callPct = 100 - putPct;
 
     return `
       <div class="signal-card">
@@ -357,12 +280,12 @@ function renderSignals(signals) {
           <span class="card-badge ${badgeCls}">${s.badge}</span>
         </div>
 
-        <div class="card-strat">PUT SOLD <span class="card-strat-bull">▲ BULLISH</span> + CALL BOUGHT</div>
+        <div class="card-strat">${stratLine}</div>
 
         <div class="card-stats">
           <div class="stat">
-            <div class="stat-val" style="color:var(--up)">${fmtNum(s.totalContracts)}</div>
-            <div class="stat-lbl">Bullish Contracts</div>
+            <div class="stat-val" style="color:var(--up)">${fmtNotional(s.totalNotional)}</div>
+            <div class="stat-lbl">Total Notional</div>
           </div>
           <div class="stat-divider"></div>
           <div class="stat">
@@ -371,28 +294,23 @@ function renderSignals(signals) {
           </div>
         </div>
 
+        ${hasBoth ? `
         <div class="ratio-wrap">
           <div class="ratio-bar">
-            <div class="ratio-seg puts-seg" style="flex:${s.totalPuts}"></div>
-            <div class="ratio-seg calls-seg" style="flex:${s.totalCalls}"></div>
+            <div class="ratio-seg puts-seg"  style="flex:${s.putNotional}"></div>
+            <div class="ratio-seg calls-seg" style="flex:${s.callNotional}"></div>
           </div>
           <div class="ratio-labels">
-            <span style="color:var(--accent)">${putPct}% puts sold</span>
-            <span class="call-color">${callPct}% calls bought</span>
+            <span style="color:var(--accent)">${putPct}% puts</span>
+            <span class="call-color">${callPct}% calls</span>
           </div>
-        </div>
+        </div>` : ''}
 
         <div class="card-footer">
           <div class="card-dates">${dateRange}</div>
           <div class="card-row2">
-            <span class="card-score">${fmtScore(s.score)}</span>
             <a class="card-link" href="#" data-ticker="${s.ticker}">View chart →</a>
           </div>
-        </div>
-
-        <div class="card-ai">
-          <button class="ai-btn" data-ticker="${s.ticker}">◈ AI ANALYSIS</button>
-          <div class="ai-result" id="ai-${s.ticker}" hidden></div>
         </div>
       </div>`;
   }).join('');
@@ -418,53 +336,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error(err);
   }
 
-  document.getElementById('signals-grid').addEventListener('click', async e => {
-    // "View chart →"
+  document.getElementById('signals-grid').addEventListener('click', e => {
     const link = e.target.closest('a[data-ticker]');
-    if (link) {
-      e.preventDefault();
-      load(link.dataset.ticker);
-      document.getElementById('sec01-body').scrollIntoView({ behavior: 'smooth', block: 'start' });
-      return;
-    }
-
-    // "AI ANALYSIS"
-    const btn = e.target.closest('.ai-btn');
-    if (!btn) return;
-
-    const ticker   = btn.dataset.ticker;
-    const resultEl = document.getElementById(`ai-${ticker}`);
-    if (!resultEl) return;
-
-    // Already showing a result — toggle visibility
-    if (!resultEl.hidden && resultEl.dataset.state === 'done') {
-      resultEl.hidden = true;
-      btn.textContent = '◈ AI ANALYSIS';
-      return;
-    }
-
-    // Show spinner
-    btn.disabled    = true;
-    btn.textContent = '◈ GENERATING…';
-    resultEl.hidden = false;
-    resultEl.dataset.state = 'loading';
-    resultEl.innerHTML = `
-      <div class="ai-loading">
-        <div class="ai-spinner"></div>
-        <span>Analysing flow data…</span>
-      </div>`;
-
-    try {
-      const text = await fetchAiAnalysis(ticker);
-      resultEl.innerHTML     = `<p class="ai-text">${text.replace(/\n/g, '<br>')}</p>`;
-      resultEl.dataset.state = 'done';
-      btn.disabled    = false;
-      btn.textContent = '◈ HIDE ANALYSIS';
-    } catch (err) {
-      resultEl.innerHTML     = `<p class="ai-error">Error: ${err.message}</p>`;
-      resultEl.dataset.state = 'error';
-      btn.disabled    = false;
-      btn.textContent = '◈ AI ANALYSIS';
-    }
+    if (!link) return;
+    e.preventDefault();
+    load(link.dataset.ticker);
+    document.getElementById('sec01-body').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 });
