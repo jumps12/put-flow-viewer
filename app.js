@@ -293,14 +293,10 @@ function buildChart(ohlcv, positions) {
     },
   });
 
-  // Responsive resize — also reposition labels
+  // Responsive resize
   new ResizeObserver(() => {
     if (_chart) _chart.applyOptions({ width: container.clientWidth });
-    updateLabelPositions();
   }).observe(container);
-
-  // Reposition labels on every pan / zoom
-  _chart.timeScale().subscribeVisibleLogicalRangeChange(updateLabelPositions);
 
   // ── OHLC bars ────────────────────────────────────────────
   const candles = _chart.addBarSeries({
@@ -575,6 +571,14 @@ async function load(raw) {
 document.addEventListener('DOMContentLoaded', () => {
   startClock();
   initCollapsibles();
+
+  // Drive label positions from the browser's own paint loop so HTML overlays
+  // stay pixel-perfect against the chart canvas on every scroll and zoom frame.
+  // updateLabelPositions() is a no-op when no chart or labels are loaded.
+  (function syncLabels() {
+    updateLabelPositions();
+    requestAnimationFrame(syncLabels);
+  })();
 
   const input = document.getElementById('ticker-input');
   const btn   = document.getElementById('load-btn');
