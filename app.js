@@ -192,9 +192,7 @@ function createLabels(positions) {
     const el = document.createElement('div');
     el.className    = 'strike-label';
     el.style.color  = color;
-    // Puts:  label on the LEFT end of the line — right-edge of label sits at trade date.
-    // Calls: label on the RIGHT end — left-edge sits just past expiry date.
-    if (p.type === 'put') el.style.transform = 'translateX(-100%) translateY(-50%)';
+    // All labels: right end of line, left-edge of label sits just past expiry date.
     el.textContent  = text;
     container.appendChild(el);
 
@@ -213,20 +211,12 @@ function updateLabelPositions() {
   // Approximate rendered label height (10px font × 1.6 line-height + 2px padding)
   const LABEL_H     = 18;
 
-  // Puts  → left end of line: right edge of label sits 4 px before the trade-date x.
-  //          transform: translateX(-100%) makes the element's right edge = left CSS value.
-  // Calls → right end of line: left edge of label sits 4 px after the expiry-date x.
+  // All labels sit on the right end of their line (expiry date), 4 px past it.
   const items = _labelData.map(({ p, el }) => {
-    const y = _candlesSeries.priceToCoordinate(p.strike);
-    let x;
-    if (p.type === 'put') {
-      const xt = _chart.timeScale().timeToCoordinate(dateToStr(p.tradeDate));
-      x = xt !== null ? xt - 4 : null;
-    } else {
-      const xe = _chart.timeScale().timeToCoordinate(dateToStr(p.expiry));
-      x = xe !== null ? Math.min(xe + 4, maxLabelX) : null;
-    }
-    return { el, x, y, isPut: p.type === 'put' };
+    const y  = _candlesSeries.priceToCoordinate(p.strike);
+    const xe = _chart.timeScale().timeToCoordinate(dateToStr(p.expiry));
+    const x  = xe !== null ? Math.min(xe + 4, maxLabelX) : null;
+    return { el, x, y };
   });
 
   // Hide off-screen items
@@ -234,23 +224,16 @@ function updateLabelPositions() {
     if (item.x === null || item.y === null) item.el.style.display = 'none';
   }
 
-  // Resolve overlaps independently for each side so puts (left) and calls (right)
-  // never interfere with each other's stacking.
-  const resolveGroup = group => {
-    group.sort((a, b) => a.y - b.y);
-    for (let i = 0; i < group.length; i++) {
-      group[i].adjY = i === 0
-        ? group[i].y
-        : Math.max(group[i].y, group[i - 1].adjY + LABEL_H);
-    }
-    return group;
-  };
-
+  // Resolve vertical overlaps for all labels together (all on the right side now).
   const visible = items.filter(i => i.x !== null && i.y !== null);
-  const puts    = resolveGroup(visible.filter(i =>  i.isPut));
-  const calls   = resolveGroup(visible.filter(i => !i.isPut));
+  visible.sort((a, b) => a.y - b.y);
+  for (let i = 0; i < visible.length; i++) {
+    visible[i].adjY = i === 0
+      ? visible[i].y
+      : Math.max(visible[i].y, visible[i - 1].adjY + LABEL_H);
+  }
 
-  for (const item of [...puts, ...calls]) {
+  for (const item of visible) {
     item.el.style.display = 'block';
     item.el.style.left    = `${item.x}px`;
     item.el.style.top     = `${item.adjY}px`;
