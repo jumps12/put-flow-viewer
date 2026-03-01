@@ -192,9 +192,9 @@ function createLabels(positions) {
     const el = document.createElement('div');
     el.className    = 'strike-label';
     el.style.color  = color;
-    // Puts: centered horizontally under the line midpoint.
-    // Calls: keep the default right-side, vertically-centered position.
-    if (p.type === 'put') el.style.transform = 'translateX(-50%) translateY(3px)';
+    // Puts:  label on the LEFT end of the line — right-edge of label sits at trade date.
+    // Calls: label on the RIGHT end — left-edge sits just past expiry date.
+    if (p.type === 'put') el.style.transform = 'translateX(-100%) translateY(-50%)';
     el.textContent  = text;
     container.appendChild(el);
 
@@ -213,41 +213,44 @@ function updateLabelPositions() {
   // Approximate rendered label height (10px font × 1.6 line-height + 2px padding)
   const LABEL_H     = 18;
 
-  // Compute x per type:
-  //   Puts  → midpoint of the line (trade date … expiry), label is translateX(-50%) centered
-  //   Calls → right end (expiry) + 4 px offset, label is left-aligned
+  // Puts  → left end of line: right edge of label sits 4 px before the trade-date x.
+  //          transform: translateX(-100%) makes the element's right edge = left CSS value.
+  // Calls → right end of line: left edge of label sits 4 px after the expiry-date x.
   const items = _labelData.map(({ p, el }) => {
     const y = _candlesSeries.priceToCoordinate(p.strike);
     let x;
     if (p.type === 'put') {
-      const x1 = _chart.timeScale().timeToCoordinate(dateToStr(p.tradeDate));
-      const x2 = _chart.timeScale().timeToCoordinate(dateToStr(p.expiry));
-      x = (x1 !== null && x2 !== null) ? (x1 + x2) / 2 : (x2 ?? x1);
+      const xt = _chart.timeScale().timeToCoordinate(dateToStr(p.tradeDate));
+      x = xt !== null ? xt - 4 : null;
     } else {
       const xe = _chart.timeScale().timeToCoordinate(dateToStr(p.expiry));
       x = xe !== null ? Math.min(xe + 4, maxLabelX) : null;
     }
-    return { el, x, y };
+    return { el, x, y, isPut: p.type === 'put' };
   });
 
-  // Hide anything off-screen
+  // Hide off-screen items
   for (const item of items) {
     if (item.x === null || item.y === null) item.el.style.display = 'none';
   }
 
-  // Resolve overlaps: sort visible labels by Y, then push each one down
-  // if it would collide with the one above it.
-  const visible = items
-    .filter(i => i.x !== null && i.y !== null)
-    .sort((a, b) => a.y - b.y);
+  // Resolve overlaps independently for each side so puts (left) and calls (right)
+  // never interfere with each other's stacking.
+  const resolveGroup = group => {
+    group.sort((a, b) => a.y - b.y);
+    for (let i = 0; i < group.length; i++) {
+      group[i].adjY = i === 0
+        ? group[i].y
+        : Math.max(group[i].y, group[i - 1].adjY + LABEL_H);
+    }
+    return group;
+  };
 
-  for (let i = 0; i < visible.length; i++) {
-    visible[i].adjY = i === 0
-      ? visible[i].y
-      : Math.max(visible[i].y, visible[i - 1].adjY + LABEL_H);
-  }
+  const visible = items.filter(i => i.x !== null && i.y !== null);
+  const puts    = resolveGroup(visible.filter(i =>  i.isPut));
+  const calls   = resolveGroup(visible.filter(i => !i.isPut));
 
-  for (const item of visible) {
+  for (const item of [...puts, ...calls]) {
     item.el.style.display = 'block';
     item.el.style.left    = `${item.x}px`;
     item.el.style.top     = `${item.adjY}px`;
@@ -260,6 +263,9 @@ let _chart        = null;
 let _candlesSeries = null;
 let _labelData     = []; // [{ p, el }] — kept in sync with the current chart
 let _strikeData    = []; // [{ p, series, color, width }] — one entry per strike line
+let _lastOhlcv     = null;   // cached for filter toggle
+let _lastPositions = null;   // cached active positions for filter toggle
+let _filterLarge   = true;   // true = show only notional ≥ $1M
 
 function buildChart(ohlcv, positions) {
   const container = document.getElementById('chart-container');
@@ -304,6 +310,12 @@ function buildChart(ohlcv, positions) {
     downColor:        '#ff3355',
     openVisible:      true,
     priceLineVisible: false, // disabled — we add a full-width one below
+    autoscaleInfoProvider: orig => {
+      const res = orig();
+      if (!res) return res;
+      const pad = (res.priceRange.maxValue - res.priceRange.minValue) * 0.1;
+      return { priceRange: { minValue: res.priceRange.minValue - pad, maxValue: res.priceRange.maxValue + pad } };
+    },
   });
   candles.setData(ohlcv);
   _candlesSeries = candles;
@@ -330,6 +342,7 @@ function buildChart(ohlcv, positions) {
     lastValueVisible:       false,
     priceLineVisible:       false,
     crosshairMarkerVisible: false,
+    autoscaleInfoProvider:  () => null,
   });
   const futurePts = [];
   const futureStart = new Date();
@@ -341,11 +354,29 @@ function buildChart(ohlcv, positions) {
   }
   futureLine.setData(futurePts);
 
+  // ── Filter positions for chart display ───────────────────
+  // 1. Price range: only strikes within ±40% of last close.
+  // 2. Notional filter: hide <$1M positions unless user toggles to ALL.
+  // 3. Cap at 8 lines, largest by notional first.
+  const lastPrice = ohlcv.length ? ohlcv[ohlcv.length - 1].close : 0;
+  const priceMin  = lastPrice * 0.60;
+  const priceMax  = lastPrice * 1.40;
+
+  const chartPositions = positions
+    .filter(p => {
+      if (p.strike < priceMin || p.strike > priceMax) return false;
+      if (_filterLarge && p.contracts * p.originalPremium * 100 < 1_000_000) return false;
+      return true;
+    })
+    .sort((a, b) => (b.contracts * b.originalPremium * 100) - (a.contracts * a.originalPremium * 100))
+    .slice(0, 8);
+
   // ── Strike lines ─────────────────────────────────────────
   // Puts: solid line, DTE color. Calls: dashed purple.
   // Store refs so sidebar hover can brighten/restore each line.
+  // autoscaleInfoProvider: () => null keeps strike lines from stretching the y-axis.
   _strikeData = [];
-  for (const p of positions) {
+  for (const p of chartPositions) {
     const isCall  = p.type === 'call';
     const dte     = getDTE(p.expiry);
     const color   = isCall ? '#aa44ff' : dteColor(dte);
@@ -361,6 +392,7 @@ function buildChart(ohlcv, positions) {
       lastValueVisible:       false,
       priceLineVisible:       false,
       crosshairMarkerVisible: false,
+      autoscaleInfoProvider:  () => null,
     });
 
     series.setData([
@@ -377,7 +409,7 @@ function buildChart(ohlcv, positions) {
   _chart.timeScale().scrollToPosition(0, false);
 
   // Wait one frame for the range to settle, then place labels
-  requestAnimationFrame(() => createLabels(positions));
+  requestAnimationFrame(() => createLabels(chartPositions));
 }
 
 // ── Sidebar (section 02 — Active Positions) ───────────────────────────────────
@@ -552,6 +584,10 @@ async function load(raw) {
     const active  = allPositions.filter(p => p.expiry >= today);
     const expired = allPositions.filter(p => p.expiry <  today);
 
+    // Cache for filter toggle rebuilds
+    _lastOhlcv     = ohlcv;
+    _lastPositions = active;
+
     buildChart(ohlcv, active);
     buildSidebar(ticker, active, expired);
 
@@ -592,6 +628,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   btn.addEventListener('click',  () => load(input.value));
   input.addEventListener('keydown', e => { if (e.key === 'Enter') load(input.value); });
+
+  // Notional filter toggle: '>$1M only' ↔ 'ALL'
+  document.getElementById('filter-btn').addEventListener('click', () => {
+    _filterLarge = !_filterLarge;
+    const filterBtn = document.getElementById('filter-btn');
+    filterBtn.textContent = _filterLarge ? '>$1M' : 'ALL';
+    filterBtn.classList.toggle('filter-btn--all', !_filterLarge);
+    if (_lastOhlcv && _lastPositions) buildChart(_lastOhlcv, _lastPositions);
+  });
 
   // Restore ticker from URL hash (e.g. index.html#SPY)
   const hash = decodeURIComponent(location.hash.slice(1));
