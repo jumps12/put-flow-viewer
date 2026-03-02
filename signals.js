@@ -57,6 +57,118 @@ function sameDayStr(a, b) {
          a.getDate()     === b.getDate();
 }
 
+// ── MA computation ────────────────────────────────────────────────────────────
+
+function calcEMA(closes, period) {
+  if (closes.length < period) return null;
+  const k = 2 / (period + 1);
+  let ema = closes.slice(0, period).reduce((s, v) => s + v, 0) / period;
+  for (let i = period; i < closes.length; i++) ema = closes[i] * k + ema * (1 - k);
+  return ema;
+}
+
+function calcSMA(closes, period) {
+  if (closes.length < period) return null;
+  return closes.slice(-period).reduce((s, v) => s + v, 0) / period;
+}
+
+// Aggregate daily bars into weekly closing prices (last close of each Mon–Fri week).
+function toWeeklyCloses(dailyBars) {
+  const weeks = {};
+  for (const { time, close } of dailyBars) {
+    const dow = time.getDay();
+    const mon = new Date(time);
+    mon.setDate(time.getDate() - (dow === 0 ? 6 : dow - 1));
+    const key = mon.toISOString().slice(0, 10);
+    weeks[key] = close;
+  }
+  return Object.entries(weeks).sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([, v]) => v);
+}
+
+// Fetch 4 years of daily OHLCV and return MA context + adjustment factor for one signal.
+async function fetchMAContext(sig, dataToday) {
+  const now   = Math.floor(Date.now() / 1000);
+  const start = now - 4 * 365 * 24 * 3600; // 4 yr — enough for 200W MA
+  const end   = now + 2 * 24 * 3600;
+
+  const target = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sig.ticker)}` +
+                 `?period1=${start}&period2=${end}&interval=1d`;
+  const url = CONFIG.CORS_PROXY + encodeURIComponent(target);
+  const res = await fetch(url, { signal: AbortSignal.timeout(15_000) });
+  if (!res.ok) return null;
+
+  const json   = await res.json();
+  const result = json.chart?.result?.[0];
+  if (!result) return null;
+
+  const timestamps = result.timestamp ?? [];
+  const q          = result.indicators?.quote?.[0] ?? {};
+  const bars       = timestamps
+    .map((t, i) => ({ time: new Date(t * 1000), close: q.close?.[i] }))
+    .filter(d => d.close != null && isFinite(d.close));
+
+  if (bars.length < 22) return null;
+
+  const closes    = bars.map(d => d.close);
+  const lastClose = closes[closes.length - 1];
+  const prevClose = closes.length > 1 ? closes[closes.length - 2] : null;
+
+  const ema9d  = calcEMA(closes, 9);
+  const ema21d = calcEMA(closes, 21);
+
+  const wkCloses = toWeeklyCloses(bars);
+  const ema21w   = calcEMA(wkCloses, 21);
+  const sma200w  = calcSMA(wkCloses, 200); // null when < 200 weeks available
+
+  // Reclaim = yesterday closed below EMA, today at or above
+  const reclaim21D = !!(prevClose != null && ema21d && prevClose < ema21d && lastClose >= ema21d);
+  const reclaim9D  = !!(prevClose != null && ema9d  && prevClose < ema9d  && lastClose >= ema9d);
+
+  // Most recent call traded on the current data date ("same day" check)
+  const latestCall = sig.calls.length
+    ? sig.calls.reduce((a, b) => (a.tradeDate > b.tradeDate ? a : b))
+    : null;
+  const callToday = !!(latestCall && dataToday && sameDayStr(latestCall.tradeDate, dataToday));
+
+  // ── MA adjustment factor ──────────────────────────────────
+  let maFactor = 1.0;
+  const indicators = []; // { text, cls } — rendered on card
+
+  // Put context: average strike vs 21W EMA and 200W SMA
+  if (sig.puts.length && ema21w) {
+    const avgStrike = sig.puts.reduce((s, p) => s + p.strike, 0) / sig.puts.length;
+    if (avgStrike > ema21w) {
+      maFactor *= 1.30;
+      indicators.push({ text: '↑ 21W', cls: 'ma-bull' });
+    } else {
+      maFactor *= 0.75;
+      indicators.push({ text: '⚠ Below 21W', cls: 'ma-warn' });
+    }
+    if (sma200w && Math.abs(avgStrike - sma200w) / sma200w <= 0.05) {
+      maFactor *= 1.50; // generational support — stacks with trend bonus/penalty
+    }
+  }
+
+  // Call context: EMA reclaim on same day as trade + below-21W penalty
+  if (sig.calls.length) {
+    if (callToday && reclaim21D) {
+      maFactor *= 2.00;
+      indicators.push({ text: '⚡ 21D reclaim', cls: 'ma-strong' });
+    } else if (callToday && reclaim9D) {
+      maFactor *= 1.50;
+      indicators.push({ text: '⚡ 9D reclaim', cls: 'ma-bull' });
+    }
+    if (ema21w && lastClose < ema21w) {
+      maFactor *= 0.80;
+      if (!indicators.some(i => i.text.includes('21W'))) {
+        indicators.push({ text: '⚠ Below 21W', cls: 'ma-warn' });
+      }
+    }
+  }
+
+  return { maFactor, indicators };
+}
+
 // ── Signal analysis ───────────────────────────────────────────────────────────
 
 async function loadSignals() {
@@ -276,16 +388,31 @@ async function loadSignals() {
     });
   }
 
-  // Sort: follow-through first → tier → notional
-  signals.sort((a, b) => {
-    const ftRank   = s => s.multiplier >= 2 ? 2 : s.multiplier >= 1.75 ? 1 : 0;
-    const ftDiff   = ftRank(b) - ftRank(a);
+  // ── Sort helper (called twice: pre-MA and post-MA) ───────────────────────────
+  const sortByConviction = arr => arr.sort((a, b) => {
+    const ftRank = s => s.multiplier >= 2 ? 2 : s.multiplier >= 1.75 ? 1 : 0;
+    const ftDiff = ftRank(b) - ftRank(a);
     if (ftDiff !== 0) return ftDiff;
     const tierOrder = { STRONG: 3, NOTABLE: 2, UNUSUAL: 1 };
-    const tDiff    = (tierOrder[b.badge] || 0) - (tierOrder[a.badge] || 0);
+    const tDiff = (tierOrder[b.badge] || 0) - (tierOrder[a.badge] || 0);
     if (tDiff !== 0) return tDiff;
     return b.totalNotional - a.totalNotional;
   });
+
+  // Pre-sort → pick top candidates for MA enrichment (avoids fetching unlimited tickers)
+  sortByConviction(signals);
+
+  // ── MA context enrichment ─────────────────────────────────────────────────
+  // Fetch price data in parallel for the top candidates; update multiplier in-place.
+  const maWindow = signals.slice(0, Math.min(signals.length, 10));
+  await Promise.all(maWindow.map(async sig => {
+    const ma = await fetchMAContext(sig, dataToday).catch(() => null);
+    sig.maContext = ma ?? null;
+    if (ma) sig.multiplier *= ma.maFactor;
+  }));
+
+  // Final sort after MA adjustment, then cap at 5
+  sortByConviction(signals);
 
   const qualified = signals.length;
   const capped    = signals.slice(0, 5);
@@ -347,6 +474,11 @@ function renderSignals(signals) {
     const putPct  = s.totalNotional > 0 ? Math.round(s.putNotional  / s.totalNotional * 100) : 0;
     const callPct = 100 - putPct;
 
+    const maInds = s.maContext?.indicators ?? [];
+    const maHtml = maInds.length
+      ? `<div class="card-ma">${maInds.map(i => `<span class="ma-tag ${i.cls}">${i.text}</span>`).join('')}</div>`
+      : '';
+
     return `
       <div class="signal-card">
         <div class="card-top">
@@ -357,6 +489,8 @@ function renderSignals(signals) {
         ${tags ? `<div class="card-tags">${tags}</div>` : ''}
 
         <div class="card-strat">${stratLine}</div>
+
+        ${maHtml}
 
         <div class="card-stats">
           <div class="stat">
