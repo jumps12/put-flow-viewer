@@ -38,12 +38,56 @@ function fmtNotional(v) {
   return `$${Math.round(v)}`;
 }
 
+// ── Follow-through helpers ────────────────────────────────────────────────────
+
+function prevTradingDay(date, n = 1) {
+  const d = new Date(date);
+  let count = 0;
+  while (count < n) {
+    d.setDate(d.getDate() - 1);
+    if (d.getDay() !== 0 && d.getDay() !== 6) count++; // skip Sat/Sun
+  }
+  return d;
+}
+
+function sameDayStr(a, b) {
+  if (!a || !b) return false;
+  return a.getFullYear() === b.getFullYear() &&
+         a.getMonth()    === b.getMonth()    &&
+         a.getDate()     === b.getDate();
+}
+
 // ── Signal analysis ───────────────────────────────────────────────────────────
 
 async function loadSignals() {
   const res = await fetch('./positions.json');
   if (!res.ok) throw new Error('positions.json not found — run fetch_premiums.py first');
   const all = await res.json();
+
+  // ── Follow-through: scan ALL positions (active + expired) ─────────────────
+  // Find the most recent trade date in the whole dataset — this is "data today".
+  // Using the data's max date (rather than calendar today) keeps weekend runs correct.
+  let dataToday = null;
+  for (const p of all) {
+    const td = parseDate(p.trade_date);
+    if (td && (!dataToday || td > dataToday)) dataToday = td;
+  }
+  const dataDay1 = dataToday ? prevTradingDay(dataToday, 1) : null; // yesterday
+  const dataDay2 = dataToday ? prevTradingDay(dataToday, 2) : null; // 2 days ago
+
+  // Per-ticker flags: which reference days did it appear on? What is its earliest trade date?
+  const tickerMeta = {}; // ticker → { d0, d1, d2, minTradeDate }
+  for (const p of all) {
+    const sym = String(p.symbol ?? '').trim().toUpperCase();
+    const td  = parseDate(p.trade_date);
+    if (!sym || !td) continue;
+    if (!tickerMeta[sym]) tickerMeta[sym] = { d0: false, d1: false, d2: false, minTradeDate: td };
+    const m = tickerMeta[sym];
+    if (td < m.minTradeDate) m.minTradeDate = td;
+    if (sameDayStr(td, dataToday)) m.d0 = true;
+    if (sameDayStr(td, dataDay1))  m.d1 = true;
+    if (sameDayStr(td, dataDay2))  m.d2 = true;
+  }
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -207,7 +251,20 @@ async function loadSignals() {
     else if (t2 >= 3 && d <= 1)              badge = 'NOTABLE';
     else if (t2 >= 2 && d === 1)             badge = 'NOTABLE';
 
+    // ── UNUSUAL ACTIVITY — first-time ticker with significant notional ─────────
+    const meta = tickerMeta[ticker] ?? {};
+    const isFirstTime = sameDayStr(meta.minTradeDate, dataToday);
+    if (!badge && isFirstTime && totalNotional > 500_000) badge = 'UNUSUAL';
+
     if (!badge) continue;
+
+    // ── Follow-through multiplier ─────────────────────────────────────────────
+    // 2x:    appeared yesterday (d1) AND today (d0) — single strongest signal
+    // 1.75x: appeared on 2 of the last 3 trading days (but not the 2x case)
+    const followThrough = !!(meta.d0 && meta.d1);
+    const countLast3    = (meta.d0 ? 1 : 0) + (meta.d1 ? 1 : 0) + (meta.d2 ? 1 : 0);
+    const ft175         = !followThrough && countLast3 >= 2;
+    const multiplier    = followThrough ? 2.0 : ft175 ? 1.75 : 1.0;
 
     signals.push({
       ticker, badge,
@@ -215,13 +272,19 @@ async function loadSignals() {
       puts, calls,
       daysActive, minTradeDate, maxExpiry,
       tier1Triggers: tier1, tier2Triggers: tier2, deprioritize: dep,
+      multiplier, followThrough, isFirstTime,
     });
   }
 
-  // Sort: STRONG before NOTABLE, then by total notional descending
+  // Sort: follow-through first → tier → notional
   signals.sort((a, b) => {
-    const order = { STRONG: 2, NOTABLE: 1 };
-    return (order[b.badge] - order[a.badge]) || (b.totalNotional - a.totalNotional);
+    const ftRank   = s => s.multiplier >= 2 ? 2 : s.multiplier >= 1.75 ? 1 : 0;
+    const ftDiff   = ftRank(b) - ftRank(a);
+    if (ftDiff !== 0) return ftDiff;
+    const tierOrder = { STRONG: 3, NOTABLE: 2, UNUSUAL: 1 };
+    const tDiff    = (tierOrder[b.badge] || 0) - (tierOrder[a.badge] || 0);
+    if (tDiff !== 0) return tDiff;
+    return b.totalNotional - a.totalNotional;
   });
 
   const qualified = signals.length;
@@ -248,20 +311,31 @@ function renderSignals(signals) {
 
   const strongN   = signals.filter(s => s.badge === 'STRONG').length;
   const notableN  = signals.filter(s => s.badge === 'NOTABLE').length;
+  const unusualN  = signals.filter(s => s.badge === 'UNUSUAL').length;
+  const ftN       = signals.filter(s => s.followThrough).length;
   const qualified = signals._qualified    ?? signals.length;
   const tracked   = signals._totalTracked ?? qualified;
   const dateStr   = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
   const summary   = document.getElementById('sig-summary');
   summary.innerHTML = `
     <span class="sum-pill bull-key">TOP SIGNALS · ${dateStr} · ${qualified} tickers qualified out of ${tracked} tracked</span>
-    <span class="sum-pill strong">${strongN} STRONG</span>
-    <span class="sum-pill notable">${notableN} NOTABLE</span>
+    ${ftN      ? `<span class="sum-pill follow-thru">${ftN} FOLLOW-THROUGH</span>` : ''}
+    ${strongN  ? `<span class="sum-pill strong">${strongN} STRONG</span>`          : ''}
+    ${notableN ? `<span class="sum-pill notable">${notableN} NOTABLE</span>`       : ''}
+    ${unusualN ? `<span class="sum-pill unusual">${unusualN} UNUSUAL</span>`       : ''}
   `;
   summary.hidden = false;
 
   grid.innerHTML = signals.map(s => {
-    const badgeCls  = s.badge === 'STRONG' ? 'badge-strong' : 'badge-notable';
+    const badgeCls  = s.badge === 'STRONG'  ? 'badge-strong'
+                    : s.badge === 'NOTABLE' ? 'badge-notable'
+                    : 'badge-unusual';
     const dateRange = `${fmtDate(s.minTradeDate)} → ${fmtDate(s.maxExpiry)}`;
+
+    const tags = [
+      s.followThrough ? `<span class="sig-tag tag-ft">FOLLOW-THROUGH</span>` : '',
+      s.isFirstTime   ? `<span class="sig-tag tag-new">NEW</span>`           : '',
+    ].filter(Boolean).join('');
 
     const hasBoth = s.puts.length > 0 && s.calls.length > 0;
     const stratLine = hasBoth
@@ -279,6 +353,8 @@ function renderSignals(signals) {
           <span class="card-ticker">${s.ticker}</span>
           <span class="card-badge ${badgeCls}">${s.badge}</span>
         </div>
+
+        ${tags ? `<div class="card-tags">${tags}</div>` : ''}
 
         <div class="card-strat">${stratLine}</div>
 

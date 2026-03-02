@@ -625,8 +625,9 @@ body::before {
   padding: 3px 9px;
   letter-spacing: 0.14em;
 }
-.badge-strong  { color: var(--warn);   border: 1px solid rgba(255,179,0,0.3); background: rgba(255,179,0,0.08); }  /* gold  */
-.badge-notable { color: var(--accent); border: 1px solid rgba(0,200,255,0.3); background: rgba(0,200,255,0.08); }  /* teal  */
+.badge-strong  { color: var(--warn);   border: 1px solid rgba(255,179,0,0.3); background: rgba(255,179,0,0.08); }  /* gold    */
+.badge-notable { color: var(--accent); border: 1px solid rgba(0,200,255,0.3); background: rgba(0,200,255,0.08); }  /* teal    */
+.badge-unusual { color: #c0c0c0;       border: 1px solid rgba(192,192,192,0.3); background: rgba(192,192,192,0.06); } /* silver */
 
 .card-stats {
   display: flex;
@@ -725,10 +726,28 @@ body::before {
   font-size: 9px;
   letter-spacing: 0.1em;
 }
-.sum-pill.strong   { color: var(--warn);   border: 1px solid rgba(255,179,0,0.25); }  /* gold */
-.sum-pill.notable  { color: var(--accent); border: 1px solid rgba(0,200,255,0.25); }  /* teal */
-.sum-pill.total    { color: var(--fg3);    border: 1px solid var(--border2); }
-.sum-pill.bull-key { color: var(--up);     border: 1px solid rgba(0,230,118,0.3); background: rgba(0,230,118,0.06); margin-right: auto; }
+.sum-pill.strong      { color: var(--warn);   border: 1px solid rgba(255,179,0,0.25); }
+.sum-pill.notable     { color: var(--accent); border: 1px solid rgba(0,200,255,0.25); }
+.sum-pill.unusual     { color: #c0c0c0;       border: 1px solid rgba(192,192,192,0.25); }
+.sum-pill.follow-thru { color: var(--warn);   border: 1px solid rgba(255,179,0,0.4); background: rgba(255,179,0,0.1); }
+.sum-pill.total       { color: var(--fg3);    border: 1px solid var(--border2); }
+.sum-pill.bull-key    { color: var(--up);     border: 1px solid rgba(0,230,118,0.3); background: rgba(0,230,118,0.06); margin-right: auto; }
+
+/* Signal card tags (FOLLOW-THROUGH, NEW) */
+.card-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.sig-tag {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 2px 7px;
+  border-radius: 2px;
+}
+.tag-ft  { color: var(--warn); border: 1px solid rgba(255,179,0,0.4); background: rgba(255,179,0,0.1); }
+.tag-new { color: var(--fg1);  border: 1px solid rgba(200,216,234,0.3); background: rgba(200,216,234,0.06); }
 
 /* Strategy line on each signal card */
 .card-strat {
