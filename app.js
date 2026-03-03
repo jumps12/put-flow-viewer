@@ -338,18 +338,20 @@ function buildChart(ohlcv, positions) {
   futureLine.setData(futurePts);
 
   // ── Filter positions for chart display ───────────────────
-  // 1. Price range: only strikes within ±40% of last close.
-  // 2. Notional filter: hide <$1M positions unless user toggles to ALL.
-  // 3. Cap at 8 lines, largest by notional first.
+  // >$1M mode: keep all positions with notional ≥ $1M, no price-range gate.
+  //            High-notional strikes are always relevant regardless of distance.
+  // ALL mode:  apply ±60% price range to avoid clutter from cheap distant OTM positions.
+  // Both modes: sort largest-notional first, cap at 8 lines.
   const lastPrice = ohlcv.length ? ohlcv[ohlcv.length - 1].close : 0;
-  const priceMin  = lastPrice * 0.60;
-  const priceMax  = lastPrice * 1.40;
 
   const chartPositions = positions
     .filter(p => {
-      if (p.strike < priceMin || p.strike > priceMax) return false;
-      if (_filterLarge && p.contracts * p.originalPremium * 100 < 1_000_000) return false;
-      return true;
+      const notional = p.contracts * p.originalPremium * 100;
+      if (_filterLarge) {
+        return notional >= 1_000_000;
+      } else {
+        return p.strike >= lastPrice * 0.40 && p.strike <= lastPrice * 1.60;
+      }
     })
     .sort((a, b) => (b.contracts * b.originalPremium * 100) - (a.contracts * a.originalPremium * 100))
     .slice(0, 8);
