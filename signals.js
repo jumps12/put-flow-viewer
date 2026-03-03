@@ -1,6 +1,6 @@
 // ─── Signals Page ─────────────────────────────────────────────────────────────
 
-// ── Date utilities (duplicated from app.js — no shared module needed) ─────────
+// ── Date utilities ─────────────────────────────────────────────────────────────
 
 function parseDate(raw) {
   if (raw == null) return null;
@@ -22,30 +22,20 @@ function fmtDate(d) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function fmtNum(n) {
-  return n.toLocaleString();
-}
-
-function fmtScore(s) {
-  if (s >= 1e6) return (s / 1e6).toFixed(1) + 'M';
-  if (s >= 1e3) return Math.round(s / 1e3) + 'K';
-  return String(s);
-}
-
 function fmtNotional(v) {
   if (v >= 1e6) return `$${(v / 1e6).toFixed(1)}M`;
   if (v >= 1e3) return `$${Math.round(v / 1e3)}K`;
   return `$${Math.round(v)}`;
 }
 
-// ── Follow-through helpers ────────────────────────────────────────────────────
+// ── Follow-through helpers ─────────────────────────────────────────────────────
 
 function prevTradingDay(date, n = 1) {
   const d = new Date(date);
   let count = 0;
   while (count < n) {
     d.setDate(d.getDate() - 1);
-    if (d.getDay() !== 0 && d.getDay() !== 6) count++; // skip Sat/Sun
+    if (d.getDay() !== 0 && d.getDay() !== 6) count++;
   }
   return d;
 }
@@ -57,7 +47,7 @@ function sameDayStr(a, b) {
          a.getDate()     === b.getDate();
 }
 
-// ── MA computation ────────────────────────────────────────────────────────────
+// ── MA computation ─────────────────────────────────────────────────────────────
 
 function calcEMA(closes, period) {
   if (closes.length < period) return null;
@@ -67,32 +57,16 @@ function calcEMA(closes, period) {
   return ema;
 }
 
-function calcSMA(closes, period) {
-  if (closes.length < period) return null;
-  return closes.slice(-period).reduce((s, v) => s + v, 0) / period;
-}
+// ── MA context fetch ───────────────────────────────────────────────────────────
+// 21D EMA is the primary bull/bear line.
+//   Reclaim within 2 sessions → +50% boost  · maStatus = 'reclaim'
+//   Price above EMA           → +20% boost  · maStatus = 'above'
+//   Price below EMA           → −20% penalty · maStatus = 'below'
 
-// Aggregate daily bars into weekly closing prices (last close of each Mon–Fri week).
-function toWeeklyCloses(dailyBars) {
-  const weeks = {};
-  for (const { time, close } of dailyBars) {
-    const dow = time.getDay();
-    const mon = new Date(time);
-    mon.setDate(time.getDate() - (dow === 0 ? 6 : dow - 1));
-    const key = mon.toISOString().slice(0, 10);
-    weeks[key] = close;
-  }
-  return Object.entries(weeks).sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([, v]) => v);
-}
-
-// Fetch daily OHLCV and return MA context + adjustment factor for one signal.
-// Primary scoring:  21D EMA (price above/below/reclaim)
-// Secondary display: 21W EMA (context tag only — no scoring)
-// Short-term boost:  8/9D EMA reclaim for calls traded today (unchanged)
-async function fetchMAContext(sig, dataToday) {
+async function fetchMAContext(sig) {
   const now   = Math.floor(Date.now() / 1000);
-  const start = now - 2 * 365 * 24 * 3600; // 2 yr — enough for 21W EMA
-  const end   = now + 2 * 24 * 3600;
+  const start = now - 90 * 24 * 3600;  // 90 days is enough for a reliable 21D EMA
+  const end   = now + 2  * 24 * 3600;
 
   const target = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sig.ticker)}` +
                  `?period1=${start}&period2=${end}&interval=1d`;
@@ -117,97 +91,99 @@ async function fetchMAContext(sig, dataToday) {
   const prevClose  = closes.length > 1 ? closes[closes.length - 2] : null;
   const prev2Close = closes.length > 2 ? closes[closes.length - 3] : null;
 
-  const ema9d  = calcEMA(closes, 9);
   const ema21d = calcEMA(closes, 21);
+  if (!ema21d) return null;
 
-  // ── PRIMARY: 21D EMA reclaim within the last 2 trading sessions ─────────────
-  // "Reclaim today"     — yesterday < EMA, today ≥ EMA
-  // "Reclaim yesterday" — two days ago < EMA, yesterday ≥ EMA
-  const reclaim21D_today = !!(prevClose  != null && ema21d && prevClose  < ema21d && lastClose >= ema21d);
-  const reclaim21D_yest  = !!(prev2Close != null && prevClose != null && ema21d &&
-                               prev2Close < ema21d && prevClose >= ema21d);
-  const reclaim21D_recent = reclaim21D_today || reclaim21D_yest;
+  // Reclaim = crossed above EMA within the last 2 sessions
+  const reclaim_today = !!(prevClose  != null && prevClose  < ema21d && lastClose >= ema21d);
+  const reclaim_yest  = !!(prev2Close != null && prev2Close < ema21d && prevClose != null && prevClose >= ema21d);
+  const reclaim       = reclaim_today || reclaim_yest;
 
-  // ── SHORT-TERM: 8/9D EMA reclaim for calls traded today (unchanged) ─────────
-  const reclaim9D  = !!(prevClose != null && ema9d && prevClose < ema9d && lastClose >= ema9d);
-  const latestCall = sig.calls.length
-    ? sig.calls.reduce((a, b) => (a.tradeDate > b.tradeDate ? a : b))
-    : null;
-  const callToday  = !!(latestCall && dataToday && sameDayStr(latestCall.tradeDate, dataToday));
-
-  // ── MA adjustment factor ──────────────────────────────────────────────────────
   let maFactor = 1.0;
-  const indicators = []; // { text, cls } — shown on signal card
+  let maStatus = 'neutral';
+  const indicators = [];
 
-  // 1. Primary scoring — 21D EMA (applies to all positions for this ticker)
-  if (ema21d) {
-    if (reclaim21D_recent) {
-      maFactor *= 2.0; // maximum boost — just reclaimed the 21D EMA
-      indicators.push({ text: '⚡ 21 EMA Reclaim', cls: 'ma-strong' });
-    } else if (lastClose > ema21d) {
-      maFactor *= 1.3; // bullish bias — price above 21D EMA
-      // No extra indicator tag: absence of warning implies bullish
-    } else {
-      maFactor *= 0.75; // bearish bias — price below 21D EMA
-      indicators.push({ text: '⚠ Below 21 EMA', cls: 'ma-warn' });
-    }
+  if (reclaim) {
+    maFactor = 1.5;
+    maStatus = 'reclaim';
+    indicators.push({ text: '⚡ RECLAIM', cls: 'ma-strong' });
+  } else if (lastClose > ema21d) {
+    maFactor = 1.2;
+    maStatus = 'above';
+    // green dot on card — no extra text tag needed
+  } else {
+    maFactor = 0.8;
+    maStatus = 'below';
+    indicators.push({ text: '⚠ Below 21 EMA', cls: 'ma-warn' });
   }
 
-  // 2. Short-term boost — 8/9D EMA reclaim for calls traded today
-  if (sig.calls.length && callToday && reclaim9D) {
-    maFactor *= 1.5;
-    indicators.push({ text: '⚡ 9D reclaim', cls: 'ma-bull' });
-  }
-
-  return { maFactor, indicators };
+  return { maFactor, maStatus, indicators };
 }
 
-// ── Signal analysis ───────────────────────────────────────────────────────────
+// ── Signal analysis ────────────────────────────────────────────────────────────
 
 async function loadSignals() {
   const res = await fetch('./positions.json');
   if (!res.ok) throw new Error('positions.json not found — run fetch_premiums.py first');
   const all = await res.json();
 
-  // ── Follow-through: scan ALL positions (active + expired) ─────────────────
-  // Find the most recent trade date in the whole dataset — this is "data today".
-  // Using the data's max date (rather than calendar today) keeps weekend runs correct.
+  // ── Reference dates ─────────────────────────────────────────────────────────
+  // dataToday = max trade date in the whole dataset. Using the data's own max
+  // date (not calendar today) keeps weekend runs correct.
   let dataToday = null;
   for (const p of all) {
     const td = parseDate(p.trade_date);
     if (td && (!dataToday || td > dataToday)) dataToday = td;
   }
-  const dataDay1 = dataToday ? prevTradingDay(dataToday, 1) : null; // yesterday
-  const dataDay2 = dataToday ? prevTradingDay(dataToday, 2) : null; // 2 days ago
+  const dataDay1 = dataToday ? prevTradingDay(dataToday, 1) : null;
+  const dataDay2 = dataToday ? prevTradingDay(dataToday, 2) : null;
+  const dataDay3 = dataToday ? prevTradingDay(dataToday, 3) : null;
+  const dataDay4 = dataToday ? prevTradingDay(dataToday, 4) : null;
 
-  // Per-ticker flags: which reference days did it appear on? What is its earliest trade date?
-  const tickerMeta = {}; // ticker → { d0, d1, d2, minTradeDate }
+  // ── Per-ticker metadata — scan ALL rows (active + expired) ─────────────────
+  // Tracks which of the last 5 trading days each ticker appeared on,
+  // plus earliest-ever trade date and total prior-appearance count.
+  const tickerMeta = {};
   for (const p of all) {
     const sym = String(p.symbol ?? '').trim().toUpperCase();
     const td  = parseDate(p.trade_date);
     if (!sym || !td) continue;
-    if (!tickerMeta[sym]) tickerMeta[sym] = { d0: false, d1: false, d2: false, minTradeDate: td };
+    if (!tickerMeta[sym]) tickerMeta[sym] = {
+      d0: false, d1: false, d2: false, d3: false, d4: false,
+      minTradeDate: td,
+      allDateKeys: new Set(),
+    };
     const m = tickerMeta[sym];
     if (td < m.minTradeDate) m.minTradeDate = td;
+    m.allDateKeys.add(td.toDateString());
     if (sameDayStr(td, dataToday)) m.d0 = true;
     if (sameDayStr(td, dataDay1))  m.d1 = true;
     if (sameDayStr(td, dataDay2))  m.d2 = true;
+    if (sameDayStr(td, dataDay3))  m.d3 = true;
+    if (sameDayStr(td, dataDay4))  m.d4 = true;
+  }
+  // priorCount = distinct trade dates strictly before dataToday
+  const todayKey = dataToday?.toDateString() ?? '';
+  for (const m of Object.values(tickerMeta)) {
+    m.priorCount = [...m.allDateKeys].filter(k => k !== todayKey).length;
   }
 
-  // Read pre-computed 21D EMA from positions.json (written by fetch_ema.py).
-  // Used for display; scoring uses a fresh fetch inside fetchMAContext.
-  const posEma = {}; // ticker → ema_21d
+  // ── Pre-computed EMA + price (written by fetch_ema.py) ─────────────────────
+  const posEma   = {};
+  const posPrice = {};
   for (const p of all) {
     const sym = String(p.symbol ?? '').trim().toUpperCase();
-    if (sym && p.ema_21d != null && !posEma[sym]) posEma[sym] = parseFloat(p.ema_21d);
+    if (sym && p.ema_21d != null && !posEma[sym])   posEma[sym]   = parseFloat(p.ema_21d);
+    if (sym && p.price   != null && !posPrice[sym]) posPrice[sym] = parseFloat(p.price);
   }
 
+  // ── Date windows ────────────────────────────────────────────────────────────
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const thirtyDaysAgo = new Date(today);
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const sevenDaysAgo = new Date(today);
+  sevenDaysAgo.setDate(today.getDate() - 7);
 
-  // Parse and validate all active positions
+  // ── Parse + validate active positions ───────────────────────────────────────
   const active = all
     .filter(p => {
       const expiry    = parseDate(p.expiry);
@@ -218,7 +194,7 @@ async function loadSignals() {
         expiry && tradeDate &&
         expiry >= today &&
         expiry > tradeDate &&
-        isFinite(orig) &&
+        isFinite(orig) && orig > 0 &&
         isFinite(contracts) && contracts > 0
       );
     })
@@ -237,7 +213,7 @@ async function loadSignals() {
       };
     });
 
-  // Group by ticker
+  // ── Group by ticker ──────────────────────────────────────────────────────────
   const byTicker = {};
   for (const p of active) {
     if (!p.symbol) continue;
@@ -247,68 +223,86 @@ async function loadSignals() {
 
   const totalTracked = Object.keys(byTicker).length;
 
-  // 30-day notional per ticker — used for T1.3 "most active" check
-  const notional30d = {};
+  // ── 7-day notional per ticker — for "most active" T1 trigger ────────────────
+  const notional7d = {};
   for (const [sym, { puts, calls }] of Object.entries(byTicker)) {
-    notional30d[sym] = [...puts, ...calls]
-      .filter(p => p.tradeDate >= thirtyDaysAgo)
+    notional7d[sym] = [...puts, ...calls]
+      .filter(p => p.tradeDate >= sevenDaysAgo)
       .reduce((s, p) => s + p.notional, 0);
   }
-  const maxNotional30d = Math.max(0, ...Object.values(notional30d));
+  const maxNotional7d = Math.max(0, ...Object.values(notional7d));
 
   const signals = [];
+  const events  = [];
 
   for (const [ticker, { puts, calls }] of Object.entries(byTicker)) {
-    const allPos       = [...puts, ...calls];
+    const allPos        = [...puts, ...calls];
     const totalNotional = allPos.reduce((s, p) => s + p.notional, 0);
-    const putNotional   = puts.reduce((s, p) => s + p.notional, 0);
     const callNotional  = calls.reduce((s, p) => s + p.notional, 0);
+    const putNotional   = puts.reduce((s, p) => s + p.notional, 0);
 
     const tradeDateKeys = new Set(allPos.map(p => p.tradeDate?.toDateString()).filter(Boolean));
     const daysActive    = tradeDateKeys.size;
 
-    const tradeDates = allPos.map(p => p.tradeDate).filter(Boolean);
-    const expiries   = allPos.map(p => p.expiry).filter(Boolean);
+    const tradeDates   = allPos.map(p => p.tradeDate).filter(Boolean);
+    const expiries     = allPos.map(p => p.expiry).filter(Boolean);
     const minTradeDate = new Date(Math.min(...tradeDates));
     const maxExpiry    = new Date(Math.max(...expiries));
 
-    // ── TIER 1 — any single trigger → STRONG ─────────────────
+    const meta        = tickerMeta[ticker] ?? {};
+    const isFirstTime = sameDayStr(meta.minTradeDate, dataToday);
+    const isQuiet     = (meta.priorCount ?? 0) < 3;
+
+    // ── Follow-through flags ──────────────────────────────────────────────────
+    const followThrough = !!(meta.d0 && meta.d1);       // appeared yesterday + today
+    const countLast3    = (meta.d0?1:0)+(meta.d1?1:0)+(meta.d2?1:0);
+    const countLast5    = countLast3+(meta.d3?1:0)+(meta.d4?1:0);
+    const ft175         = !followThrough && countLast3 >= 2;
+    const ft250         = countLast5 >= 3;
+
+    // Base multiplier from follow-through intensity (dep penalty applied below)
+    const ftBase = ft250 ? 2.5 : followThrough ? 2.0 : ft175 ? 1.75 : 1.0;
+
+    // ── EVENT TRADE detection ─────────────────────────────────────────────────
+    // Pure call plays where at least one call expires within 14 days of today.
+    // These are binary/catalyst trades, shown separately — not structural flow.
+    const isEventPlay = puts.length === 0 && calls.length > 0 &&
+      calls.some(c => c.expiry && Math.floor((c.expiry - today) / 86_400_000) <= 14);
+
+    // ── TIER 1 — any single trigger → STRONG ─────────────────────────────────
     const tier1 = [];
 
-    // T1.1: Same day has both puts AND calls
+    // T1.1  Same day: puts sold + calls bought on same calendar date
     const putDayKeys  = new Set(puts.map(p => p.tradeDate?.toDateString()).filter(Boolean));
     const callDayKeys = new Set(calls.map(p => p.tradeDate?.toDateString()).filter(Boolean));
-    if ([...putDayKeys].some(d => callDayKeys.has(d)))
-      tier1.push('same_day_both');
+    if ([...putDayKeys].some(d => callDayKeys.has(d))) tier1.push('same_day_both');
 
-    // T1.2: Any single day's total notional > $5M
+    // T1.2  Follow-through: appeared yesterday AND today
+    if (followThrough) tier1.push('follow_through');
+
+    // T1.3  Single-day notional > $5M
     const dailyNotional = {};
     for (const p of allPos) {
       const k = p.tradeDate?.toDateString();
       if (k) dailyNotional[k] = (dailyNotional[k] || 0) + p.notional;
     }
-    if (Object.values(dailyNotional).some(n => n > 5_000_000))
-      tier1.push('daily_notional_5m');
+    if (Object.values(dailyNotional).some(n => n > 5_000_000)) tier1.push('daily_5m');
 
-    // T1.3: Most active ticker over rolling 30-day window
-    if (maxNotional30d > 0 && notional30d[ticker] === maxNotional30d)
-      tier1.push('most_active_30d');
+    // T1.4  Most active ticker by weighted notional over rolling 7-day window
+    if (maxNotional7d > 0 && notional7d[ticker] === maxNotional7d) tier1.push('most_active_7d');
 
-    // T1.4: Calls rolled to progressively higher strikes over time
+    // T1.5  Calls rolled to progressively higher strikes
     if (calls.length >= 2) {
       const sorted = [...calls].sort((a, b) => a.tradeDate - b.tradeDate);
-      if (sorted.some((c, i) => i > 0 && c.strike > sorted[i - 1].strike))
-        tier1.push('rolled_higher');
+      if (sorted.some((c, i) => i > 0 && c.strike > sorted[i - 1].strike)) tier1.push('rolled_higher');
     }
 
-    // T1.5: Both types present AND active 4+ distinct days
-    if (puts.length && calls.length && daysActive >= 4)
-      tier1.push('both_types_4days');
+    // T1.6  21D EMA reclaim — injected during MA enrichment pass (set below)
 
-    // ── TIER 2 — needs 2+ triggers → NOTABLE ─────────────────
+    // ── TIER 2 — needs 2+ triggers → NOTABLE ─────────────────────────────────
     const tier2 = [];
 
-    // T2.1: Put + call within any 5-day window
+    // T2.1  Both types within a 5-day window
     let has5day = false;
     outer5: for (const p of puts) {
       for (const c of calls) {
@@ -317,67 +311,87 @@ async function loadSignals() {
     }
     if (has5day) tier2.push('5day_confluence');
 
-    // T2.2: Flow on 3+ distinct days
+    // T2.2  Repeat flow on 3+ distinct dates
     if (daysActive >= 3) tier2.push('repeat_3days');
 
-    // T2.3: High premium (put >$5 or call >$3)
+    // T2.3  High premium — put > $5 or call > $3 signals real conviction
     if (puts.some(p => p.originalPremium > 5) || calls.some(p => p.originalPremium > 3))
       tier2.push('high_premium');
 
-    // T2.4: Any single position notional > $1M
-    if (allPos.some(p => p.notional > 1_000_000))
-      tier2.push('large_single_notional');
+    // T2.4  Any single position notional > $1M
+    if (allPos.some(p => p.notional > 1_000_000)) tier2.push('large_single');
 
-    // T2.5: Active 2+ distinct days
+    // T2.5  Active on 2+ distinct trade dates
     if (daysActive >= 2) tier2.push('active_2days');
 
-    // T2.6: Risk reversal — put sold + call bought in same expiry month
-    let hasRR = false;
-    outerRR: for (const p of puts) {
+    // T2.6  Repeat spread structure — same put strike seen on 3+ distinct dates
+    //       (potential catalyst / M&A flag — systematic re-entry at same level)
+    if (puts.length >= 3) {
+      const strikeMap = {};
+      for (const p of puts) {
+        const k = `${p.strike}`;
+        if (!strikeMap[k]) strikeMap[k] = new Set();
+        strikeMap[k].add(p.tradeDate?.toDateString());
+      }
+      if (Object.values(strikeMap).some(s => s.size >= 3)) tier2.push('repeat_spread');
+    }
+
+    // T2.7  Deep support put — strike > 15% below current price
+    const currPrice = posPrice[ticker];
+    if (currPrice && puts.some(p => p.strike < currPrice * 0.85)) tier2.push('deep_put_support');
+
+    // T2.8  Zero cost structure — put sold and call bought in same expiry month
+    let hasZeroCost = false;
+    outerZC: for (const p of puts) {
       for (const c of calls) {
         if (p.expiry && c.expiry &&
             p.expiry.getFullYear() === c.expiry.getFullYear() &&
-            p.expiry.getMonth()    === c.expiry.getMonth()) { hasRR = true; break outerRR; }
+            p.expiry.getMonth()    === c.expiry.getMonth()) { hasZeroCost = true; break outerZC; }
       }
     }
-    if (hasRR) tier2.push('risk_reversal');
+    if (hasZeroCost) tier2.push('zero_cost');
 
-    // T2.7: Short-dated catalyst — expiry within 45 days of trade date
-    if (allPos.some(p => p.expiry && p.tradeDate &&
-        Math.floor((p.expiry - p.tradeDate) / 86_400_000) <= 45))
-      tier2.push('catalyst_expiry');
-
-    // ── DEPRIORITIZE ──────────────────────────────────────────
+    // ── DEPRIORITIZE — reduces weighted score by 50% if any trigger fires ─────
     const dep = [];
-    if (daysActive <= 1)                                 dep.push('one_day');
-    if (allPos.every(p => p.originalPremium < 0.50))    dep.push('all_cheap');
-    if (puts.length === 0)                               dep.push('no_puts');
-    if (totalNotional < 100_000)                         dep.push('low_notional');
+    if (daysActive <= 1)                                                   dep.push('one_day');
+    if (allPos.every(p => p.originalPremium < 0.50))                      dep.push('all_cheap');
+    if (puts.length === 0 && calls.every(p => p.originalPremium < 2.0))   dep.push('calls_only_cheap');
+    if (totalNotional < 100_000)                                           dep.push('low_notional');
+    if (allPos.every(p => p.expiry &&
+        Math.floor((p.expiry - today) / 86_400_000) <= 14) &&
+        (meta.priorCount ?? 0) <= 1)                                       dep.push('short_dated_no_history');
 
-    // ── Tier determination ────────────────────────────────────
+    const depPenalty = dep.length > 0 ? 0.5 : 1.0;
+    const multiplier = ftBase * depPenalty;
+
+    // ── Badge assignment ──────────────────────────────────────────────────────
     const t1 = tier1.length, t2 = tier2.length, d = dep.length;
     let badge = null;
 
-    if      (t1 >= 1 && d === 0)              badge = 'STRONG';
+    if      (t1 >= 1 && d === 0)             badge = 'STRONG';
     else if (t1 >= 1 && d === 1 && t2 >= 1)  badge = 'STRONG';
-    else if (t2 >= 2 && d === 0)              badge = 'NOTABLE';
+    else if (t2 >= 2 && d === 0)             badge = 'NOTABLE';
     else if (t2 >= 3 && d <= 1)              badge = 'NOTABLE';
     else if (t2 >= 2 && d === 1)             badge = 'NOTABLE';
 
-    // ── UNUSUAL ACTIVITY — first-time ticker with significant notional ─────────
-    const meta = tickerMeta[ticker] ?? {};
-    const isFirstTime = sameDayStr(meta.minTradeDate, dataToday);
-    if (!badge && isFirstTime && totalNotional > 500_000) badge = 'UNUSUAL';
+    // UNUSUAL: first-time or very quiet name with meaningful notional
+    if (!badge && isQuiet && totalNotional > 500_000) badge = 'UNUSUAL';
+
+    // EVENT TRADE: structural badge didn't fire, but it's a short-dated call play
+    if (!badge && isEventPlay && totalNotional > 50_000) {
+      events.push({
+        ticker, badge: 'EVENT',
+        totalNotional, putNotional: 0, callNotional,
+        puts: [], calls,
+        daysActive, minTradeDate, maxExpiry,
+        tier1Triggers: tier1, tier2Triggers: tier2, deprioritize: dep,
+        multiplier, followThrough, ft250, isFirstTime, isQuiet,
+        ema21d: posEma[ticker] ?? null, maContext: null,
+      });
+      continue;
+    }
 
     if (!badge) continue;
-
-    // ── Follow-through multiplier ─────────────────────────────────────────────
-    // 2x:    appeared yesterday (d1) AND today (d0) — single strongest signal
-    // 1.75x: appeared on 2 of the last 3 trading days (but not the 2x case)
-    const followThrough = !!(meta.d0 && meta.d1);
-    const countLast3    = (meta.d0 ? 1 : 0) + (meta.d1 ? 1 : 0) + (meta.d2 ? 1 : 0);
-    const ft175         = !followThrough && countLast3 >= 2;
-    const multiplier    = followThrough ? 2.0 : ft175 ? 1.75 : 1.0;
 
     signals.push({
       ticker, badge,
@@ -385,49 +399,59 @@ async function loadSignals() {
       puts, calls,
       daysActive, minTradeDate, maxExpiry,
       tier1Triggers: tier1, tier2Triggers: tier2, deprioritize: dep,
-      multiplier, followThrough, isFirstTime,
-      ema21d: posEma[ticker] ?? null, // stored by fetch_ema.py — for display
+      multiplier, followThrough, ft250, isFirstTime, isQuiet,
+      ema21d: posEma[ticker] ?? null, maContext: null,
     });
   }
 
-  // ── Sort helper (called twice: pre-MA and post-MA) ───────────────────────────
+  // ── Sort helper (called twice: pre-MA and post-MA) ────────────────────────
   const sortByConviction = arr => arr.sort((a, b) => {
-    const ftRank = s => s.multiplier >= 2 ? 2 : s.multiplier >= 1.75 ? 1 : 0;
+    // Primary: follow-through intensity (higher multiplier first)
+    const ftRank = s => s.multiplier >= 2.5 ? 3 : s.multiplier >= 2 ? 2 : s.multiplier >= 1.75 ? 1 : 0;
     const ftDiff = ftRank(b) - ftRank(a);
     if (ftDiff !== 0) return ftDiff;
+    // Secondary: badge tier
     const tierOrder = { STRONG: 3, NOTABLE: 2, UNUSUAL: 1 };
     const tDiff = (tierOrder[b.badge] || 0) - (tierOrder[a.badge] || 0);
     if (tDiff !== 0) return tDiff;
-    return b.totalNotional - a.totalNotional;
+    // Tertiary: weighted notional
+    return (b.totalNotional * b.multiplier) - (a.totalNotional * a.multiplier);
   });
 
-  // Pre-sort → pick top candidates for MA enrichment.
-  // Use 15 (not 10) so borderline tickers that could cross a threshold via MA boost are included.
+  // Pre-sort → fetch MA for the top 15 candidates in parallel.
+  // Using 15 (not 10) so borderline names aren't skipped if a reclaim or
+  // above-EMA boost would push them over the display threshold.
   sortByConviction(signals);
 
-  // ── MA context enrichment ─────────────────────────────────────────────────
-  // Fetch price data in parallel for the top candidates; update multiplier in-place.
   const maWindow = signals.slice(0, Math.min(signals.length, 15));
   await Promise.all(maWindow.map(async sig => {
-    const ma = await fetchMAContext(sig, dataToday).catch(() => null);
+    const ma = await fetchMAContext(sig).catch(() => null);
     sig.maContext = ma ?? null;
-    if (ma) sig.multiplier *= ma.maFactor;
+    if (ma) {
+      sig.multiplier *= ma.maFactor;
+      // EMA reclaim is a T1 trigger — upgrade non-STRONG signals
+      if (ma.maStatus === 'reclaim' && sig.badge !== 'STRONG') {
+        sig.badge = 'STRONG';
+        sig.tier1Triggers.push('ema_reclaim');
+      }
+    }
   }));
 
-  // Final sort after MA adjustment
+  // Final sort after MA adjustments
   sortByConviction(signals);
 
   // ── Threshold filter — quality over quantity ──────────────────────────────
-  // weighted score = totalNotional × (follow-through factor × MA factor)
-  // Thresholds are set to produce ~4-8 cards on a typical day; 10 is a safety cap.
+  // Weighted score = totalNotional × all accumulated multipliers.
+  // Targets ~4–8 cards on a typical day; hard cap at 12.
   const THRESH = { STRONG: 150_000, NOTABLE: 75_000, UNUSUAL: 0 };
   const shown = signals.filter(s => {
     const weighted = s.totalNotional * s.multiplier;
     return weighted >= (THRESH[s.badge] ?? 0);
-  }).slice(0, 10);
+  }).slice(0, 12);
 
   shown._qualified    = shown.length;
   shown._totalTracked = totalTracked;
+  shown._events       = events.slice(0, 5);
   return shown;
 }
 
@@ -436,44 +460,57 @@ async function loadSignals() {
 function exportSignals(signals) {
   const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
   const line50  = '─'.repeat(50);
+  const events  = signals._events ?? [];
   const out     = [`OPTIONS FLOW SIGNALS — ${dateStr}`, line50];
 
-  for (const s of signals) {
+  const formatSig = s => {
     const note    = (localStorage.getItem(`analyst_note_${s.ticker}`) ?? '').trim();
     const hasBoth = s.puts.length > 0 && s.calls.length > 0;
-    const strat   = hasBoth      ? 'PUT SOLD + CALL BOUGHT (BULLISH)'
+    const strat   = hasBoth       ? 'PUT SOLD + CALL BOUGHT (BULLISH)'
                   : s.puts.length ? 'PUT SOLD (BULLISH)'
                   : 'CALL BOUGHT (BULLISH)';
-    const ftTag   = s.followThrough ? ' · FOLLOW-THROUGH' : s.isFirstTime ? ' · NEW' : '';
+    const ftTag   = s.ft250         ? ' · 3+ OF 5 DAYS'
+                  : s.followThrough ? ' · FOLLOW-THROUGH'
+                  : s.isFirstTime   ? ' · NEW'
+                  : '';
     const maInds  = (s.maContext?.indicators ?? []).map(i => i.text).join(' · ');
+    const rows    = [
+      '',
+      `${s.ticker}  [${s.badge}${ftTag}]`,
+      `Strategy : ${strat}`,
+      `Notional : ${fmtNotional(s.totalNotional)}   Active: ${s.daysActive} days`,
+      `Dates    : ${fmtDate(s.minTradeDate)} → ${fmtDate(s.maxExpiry)}`,
+    ];
+    if (s.ema21d != null) rows.push(`21D EMA  : $${s.ema21d.toFixed(2)}`);
+    if (maInds)           rows.push(`MA       : ${maInds}`);
+    if (note)             rows.push(`Note     : ${note}`);
+    rows.push(line50);
+    return rows;
+  };
 
-    out.push('');
-    out.push(`${s.ticker}  [${s.badge}${ftTag}]`);
-    out.push(`Strategy : ${strat}`);
-    out.push(`Notional : ${fmtNotional(s.totalNotional)}   Active: ${s.daysActive} days`);
-    out.push(`Dates    : ${fmtDate(s.minTradeDate)} → ${fmtDate(s.maxExpiry)}`);
-    if (s.ema21d != null) out.push(`21D EMA  : $${s.ema21d.toFixed(2)}`);
-    if (maInds)           out.push(`MA       : ${maInds}`);
-    if (note)             out.push(`Note     : ${note}`);
-    out.push(line50);
+  for (const s of signals) out.push(...formatSig(s));
+
+  if (events.length) {
+    out.push('', 'EVENT TRADE', line50);
+    for (const s of events) out.push(...formatSig(s));
   }
 
-  out.push('');
-  out.push('Generated by Options Flow Command Centre');
+  out.push('', 'Generated by Options Flow Command Centre');
   return out.join('\n');
 }
 
 // ── Rendering ─────────────────────────────────────────────────────────────────
 
 function renderSignals(signals) {
-  const grid = document.getElementById('signals-grid');
+  const grid   = document.getElementById('signals-grid');
+  const events = signals._events ?? [];
 
-  if (!signals.length) {
+  if (!signals.length && !events.length) {
     grid.innerHTML = `
       <div class="sig-empty">
         <div class="sig-empty-icon">◈</div>
         <div>No signals found</div>
-        <div class="sig-empty-sub">Signals appear when a ticker meets STRONG or NOTABLE conviction criteria based on notional value, flow frequency, and premium quality.</div>
+        <div class="sig-empty-sub">Signals appear when a ticker meets conviction criteria based on notional value, flow frequency, and premium quality.</div>
       </div>`;
     return;
   }
@@ -481,11 +518,12 @@ function renderSignals(signals) {
   const strongN   = signals.filter(s => s.badge === 'STRONG').length;
   const notableN  = signals.filter(s => s.badge === 'NOTABLE').length;
   const unusualN  = signals.filter(s => s.badge === 'UNUSUAL').length;
-  const ftN       = signals.filter(s => s.followThrough).length;
+  const ftN       = signals.filter(s => s.followThrough || s.ft250).length;
   const qualified = signals._qualified    ?? signals.length;
   const tracked   = signals._totalTracked ?? qualified;
   const dateStr   = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
-  const summary   = document.getElementById('sig-summary');
+
+  const summary = document.getElementById('sig-summary');
   summary.innerHTML = `
     <span class="sum-pill bull-key">TOP SIGNALS · ${dateStr} · ${qualified} tickers qualified out of ${tracked} tracked</span>
     ${ftN      ? `<span class="sum-pill follow-thru">${ftN} FOLLOW-THROUGH</span>` : ''}
@@ -496,37 +534,68 @@ function renderSignals(signals) {
   `;
   summary.hidden = false;
 
-  grid.innerHTML = signals.map(s => {
-    const badgeCls  = s.badge === 'STRONG'  ? 'badge-strong'
-                    : s.badge === 'NOTABLE' ? 'badge-notable'
-                    : 'badge-unusual';
+  // ── Shared card template ──────────────────────────────────────────────────
+  const makeCard = s => {
+    const badgeCls = s.badge === 'STRONG'  ? 'badge-strong'
+                   : s.badge === 'NOTABLE' ? 'badge-notable'
+                   : s.badge === 'UNUSUAL' ? 'badge-unusual'
+                   : 'badge-event';
+
+    const cardCls  = s.badge === 'STRONG'  ? 'signal-card--strong'
+                   : s.badge === 'NOTABLE' ? 'signal-card--notable'
+                   : s.badge === 'UNUSUAL' ? 'signal-card--unusual'
+                   : 'signal-card--event';
+
     const dateRange = `${fmtDate(s.minTradeDate)} → ${fmtDate(s.maxExpiry)}`;
 
+    // EMA status dot
+    const maStatus = s.maContext?.maStatus ?? null;
+    const dotTitle = maStatus === 'reclaim' ? '⚡ 21D EMA Reclaim'
+                   : maStatus === 'above'   ? '↑ Above 21D EMA'
+                   : maStatus === 'below'   ? '↓ Below 21D EMA'
+                   : '';
+    const dotCls   = maStatus === 'reclaim' ? 'ema-dot--reclaim'
+                   : maStatus === 'above'   ? 'ema-dot--above'
+                   : maStatus === 'below'   ? 'ema-dot--below'
+                   : '';
+    const emaDot   = dotCls
+      ? `<span class="ema-dot ${dotCls}" title="${dotTitle}"></span>`
+      : '';
+
+    // Tags row — most significant first
     const tags = [
-      s.followThrough ? `<span class="sig-tag tag-ft">FOLLOW-THROUGH</span>` : '',
-      s.isFirstTime   ? `<span class="sig-tag tag-new">NEW</span>`           : '',
+      s.ft250          ? `<span class="sig-tag tag-ft">3+ OF 5 DAYS</span>`   : '',
+      s.followThrough  ? `<span class="sig-tag tag-ft">FOLLOW-THROUGH</span>` : '',
+      s.isFirstTime    ? `<span class="sig-tag tag-new">NEW</span>`           : '',
+      (!s.isFirstTime && s.isQuiet) ? `<span class="sig-tag tag-new">QUIET NAME</span>` : '',
     ].filter(Boolean).join('');
 
-    const hasBoth = s.puts.length > 0 && s.calls.length > 0;
+    const hasBoth   = s.puts.length > 0 && s.calls.length > 0;
     const stratLine = hasBoth
       ? `PUT SOLD <span class="card-strat-bull">▲ BULLISH</span> + CALL BOUGHT`
       : s.puts.length
         ? `PUT SOLD <span class="card-strat-bull">▲ BULLISH</span>`
-        : `CALL BOUGHT <span class="card-strat-bull">▲ BULLISH</span>`;
+        : s.badge === 'EVENT'
+          ? `CALL BOUGHT <span class="card-strat-event">⚡ EVENT PLAY</span>`
+          : `CALL BOUGHT <span class="card-strat-bull">▲ BULLISH</span>`;
 
     const maInds = s.maContext?.indicators ?? [];
     const maHtml = maInds.length
       ? `<div class="card-ma">${maInds.map(i => `<span class="ma-tag ${i.cls}">${i.text}</span>`).join('')}</div>`
       : '';
+
     const emaHtml = s.ema21d != null
       ? `<div class="card-ema">21D EMA <span class="card-ema-val">$${s.ema21d.toFixed(2)}</span></div>`
       : '';
 
     return `
-      <div class="signal-card">
+      <div class="signal-card ${cardCls}">
         <div class="card-top">
           <span class="card-ticker">${s.ticker}</span>
-          <span class="card-badge ${badgeCls}">${s.badge}</span>
+          <div class="card-top-right">
+            ${emaDot}
+            <span class="card-badge ${badgeCls}">${s.badge}</span>
+          </div>
         </div>
 
         ${tags ? `<div class="card-tags">${tags}</div>` : ''}
@@ -560,10 +629,34 @@ function renderSignals(signals) {
           <textarea class="card-note" data-ticker="${s.ticker}" placeholder="Add context…" rows="2"></textarea>
         </div>
       </div>`;
-  }).join('');
+  };
 
-  // Load saved notes and wire auto-save
-  grid.querySelectorAll('.card-note').forEach(ta => {
+  // Main structural signals grid
+  grid.innerHTML = signals.length
+    ? signals.map(makeCard).join('')
+    : `<div class="sig-empty">
+         <div class="sig-empty-icon">◈</div>
+         <div>No structural signals today</div>
+         <div class="sig-empty-sub">Check the Event Trade section below for short-dated flow.</div>
+       </div>`;
+
+  // ── Event trades section (separate, below main grid) ──────────────────────
+  document.getElementById('event-wrap')?.remove();
+  if (events.length) {
+    const wrap = document.createElement('div');
+    wrap.id = 'event-wrap';
+    wrap.innerHTML = `
+      <div class="event-section-hdr">
+        <span class="event-hdr-label">EVENT TRADE</span>
+        <span class="event-hdr-sub">Short-dated calls · Binary / catalyst play · Not structural flow</span>
+      </div>
+      <div class="signals-grid">${events.map(makeCard).join('')}</div>
+    `;
+    document.getElementById('sec03-body').appendChild(wrap);
+  }
+
+  // ── Wire analyst notes (all cards, incl. events) ─────────────────────────
+  document.getElementById('sec03-body').querySelectorAll('.card-note').forEach(ta => {
     const key   = `analyst_note_${ta.dataset.ticker}`;
     const saved = localStorage.getItem(key) ?? '';
     if (saved) { ta.value = saved; ta.classList.add('has-note'); }
@@ -580,11 +673,10 @@ function renderSignals(signals) {
         }
       }, 400);
     });
-    // Prevent card link click from firing when interacting with textarea
     ta.addEventListener('click', e => e.stopPropagation());
   });
 
-  // Wire export button
+  // ── Wire export button ────────────────────────────────────────────────────
   document.getElementById('export-btn')?.addEventListener('click', async () => {
     const btn  = document.getElementById('export-btn');
     const text = exportSignals(signals);
@@ -592,7 +684,6 @@ function renderSignals(signals) {
       await navigator.clipboard.writeText(text);
       btn.textContent = 'COPIED ✓';
     } catch {
-      // Fallback: select a temporary textarea
       const tmp = document.createElement('textarea');
       tmp.value = text;
       tmp.style.cssText = 'position:fixed;opacity:0';
@@ -613,7 +704,7 @@ function setSigStatus(msg, cls) {
   el.hidden      = !msg;
 }
 
-// ── Entry point ───────────────────────────────────────────────────────────────
+// ── Entry point ────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
   try {
@@ -626,7 +717,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error(err);
   }
 
-  document.getElementById('signals-grid').addEventListener('click', e => {
+  // Delegate chart-link clicks — covers both main grid and event section
+  document.getElementById('sec03-body').addEventListener('click', e => {
     const link = e.target.closest('a[data-ticker]');
     if (!link) return;
     e.preventDefault();
