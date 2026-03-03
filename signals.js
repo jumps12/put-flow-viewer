@@ -120,9 +120,6 @@ async function fetchMAContext(sig, dataToday) {
   const ema9d  = calcEMA(closes, 9);
   const ema21d = calcEMA(closes, 21);
 
-  const wkCloses = toWeeklyCloses(bars);
-  const ema21w   = calcEMA(wkCloses, 21);
-
   // ── PRIMARY: 21D EMA reclaim within the last 2 trading sessions ─────────────
   // "Reclaim today"     — yesterday < EMA, today ≥ EMA
   // "Reclaim yesterday" — two days ago < EMA, yesterday ≥ EMA
@@ -156,15 +153,7 @@ async function fetchMAContext(sig, dataToday) {
     }
   }
 
-  // 2. Context only — 21W EMA (no scoring impact)
-  if (ema21w) {
-    indicators.push(lastClose >= ema21w
-      ? { text: '↑ 21W Bull', cls: 'ma-bull' }
-      : { text: '↓ 21W Bear', cls: 'ma-dim' }
-    );
-  }
-
-  // 3. Short-term boost — 8/9D EMA reclaim for calls traded today
+  // 2. Short-term boost — 8/9D EMA reclaim for calls traded today
   if (sig.calls.length && callToday && reclaim9D) {
     maFactor *= 1.5;
     indicators.push({ text: '⚡ 9D reclaim', cls: 'ma-bull' });
@@ -484,9 +473,6 @@ function renderSignals(signals) {
         ? `PUT SOLD <span class="card-strat-bull">▲ BULLISH</span>`
         : `CALL BOUGHT <span class="card-strat-bull">▲ BULLISH</span>`;
 
-    const putPct  = s.totalNotional > 0 ? Math.round(s.putNotional  / s.totalNotional * 100) : 0;
-    const callPct = 100 - putPct;
-
     const maInds = s.maContext?.indicators ?? [];
     const maHtml = maInds.length
       ? `<div class="card-ma">${maInds.map(i => `<span class="ma-tag ${i.cls}">${i.text}</span>`).join('')}</div>`
@@ -519,18 +505,6 @@ function renderSignals(signals) {
             <div class="stat-lbl">Days active</div>
           </div>
         </div>
-
-        ${hasBoth ? `
-        <div class="ratio-wrap">
-          <div class="ratio-bar">
-            <div class="ratio-seg puts-seg"  style="flex:${s.putNotional}"></div>
-            <div class="ratio-seg calls-seg" style="flex:${s.callNotional}"></div>
-          </div>
-          <div class="ratio-labels">
-            <span style="color:var(--accent)">${putPct}% puts</span>
-            <span class="call-color">${callPct}% calls</span>
-          </div>
-        </div>` : ''}
 
         <div class="card-footer">
           ${emaHtml}
