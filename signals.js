@@ -401,26 +401,34 @@ async function loadSignals() {
     return b.totalNotional - a.totalNotional;
   });
 
-  // Pre-sort → pick top candidates for MA enrichment (avoids fetching unlimited tickers)
+  // Pre-sort → pick top candidates for MA enrichment.
+  // Use 15 (not 10) so borderline tickers that could cross a threshold via MA boost are included.
   sortByConviction(signals);
 
   // ── MA context enrichment ─────────────────────────────────────────────────
   // Fetch price data in parallel for the top candidates; update multiplier in-place.
-  const maWindow = signals.slice(0, Math.min(signals.length, 10));
+  const maWindow = signals.slice(0, Math.min(signals.length, 15));
   await Promise.all(maWindow.map(async sig => {
     const ma = await fetchMAContext(sig, dataToday).catch(() => null);
     sig.maContext = ma ?? null;
     if (ma) sig.multiplier *= ma.maFactor;
   }));
 
-  // Final sort after MA adjustment, then cap at 5
+  // Final sort after MA adjustment
   sortByConviction(signals);
 
-  const qualified = signals.length;
-  const capped    = signals.slice(0, 5);
-  capped._qualified    = qualified;
-  capped._totalTracked = totalTracked;
-  return capped;
+  // ── Threshold filter — quality over quantity ──────────────────────────────
+  // weighted score = totalNotional × (follow-through factor × MA factor)
+  // Thresholds are set to produce ~4-8 cards on a typical day; 10 is a safety cap.
+  const THRESH = { STRONG: 150_000, NOTABLE: 75_000, UNUSUAL: 0 };
+  const shown = signals.filter(s => {
+    const weighted = s.totalNotional * s.multiplier;
+    return weighted >= (THRESH[s.badge] ?? 0);
+  }).slice(0, 10);
+
+  shown._qualified    = shown.length;
+  shown._totalTracked = totalTracked;
+  return shown;
 }
 
 // ── Export ────────────────────────────────────────────────────────────────────
