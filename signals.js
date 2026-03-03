@@ -85,10 +85,13 @@ function toWeeklyCloses(dailyBars) {
   return Object.entries(weeks).sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([, v]) => v);
 }
 
-// Fetch 4 years of daily OHLCV and return MA context + adjustment factor for one signal.
+// Fetch daily OHLCV and return MA context + adjustment factor for one signal.
+// Primary scoring:  21D EMA (price above/below/reclaim)
+// Secondary display: 21W EMA (context tag only — no scoring)
+// Short-term boost:  8/9D EMA reclaim for calls traded today (unchanged)
 async function fetchMAContext(sig, dataToday) {
   const now   = Math.floor(Date.now() / 1000);
-  const start = now - 4 * 365 * 24 * 3600; // 4 yr — enough for 200W MA
+  const start = now - 2 * 365 * 24 * 3600; // 2 yr — enough for 21W EMA
   const end   = now + 2 * 24 * 3600;
 
   const target = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sig.ticker)}` +
@@ -109,61 +112,62 @@ async function fetchMAContext(sig, dataToday) {
 
   if (bars.length < 22) return null;
 
-  const closes    = bars.map(d => d.close);
-  const lastClose = closes[closes.length - 1];
-  const prevClose = closes.length > 1 ? closes[closes.length - 2] : null;
+  const closes     = bars.map(d => d.close);
+  const lastClose  = closes[closes.length - 1];
+  const prevClose  = closes.length > 1 ? closes[closes.length - 2] : null;
+  const prev2Close = closes.length > 2 ? closes[closes.length - 3] : null;
 
   const ema9d  = calcEMA(closes, 9);
   const ema21d = calcEMA(closes, 21);
 
   const wkCloses = toWeeklyCloses(bars);
   const ema21w   = calcEMA(wkCloses, 21);
-  const sma200w  = calcSMA(wkCloses, 200); // null when < 200 weeks available
 
-  // Reclaim = yesterday closed below EMA, today at or above
-  const reclaim21D = !!(prevClose != null && ema21d && prevClose < ema21d && lastClose >= ema21d);
-  const reclaim9D  = !!(prevClose != null && ema9d  && prevClose < ema9d  && lastClose >= ema9d);
+  // ── PRIMARY: 21D EMA reclaim within the last 2 trading sessions ─────────────
+  // "Reclaim today"     — yesterday < EMA, today ≥ EMA
+  // "Reclaim yesterday" — two days ago < EMA, yesterday ≥ EMA
+  const reclaim21D_today = !!(prevClose  != null && ema21d && prevClose  < ema21d && lastClose >= ema21d);
+  const reclaim21D_yest  = !!(prev2Close != null && prevClose != null && ema21d &&
+                               prev2Close < ema21d && prevClose >= ema21d);
+  const reclaim21D_recent = reclaim21D_today || reclaim21D_yest;
 
-  // Most recent call traded on the current data date ("same day" check)
+  // ── SHORT-TERM: 8/9D EMA reclaim for calls traded today (unchanged) ─────────
+  const reclaim9D  = !!(prevClose != null && ema9d && prevClose < ema9d && lastClose >= ema9d);
   const latestCall = sig.calls.length
     ? sig.calls.reduce((a, b) => (a.tradeDate > b.tradeDate ? a : b))
     : null;
-  const callToday = !!(latestCall && dataToday && sameDayStr(latestCall.tradeDate, dataToday));
+  const callToday  = !!(latestCall && dataToday && sameDayStr(latestCall.tradeDate, dataToday));
 
-  // ── MA adjustment factor ──────────────────────────────────
+  // ── MA adjustment factor ──────────────────────────────────────────────────────
   let maFactor = 1.0;
-  const indicators = []; // { text, cls } — rendered on card
+  const indicators = []; // { text, cls } — shown on signal card
 
-  // Put context: average strike vs 21W EMA and 200W SMA
-  if (sig.puts.length && ema21w) {
-    const avgStrike = sig.puts.reduce((s, p) => s + p.strike, 0) / sig.puts.length;
-    if (avgStrike > ema21w) {
-      maFactor *= 1.30;
-      indicators.push({ text: '↑ 21W', cls: 'ma-bull' });
+  // 1. Primary scoring — 21D EMA (applies to all positions for this ticker)
+  if (ema21d) {
+    if (reclaim21D_recent) {
+      maFactor *= 2.0; // maximum boost — just reclaimed the 21D EMA
+      indicators.push({ text: '⚡ 21 EMA Reclaim', cls: 'ma-strong' });
+    } else if (lastClose > ema21d) {
+      maFactor *= 1.3; // bullish bias — price above 21D EMA
+      // No extra indicator tag: absence of warning implies bullish
     } else {
-      maFactor *= 0.75;
-      indicators.push({ text: '⚠ Below 21W', cls: 'ma-warn' });
-    }
-    if (sma200w && Math.abs(avgStrike - sma200w) / sma200w <= 0.05) {
-      maFactor *= 1.50; // generational support — stacks with trend bonus/penalty
+      maFactor *= 0.75; // bearish bias — price below 21D EMA
+      indicators.push({ text: '⚠ Below 21 EMA', cls: 'ma-warn' });
     }
   }
 
-  // Call context: EMA reclaim on same day as trade + below-21W penalty
-  if (sig.calls.length) {
-    if (callToday && reclaim21D) {
-      maFactor *= 2.00;
-      indicators.push({ text: '⚡ 21D reclaim', cls: 'ma-strong' });
-    } else if (callToday && reclaim9D) {
-      maFactor *= 1.50;
-      indicators.push({ text: '⚡ 9D reclaim', cls: 'ma-bull' });
-    }
-    if (ema21w && lastClose < ema21w) {
-      maFactor *= 0.80;
-      if (!indicators.some(i => i.text.includes('21W'))) {
-        indicators.push({ text: '⚠ Below 21W', cls: 'ma-warn' });
-      }
-    }
+  // 2. Context only — 21W EMA (no scoring impact)
+  if (ema21w) {
+    indicators.push(lastClose >= ema21w
+      ? { text: '↑ 21W Bull', cls: 'ma-bull' }
+      : { text: '↓ 21W Bear', cls: 'ma-dim' }
+    );
+  }
+
+  // 3. Short-term boost — 8/9D EMA reclaim for calls traded today
+  if (sig.calls.length && callToday && reclaim9D) {
+    maFactor *= 1.5;
+    indicators.push({ text: '⚡ 9D reclaim', cls: 'ma-bull' });
   }
 
   return { maFactor, indicators };
@@ -199,6 +203,14 @@ async function loadSignals() {
     if (sameDayStr(td, dataToday)) m.d0 = true;
     if (sameDayStr(td, dataDay1))  m.d1 = true;
     if (sameDayStr(td, dataDay2))  m.d2 = true;
+  }
+
+  // Read pre-computed 21D EMA from positions.json (written by fetch_ema.py).
+  // Used for display; scoring uses a fresh fetch inside fetchMAContext.
+  const posEma = {}; // ticker → ema_21d
+  for (const p of all) {
+    const sym = String(p.symbol ?? '').trim().toUpperCase();
+    if (sym && p.ema_21d != null && !posEma[sym]) posEma[sym] = parseFloat(p.ema_21d);
   }
 
   const today = new Date();
@@ -385,6 +397,7 @@ async function loadSignals() {
       daysActive, minTradeDate, maxExpiry,
       tier1Triggers: tier1, tier2Triggers: tier2, deprioritize: dep,
       multiplier, followThrough, isFirstTime,
+      ema21d: posEma[ticker] ?? null, // stored by fetch_ema.py — for display
     });
   }
 
@@ -478,6 +491,9 @@ function renderSignals(signals) {
     const maHtml = maInds.length
       ? `<div class="card-ma">${maInds.map(i => `<span class="ma-tag ${i.cls}">${i.text}</span>`).join('')}</div>`
       : '';
+    const emaHtml = s.ema21d != null
+      ? `<div class="card-ema">21D EMA <span class="card-ema-val">$${s.ema21d.toFixed(2)}</span></div>`
+      : '';
 
     return `
       <div class="signal-card">
@@ -517,6 +533,7 @@ function renderSignals(signals) {
         </div>` : ''}
 
         <div class="card-footer">
+          ${emaHtml}
           <div class="card-dates">${dateRange}</div>
           <div class="card-row2">
             <a class="card-link" href="#" data-ticker="${s.ticker}">View chart →</a>

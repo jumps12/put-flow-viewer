@@ -765,6 +765,11 @@ body::before {
 .ma-bull   { color: var(--up);   border: 1px solid rgba(0,230,118,0.35); background: rgba(0,230,118,0.07); }
 .ma-strong { color: var(--warn); border: 1px solid rgba(255,179,0,0.45); background: rgba(255,179,0,0.10); }
 .ma-warn   { color: #ff7043;     border: 1px solid rgba(255,112,67,0.35); }
+.ma-dim    { color: var(--fg3);  border: 1px solid var(--border2); }  /* 21W Bear — context only */
+
+/* Stored 21D EMA value from positions.json */
+.card-ema      { font-size: 9px; color: var(--fg3); letter-spacing: 0.06em; }
+.card-ema-val  { color: var(--fg2); font-weight: 600; }
 
 /* Strategy line on each signal card */
 .card-strat {
