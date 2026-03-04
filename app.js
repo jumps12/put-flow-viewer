@@ -137,13 +137,26 @@ function lineEndDate() {
   return d;
 }
 
-// Far future anchor point pushed into the series data so LightweightCharts
-// allocates time-axis space for future dates, enabling right-scroll.
+// Maximum right boundary for strike lines and the invisible future anchor.
+// LightweightCharts allocates time-axis space for every date present in any
+// series. Clamping to 90 days prevents far-dated expiries (e.g. 2028) from
+// stretching the chart to years of empty whitespace.
 function lineFarDate() {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
   d.setDate(d.getDate() + 90);
   return d;
+}
+
+// Set the visible time window. `months` is how much history to show;
+// the right edge is always today + 90 days (the future anchor).
+function applyTimeframe(months) {
+  if (!_chart) return;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const from  = new Date(today);
+  from.setMonth(from.getMonth() - months);
+  const to = lineFarDate(); // today + 90 days
+  _chart.timeScale().setVisibleRange({ from: dateToStr(from), to: dateToStr(to) });
 }
 
 function dteColor(dte) {
@@ -211,11 +224,14 @@ function updateLabelPositions() {
   // Approximate rendered label height (10px font × 1.6 line-height + 2px padding)
   const LABEL_H     = 18;
 
-  // All labels sit on the right end of their line (expiry date), 4 px past it.
+  // Labels sit at the right end of their line. Because strike lines are clamped
+  // to today+90, use the same clamped date so the label tracks the line tip.
+  const farDate = lineFarDate();
   const items = _labelData.map(({ p, el }) => {
-    const y  = _candlesSeries.priceToCoordinate(p.strike);
-    const xe = _chart.timeScale().timeToCoordinate(dateToStr(p.expiry));
-    const x  = xe !== null ? Math.min(xe + 4, maxLabelX) : null;
+    const y      = _candlesSeries.priceToCoordinate(p.strike);
+    const tipDate = p.expiry < farDate ? p.expiry : farDate;
+    const xe     = _chart.timeScale().timeToCoordinate(dateToStr(tipDate));
+    const x      = xe !== null ? Math.min(xe + 4, maxLabelX) : null;
     return { el, x, y };
   });
 
@@ -242,13 +258,14 @@ function updateLabelPositions() {
 
 // ── Chart ─────────────────────────────────────────────────────────────────────
 
-let _chart        = null;
+let _chart         = null;
 let _candlesSeries = null;
 let _labelData     = []; // [{ p, el }] — kept in sync with the current chart
 let _strikeData    = []; // [{ p, series, color, width }] — one entry per strike line
 let _lastOhlcv     = null;   // cached for filter toggle
 let _lastPositions = null;   // cached active positions for filter toggle
 let _filterLarge   = true;   // true = show only notional ≥ $1M
+let _currentMonths = 12;     // current timeframe selection (months of history)
 
 function buildChart(ohlcv, positions) {
   const container = document.getElementById('chart-container');
@@ -380,20 +397,24 @@ function buildChart(ohlcv, positions) {
       autoscaleInfoProvider:  () => null,
     });
 
+    // Clamp the right endpoint to today+90 so far-dated expiries (e.g. 2028)
+    // don't stretch the time axis into years of empty whitespace.
+    const farDate = lineFarDate();
+    const lineEnd = p.expiry < farDate ? p.expiry : farDate;
     series.setData([
       { time: dateToStr(p.tradeDate), value: p.strike },
-      { time: dateToStr(p.expiry),    value: p.strike },
+      { time: dateToStr(lineEnd),     value: p.strike },
     ]);
 
     _strikeData.push({ p, series, color, width });
   }
 
-  // Default view: scroll to right edge (rightOffset:30 gives 30-bar buffer past last candle).
-  // scrollToPosition(0) positions the last bar at the right edge minus rightOffset,
-  // keeping the chart freely scrollable in both directions.
-  _chart.timeScale().scrollToPosition(0, false);
+  // Set the initial visible range to the current timeframe selection.
+  // Done inline (not in rAF) so the label positions computed one frame later
+  // already reflect the correct coordinate mapping.
+  applyTimeframe(_currentMonths);
 
-  // Wait one frame for the range to settle, then place labels
+  // Wait one frame for the range to settle, then place labels.
   requestAnimationFrame(() => createLabels(chartPositions));
 }
 
@@ -573,6 +594,12 @@ async function load(raw) {
     _lastOhlcv     = ohlcv;
     _lastPositions = active;
 
+    // Reset to 1Y default on every new ticker load
+    _currentMonths = 12;
+    document.querySelectorAll('.tf-btn').forEach(b =>
+      b.classList.toggle('tf-btn--active', b.dataset.months === '12')
+    );
+
     buildChart(ohlcv, active);
     buildSidebar(ticker, active, expired);
 
@@ -621,6 +648,16 @@ document.addEventListener('DOMContentLoaded', () => {
     filterBtn.textContent = _filterLarge ? '>$1M' : 'ALL';
     filterBtn.classList.toggle('filter-btn--all', !_filterLarge);
     if (_lastOhlcv && _lastPositions) buildChart(_lastOhlcv, _lastPositions);
+  });
+
+  // Timeframe selector buttons (3M / 6M / 1Y / 2Y)
+  document.querySelectorAll('.tf-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      _currentMonths = parseInt(btn.dataset.months);
+      document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('tf-btn--active'));
+      btn.classList.add('tf-btn--active');
+      applyTimeframe(_currentMonths);
+    });
   });
 
   // Restore ticker from URL hash (e.g. index.html#SPY)

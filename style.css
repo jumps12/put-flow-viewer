@@ -506,6 +506,24 @@ body::before {
 .filter-btn--all        { background: rgba(255,179,0,0.08); color: var(--warn); border-color: rgba(255,179,0,0.3); }
 .filter-btn--all:hover  { background: rgba(255,179,0,0.15); border-color: var(--warn); }
 
+/* Timeframe selector (3M · 6M · 1Y · 2Y) */
+.tf-group { display: flex; gap: 2px; }
+.tf-btn {
+  background: transparent;
+  color: var(--fg3);
+  border: 1px solid transparent;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  padding: 2px 8px;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.tf-btn:hover   { color: var(--fg2); border-color: var(--border2); }
+.tf-btn--active { color: var(--accent); border-color: rgba(0,200,255,0.3); background: rgba(0,200,255,0.06); }
+
 /* ── Chart container ─────────────────────────────────────── */
 #chart-container {
   position: relative;
