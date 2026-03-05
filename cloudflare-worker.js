@@ -6,6 +6,7 @@
 const ALLOWED_ORIGIN  = 'https://jumps12.github.io';
 const ANTHROPIC_URL   = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_VER   = '2023-06-01';
+const ANTHROPIC_BETA  = 'prompt-caching-2024-07-31';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin':  ALLOWED_ORIGIN,
@@ -33,10 +34,9 @@ export default {
       return new Response('Forbidden', { status: 403, headers: CORS_HEADERS });
     }
 
-    let body;
+    let parsed;
     try {
-      body = await request.text();
-      JSON.parse(body); // validate it's real JSON before forwarding
+      parsed = await request.json();
     } catch {
       return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
         status: 400,
@@ -52,14 +52,33 @@ export default {
       });
     }
 
+    // Inject cache_control into the system prompt so Anthropic caches it between
+    // requests. This avoids re-billing the full system prompt token count every call.
+    // A string system becomes a single-block array; an existing array gets cache_control
+    // added to its last block (caching applies from that point backward).
+    const { system: rawSystem, ...rest } = parsed;
+    let system;
+    if (typeof rawSystem === 'string' && rawSystem) {
+      system = [{ type: 'text', text: rawSystem, cache_control: { type: 'ephemeral' } }];
+    } else if (Array.isArray(rawSystem) && rawSystem.length) {
+      system = rawSystem.map((block, i) =>
+        i === rawSystem.length - 1 ? { ...block, cache_control: { type: 'ephemeral' } } : block
+      );
+    } else {
+      system = rawSystem; // null / undefined — pass through unchanged
+    }
+
+    const outBody = JSON.stringify({ ...rest, ...(system != null && { system }) });
+
     const upstream = await fetch(ANTHROPIC_URL, {
       method: 'POST',
       headers: {
         'Content-Type':      'application/json',
         'x-api-key':         apiKey,
         'anthropic-version': ANTHROPIC_VER,
+        'anthropic-beta':    ANTHROPIC_BETA,
       },
-      body,
+      body: outBody,
     });
 
     const upstreamBody = await upstream.text();
