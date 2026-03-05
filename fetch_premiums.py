@@ -1,19 +1,14 @@
 #!/usr/bin/env python3
 """
-fetch_premiums.py — Refresh current_premium for all active positions in positions.json.
+fetch_premiums.py — Stamp status + fill original_premium for new positions.
 
-Fetches live option mid-prices from Yahoo Finance and writes results back.
-Also fills in original_premium when it is null or zero.
+For every position in positions.json:
+  • Sets status = "ACTIVE" or "EXPIRED" based on the expiry date.
+  • Fetches original_premium from Yahoo Finance ONLY when it is missing or zero.
+    Once set, original_premium is never overwritten.
 
-Skip rules:
-  • Expired positions (expiry < today)                              — always skipped
-  • original_premium already set AND expiry within 7 days          — skipped (no value updating near-expiry)
-
-Timeout / reliability:
-  • 10-second timeout per HTTP call
-  • 3 retries with 1-second pause between each
-  • 0.5-second polite delay between ticker fetches
-  • On permanent failure: log clearly, continue — never hangs
+No current_premium tracking.  No P&L calculation.
+Typical run time: < 30 seconds (only new positions require API calls).
 
 Usage:
     python3 fetch_premiums.py
@@ -31,14 +26,12 @@ from pathlib import Path
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 
-POSITIONS_FILE   = Path(__file__).parent / "positions.json"
-HEADERS          = {"User-Agent": "Mozilla/5.0"}
-TIMEOUT_SECS     = 10    # per-request HTTP timeout (seconds)
-MAX_RETRIES      = 3     # attempts before permanently giving up on one fetch
-RETRY_DELAY      = 1.0   # pause between retry attempts (seconds)
-FETCH_DELAY      = 0.5   # polite pause between distinct fetches (rate limit)
-NEAR_EXPIRY_DAYS = 7     # skip positions expiring in fewer than this many days
-                         # (only when original_premium is already set)
+POSITIONS_FILE = Path(__file__).parent / "positions.json"
+HEADERS        = {"User-Agent": "Mozilla/5.0"}
+TIMEOUT_SECS   = 10    # per-request HTTP timeout (seconds)
+MAX_RETRIES    = 3     # attempts before permanently giving up on one fetch
+RETRY_DELAY    = 1.0   # pause between retry attempts (seconds)
+FETCH_DELAY    = 0.5   # polite pause between distinct fetches (rate limit)
 
 # ── Yahoo Finance helpers ─────────────────────────────────────────────────────
 
@@ -51,8 +44,7 @@ def expiry_ts(expiry_str: str) -> int:
 def fetch_options(ticker: str, ts: int):
     """
     Fetch the Yahoo Finance options chain for (ticker, expiry_ts).
-
-    Returns the parsed JSON dict on success, or None after MAX_RETRIES failures.
+    Returns parsed JSON on success, or None after MAX_RETRIES failures.
     Never raises — all errors are caught, logged, and retried.
     """
     url = (
@@ -65,23 +57,17 @@ def fetch_options(ticker: str, ts: int):
         try:
             with urllib.request.urlopen(req, timeout=TIMEOUT_SECS) as resp:
                 return json.loads(resp.read())
-
         except urllib.error.HTTPError as exc:
             _retry_msg(f"HTTP {exc.code}", attempt)
-
         except urllib.error.URLError as exc:
-            # URLError wraps socket.timeout for connect/read timeouts
             if isinstance(exc.reason, socket.timeout):
                 _retry_msg("Timed out", attempt)
             else:
                 _retry_msg(f"Network: {exc.reason}", attempt)
-
         except (socket.timeout, TimeoutError):
             _retry_msg("Timed out", attempt)
-
         except Exception as exc:          # pragma: no cover
             _retry_msg(f"Unexpected: {exc}", attempt)
-
         if attempt < MAX_RETRIES:
             time.sleep(RETRY_DELAY)
 
@@ -90,18 +76,11 @@ def fetch_options(ticker: str, ts: int):
 
 
 def _retry_msg(reason: str, attempt: int) -> None:
-    print(
-        f"\n    attempt {attempt}/{MAX_RETRIES}: {reason}",
-        end="",
-        flush=True,
-    )
+    print(f"\n    attempt {attempt}/{MAX_RETRIES}: {reason}", end="", flush=True)
 
 
 def parse_chain(data: dict):
-    """
-    Extract puts and calls from Yahoo's option chain response.
-    Returns (puts_list, calls_list); both empty on parse failure.
-    """
+    """Extract puts and calls from Yahoo's option chain response."""
     try:
         tables = data["optionChain"]["result"][0].get("options", [])
         puts, calls = [], []
@@ -123,20 +102,36 @@ def find_contract(chain: list, strike: float, tol: float = 0.01):
 
 
 def mid_price(contract: dict):
-    """
-    Return the bid/ask mid-point as the 'fair' premium.
-    Falls back to lastPrice when bid/ask are absent or zero.
-    Returns None if no valid price is found.
-    """
+    """Bid/ask mid-point, falling back to lastPrice. Returns None if unavailable."""
     bid  = (contract.get("bid")       or {}).get("raw")
     ask  = (contract.get("ask")       or {}).get("raw")
     last = (contract.get("lastPrice") or {}).get("raw")
-
     if bid and ask and float(bid) > 0 and float(ask) > 0:
         return round((float(bid) + float(ask)) / 2, 4)
     if last and float(last) > 0:
         return round(float(last), 4)
     return None
+
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+
+def _parse_date_field(raw) -> date | None:
+    """Parse YYYY-MM-DD or MM/DD/YYYY; return None on failure."""
+    s = str(raw).strip()
+    for fmt in ("%Y-%m-%d", "%m/%d/%Y"):
+        try:
+            return datetime.strptime(s, fmt).date()
+        except ValueError:
+            pass
+    return None
+
+
+def _has_premium(value) -> bool:
+    """Return True if value is a non-null, non-zero number."""
+    try:
+        return value is not None and float(value) > 0
+    except (ValueError, TypeError):
+        return False
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -149,55 +144,51 @@ def main() -> None:
     positions = json.loads(POSITIONS_FILE.read_text())
     today     = date.today()
 
-    # ── Classify positions ────────────────────────────────────────────────────
-    to_update    = []   # indices of positions we will fetch
-    skip_expired = 0
-    skip_near    = 0
+    # ── Pass 1: stamp ACTIVE / EXPIRED on every row ───────────────────────────
+    # No API calls here — pure date comparison.
+    needs_premium = []   # indices where original_premium is missing/zero
+    n_active = n_expired = 0
 
     for idx, p in enumerate(positions):
-        try:
-            exp_date = datetime.strptime(p["expiry"], "%Y-%m-%d").date()
-            dte = (exp_date - today).days
-        except (KeyError, ValueError):
-            to_update.append(idx)   # can't parse expiry — attempt anyway
-            continue
+        exp_date = _parse_date_field(p.get("expiry"))
+        if exp_date is not None and exp_date < today:
+            p["status"] = "EXPIRED"
+            n_expired += 1
+        else:
+            p["status"] = "ACTIVE"
+            n_active += 1
 
-        if dte < 0:
-            skip_expired += 1
-            continue
+        if not _has_premium(p.get("original_premium")):
+            needs_premium.append(idx)
 
-        orig     = p.get("original_premium")
-        has_orig = orig is not None and float(orig) > 0
-        if has_orig and dte < NEAR_EXPIRY_DAYS:
-            skip_near += 1
-            continue
+    print(f"positions.json  : {len(positions)} rows  ({n_active} active, {n_expired} expired)")
+    print(f"Status updated  : all rows")
+    print(f"Need premium    : {len(needs_premium)} positions  (original_premium missing or zero)")
 
-        to_update.append(idx)
+    # ── Early exit if nothing to fetch ───────────────────────────────────────
+    if not needs_premium:
+        POSITIONS_FILE.write_text(json.dumps(positions, indent=2))
+        print(f"✓ Written to    : {POSITIONS_FILE.name}  (status only, no fetches needed)")
+        return
 
-    # ── Group by (ticker, expiry) — one API call per pair ────────────────────
+    # ── Pass 2: group by (ticker, expiry) — one API call per pair ─────────────
     groups: dict = {}
-    for idx in to_update:
+    for idx in needs_premium:
         p   = positions[idx]
         sym = str(p.get("symbol", "")).strip().upper()
         key = (sym, str(p.get("expiry", "")))
         groups.setdefault(key, []).append(idx)
 
     total_groups = len(groups)
-
-    print(f"positions.json        : {len(positions)} rows")
-    print(f"To fetch              : {len(to_update)} positions  /  {total_groups} (ticker, expiry) pairs")
-    print(f"Skipped — expired     : {skip_expired}")
-    print(f"Skipped — near-expiry : {skip_near}  (original_premium set, DTE < {NEAR_EXPIRY_DAYS})")
+    print(f"  → {total_groups} (ticker, expiry) pairs to fetch")
     print("─" * 60)
 
-    updated   = 0
+    fetched   = 0
     not_found = 0
     failed    = 0
 
     for g_num, ((ticker, expiry_str), indices) in enumerate(sorted(groups.items()), 1):
         n = len(indices)
-
-        # Progress line — printed before the fetch so any retry messages appear inline
         print(
             f"[{g_num:3d}/{total_groups}]  {ticker:<8s}  {expiry_str}  "
             f"({n} position{'s' if n != 1 else ''}) ...",
@@ -209,7 +200,6 @@ def main() -> None:
         data = fetch_options(ticker, ts)
 
         if data is None:
-            # fetch_options already printed the failure reason
             print()
             failed += n
             time.sleep(FETCH_DELAY)
@@ -223,12 +213,12 @@ def main() -> None:
             time.sleep(FETCH_DELAY)
             continue
 
-        group_updated = 0
+        group_fetched = 0
         for idx in indices:
-            p         = positions[idx]
-            is_put    = p.get("type", "put").lower() == "put"
-            chain     = puts if is_put else calls
-            contract  = find_contract(chain, float(p.get("strike", 0)))
+            p        = positions[idx]
+            is_put   = p.get("type", "put").lower() == "put"
+            chain    = puts if is_put else calls
+            contract = find_contract(chain, float(p.get("strike", 0)))
 
             if contract is None:
                 not_found += 1
@@ -239,34 +229,22 @@ def main() -> None:
                 not_found += 1
                 continue
 
-            p["current_premium"] = price
+            p["original_premium"] = price   # write once, never overwritten again
+            group_fetched += 1
+            fetched       += 1
 
-            # Back-fill original_premium if it was never set
-            orig = p.get("original_premium")
-            if orig is None or float(orig) == 0:
-                p["original_premium"] = price
-
-            group_updated += 1
-            updated       += 1
-
-        if group_updated == n:
-            marker = "✓"
-        elif group_updated > 0:
-            marker = "⚠"
-        else:
-            marker = "✗"
-
-        print(f"  {marker} {group_updated}/{n} updated", flush=True)
+        marker = "✓" if group_fetched == n else ("⚠" if group_fetched > 0 else "✗")
+        print(f"  {marker} {group_fetched}/{n} fetched", flush=True)
         time.sleep(FETCH_DELAY)
 
-    # ── Persist results ───────────────────────────────────────────────────────
+    # ── Persist ───────────────────────────────────────────────────────────────
     POSITIONS_FILE.write_text(json.dumps(positions, indent=2))
 
     print("─" * 60)
-    print(f"✓ Premiums updated  : {updated}")
-    print(f"  Not in chain      : {not_found}  (strike not listed by Yahoo)")
-    print(f"  API failures      : {failed}  (all retries exhausted)")
-    print(f"✓ Written to        : {POSITIONS_FILE.name}")
+    print(f"✓ New premiums fetched : {fetched}")
+    print(f"  Not in chain         : {not_found}  (strike not listed by Yahoo)")
+    print(f"  API failures         : {failed}  (all retries exhausted)")
+    print(f"✓ Written to           : {POSITIONS_FILE.name}")
 
 
 if __name__ == "__main__":
