@@ -12,10 +12,13 @@ Typical run time: < 30 seconds (only new positions require API calls).
 
 Usage:
     python3 fetch_premiums.py
+    python3 fetch_premiums.py --set-premium ABBV 200P 2026-05-15 2.54
 """
 
+import argparse
 import calendar
 import json
+import re
 import socket
 import sys
 import time
@@ -101,6 +104,23 @@ def find_contract(chain: list, strike: float, tol: float = 0.01):
     return None
 
 
+def find_closest_contract(chain: list, strike: float):
+    """
+    Fallback: return the contract with the strike nearest to target.
+    Used when the exact strike is not listed in Yahoo's chain.
+    Returns (contract, actual_strike) or (None, None) if chain is empty.
+    """
+    best, best_diff, best_strike = None, float("inf"), None
+    for c in chain:
+        c_strike = (c.get("strike") or {}).get("raw")
+        if c_strike is None:
+            continue
+        diff = abs(float(c_strike) - strike)
+        if diff < best_diff:
+            best_diff, best, best_strike = diff, c, float(c_strike)
+    return best, best_strike
+
+
 def mid_price(contract: dict):
     """Bid/ask mid-point, falling back to lastPrice. Returns None if unavailable."""
     bid  = (contract.get("bid")       or {}).get("raw")
@@ -158,12 +178,16 @@ def main() -> None:
             p["status"] = "ACTIVE"
             n_active += 1
 
+        # ── Skip/fetch decision (lines 161-164) ───────────────────────────
+        # If original_premium has ANY non-zero non-empty value → skip entirely.
+        # Only add to needs_premium if the value is missing, None, or zero.
         if not _has_premium(p.get("original_premium")):
             needs_premium.append(idx)
 
+    n_skip = len(positions) - len(needs_premium)
+    print(f"Will fetch {len(needs_premium)} positions, skipping {n_skip}")
     print(f"positions.json  : {len(positions)} rows  ({n_active} active, {n_expired} expired)")
     print(f"Status updated  : all rows")
-    print(f"Need premium    : {len(needs_premium)} positions  (original_premium missing or zero)")
 
     # ── Early exit if nothing to fetch ───────────────────────────────────────
     if not needs_premium:
@@ -186,6 +210,7 @@ def main() -> None:
     fetched   = 0
     not_found = 0
     failed    = 0
+    missing   = []   # [(ticker, strike, expiry_str)] — need manual entry
 
     for g_num, ((ticker, expiry_str), indices) in enumerate(sorted(groups.items()), 1):
         n = len(indices)
@@ -196,19 +221,33 @@ def main() -> None:
             flush=True,
         )
 
-        ts   = expiry_ts(expiry_str)
-        data = fetch_options(ticker, ts)
+        ts = expiry_ts(expiry_str)
 
-        if data is None:
-            print()
-            failed += n
-            time.sleep(FETCH_DELAY)
-            continue
-
-        puts, calls = parse_chain(data)
+        # Retry the chain fetch up to MAX_RETRIES times with a 2-second pause
+        # when Yahoo returns an empty response (distinct from HTTP-level retries
+        # that happen inside fetch_options itself).
+        puts, calls, data = [], [], None
+        for chain_attempt in range(1, MAX_RETRIES + 1):
+            data = fetch_options(ticker, ts)
+            if data is None:
+                break   # HTTP failure already retried inside fetch_options
+            puts, calls = parse_chain(data)
+            if puts or calls:
+                break   # got usable chain data
+            if chain_attempt < MAX_RETRIES:
+                print(
+                    f"\n    empty chain, retrying in 2s "
+                    f"({chain_attempt}/{MAX_RETRIES})...",
+                    end="", flush=True,
+                )
+                time.sleep(2.0)
 
         if not puts and not calls:
-            print("  ✗ no chain data", flush=True)
+            reason = "API failure" if data is None else "no chain data after retries"
+            print(f"  ✗ {reason}", flush=True)
+            for idx in indices:
+                p = positions[idx]
+                missing.append((ticker, p.get("strike"), expiry_str))
             failed += n
             time.sleep(FETCH_DELAY)
             continue
@@ -218,15 +257,29 @@ def main() -> None:
             p        = positions[idx]
             is_put   = p.get("type", "put").lower() == "put"
             chain    = puts if is_put else calls
-            contract = find_contract(chain, float(p.get("strike", 0)))
+            strike   = float(p.get("strike", 0))
+
+            # Try exact strike first; fall back to closest listed strike.
+            contract = find_contract(chain, strike)
+            used_strike = strike
+            if contract is None:
+                contract, used_strike = find_closest_contract(chain, strike)
+                if contract is not None:
+                    print(
+                        f"\n    ⚠ {strike} not listed, using closest "
+                        f"({used_strike})",
+                        end="", flush=True,
+                    )
 
             if contract is None:
                 not_found += 1
+                missing.append((ticker, p.get("strike"), expiry_str))
                 continue
 
             price = mid_price(contract)
             if price is None:
                 not_found += 1
+                missing.append((ticker, p.get("strike"), expiry_str))
                 continue
 
             p["original_premium"] = price   # write once, never overwritten again
@@ -242,10 +295,118 @@ def main() -> None:
 
     print("─" * 60)
     print(f"✓ New premiums fetched : {fetched}")
-    print(f"  Not in chain         : {not_found}  (strike not listed by Yahoo)")
+    print(f"  Not in chain         : {not_found}  (closest-strike fallback attempted)")
     print(f"  API failures         : {failed}  (all retries exhausted)")
     print(f"✓ Written to           : {POSITIONS_FILE.name}")
 
+    # ── Manual review block ───────────────────────────────────────────────────
+    if missing:
+        print()
+        print("MISSING PREMIUMS - add manually to sheet:")
+        print(f"  {'TICKER':<10}  {'STRIKE':>8}  EXPIRY")
+        print(f"  {'──────':<10}  {'──────':>8}  ──────────")
+        for m_ticker, m_strike, m_expiry in sorted(missing):
+            strike_str = f"{float(m_strike):.2f}" if m_strike is not None else "?"
+            print(f"  {m_ticker:<10}  {strike_str:>8}  {m_expiry}")
+
+
+# ── --set-premium command ─────────────────────────────────────────────────────
+
+def set_premium_cmd(ticker_arg: str, strike_arg: str, expiry_arg: str, premium_arg: str) -> None:
+    """
+    Write a manual original_premium directly into positions.json.
+    Matches on ticker + strike (numeric) + expiry + optional type from P/C suffix.
+    """
+    ticker = ticker_arg.strip().upper()
+    expiry = expiry_arg.strip()
+
+    # Parse premium — accept "$2.54" or "2.54"
+    try:
+        premium = float(premium_arg.replace("$", "").strip())
+        if premium <= 0:
+            raise ValueError
+    except ValueError:
+        print(f"ERROR: invalid premium '{premium_arg}' — must be a positive number.",
+              file=sys.stderr)
+        sys.exit(1)
+
+    # Parse strike — accept "200P", "200C", "200.5P", bare "200"
+    m = re.match(r"^([\d.]+)([PC]?)$", strike_arg.strip().upper())
+    if not m:
+        print(f"ERROR: invalid strike '{strike_arg}' — expected e.g. 200P, 200C, 200.5P, 200",
+              file=sys.stderr)
+        sys.exit(1)
+    strike      = float(m.group(1))
+    type_filter = {"P": "put", "C": "call"}.get(m.group(2))  # None = match both
+
+    if not POSITIONS_FILE.exists():
+        print(f"ERROR: {POSITIONS_FILE} not found.", file=sys.stderr)
+        sys.exit(1)
+
+    positions = json.loads(POSITIONS_FILE.read_text())
+
+    # Normalise the input expiry so YYYY-MM-DD and MM/DD/YYYY both work
+    input_exp = _parse_date_field(expiry)
+    if input_exp is None:
+        print(f"ERROR: invalid expiry '{expiry}' — expected YYYY-MM-DD or MM/DD/YYYY",
+              file=sys.stderr)
+        sys.exit(1)
+
+    matched = []
+    for p in positions:
+        if str(p.get("symbol", "")).strip().upper() != ticker:
+            continue
+        try:
+            if abs(float(p.get("strike", "x")) - strike) > 0.01:
+                continue
+        except (ValueError, TypeError):
+            continue
+        if _parse_date_field(p.get("expiry")) != input_exp:
+            continue
+        if type_filter is not None and p.get("type", "put").lower() != type_filter:
+            continue
+        matched.append(p)
+
+    if not matched:
+        print(
+            f"ERROR: no position found for  {ticker}  strike={strike}  "
+            f"expiry={expiry}"
+            + (f"  type={type_filter}" if type_filter else ""),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    strike_int = int(strike) if strike == int(strike) else strike
+    for p in matched:
+        p["original_premium"] = premium
+        type_char = "C" if p.get("type", "put").lower() == "call" else "P"
+        print(f"Set {ticker} {strike_int}{type_char} {expiry} manual premium = ${premium:.2f}")
+
+    POSITIONS_FILE.write_text(json.dumps(positions, indent=2))
+
+
+# ── Entry point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        description="Stamp status + fill original_premium for positions.json.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  python3 fetch_premiums.py\n"
+            "  python3 fetch_premiums.py --set-premium ABBV 200P 2026-05-15 2.54\n"
+            "  python3 fetch_premiums.py --set-premium SPY  450C 2026-06-20 8.00\n"
+        ),
+    )
+    parser.add_argument(
+        "--set-premium",
+        nargs=4,
+        metavar=("TICKER", "STRIKE", "EXPIRY", "PREMIUM"),
+        help="Write a manual premium (e.g. --set-premium ABBV 200P 2026-05-15 2.54)",
+    )
+    args = parser.parse_args()
+
+    if args.set_premium:
+        set_premium_cmd(*args.set_premium)
+    else:
+        main()
