@@ -2813,7 +2813,7 @@
     "original_premium": 3.42,
     "trade_date": "2026-02-27",
     "type": "put",
-    "status": "ACTIVE"
+    "status": "EXPIRED"
   },
   {
     "symbol": "NVDA",
@@ -9127,7 +9127,7 @@
     "original_premium": 0.42,
     "trade_date": "2026-02-26",
     "type": "call",
-    "status": "ACTIVE"
+    "status": "EXPIRED"
   },
   {
     "symbol": "UTHR",
@@ -10359,7 +10359,7 @@
     "original_premium": 0.5,
     "trade_date": "2026-03-03",
     "type": "call",
-    "status": "ACTIVE"
+    "status": "EXPIRED"
   },
   {
     "symbol": "TLT",
@@ -10513,7 +10513,7 @@
     "original_premium": null,
     "trade_date": "2026-03-04",
     "type": "call",
-    "status": "ACTIVE"
+    "status": "EXPIRED"
   },
   {
     "symbol": "AMZN",
