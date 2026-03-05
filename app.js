@@ -428,14 +428,6 @@ function renderSidebarCards(positions, isExpired) {
     return;
   }
 
-  const fmtPl = v => {
-    const sign = v >= 0 ? '+' : '−';
-    const abs  = Math.abs(v);
-    if (abs >= 1e6) return `${sign}$${(abs / 1e6).toFixed(2)}M`;
-    if (abs >= 1e3) return `${sign}$${(abs / 1e3).toFixed(0)}K`;
-    return `${sign}$${abs.toFixed(0)}`;
-  };
-
   cardsEl.innerHTML = '';
 
   [...positions]
@@ -445,16 +437,6 @@ function renderSidebarCards(positions, isExpired) {
       const isCall   = p.type === 'call';
       const typeCol  = isCall ? '#aa44ff' : dteColor(dte);
       const typeStr  = isCall ? 'CALL' : 'PUT';
-
-      const orig     = p.originalPremium;
-      const curr     = p.currentPremium;
-      const plTotal  = (orig - curr) * 100 * p.contracts;
-      const plPct    = orig > 0 ? (orig - curr) / orig * 100 : null;
-      const plCol    = plTotal >= 0 ? '#00e676' : '#ff3355';
-
-      const plPctStr = plPct !== null
-        ? ` (${plPct >= 0 ? '+' : '−'}${Math.abs(plPct).toFixed(1)}%)`
-        : '';
 
       const strikeStr = p.strike % 1 === 0 ? p.strike.toFixed(0) : p.strike.toFixed(2);
       const dteLabel  = isExpired ? 'Expired' : 'DTE';
@@ -468,7 +450,6 @@ function renderSidebarCards(positions, isExpired) {
         <div class="pos-card-top">
           <span class="pos-type-badge" style="color:${typeCol}">${typeStr}</span>
           <span class="pos-strike" style="color:${typeCol}">$${strikeStr}</span>
-          <span class="pos-pl" style="color:${plCol}">${fmtPl(plTotal)}${plPctStr}</span>
         </div>
         <div class="pos-details">
           <span class="pos-detail-lbl">Expiry</span>

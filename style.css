@@ -405,12 +405,6 @@ body::before {
   letter-spacing: 0.04em;
 }
 
-.pos-pl {
-  font-size: 10px;
-  text-align: right;
-  white-space: nowrap;
-  font-weight: 600;
-}
 
 .pos-details {
   display: grid;
