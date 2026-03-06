@@ -402,6 +402,22 @@ async function loadSignals() {
       multiplier, followThrough, ft250, isFirstTime, isQuiet,
       ema21d: posEma[ticker] ?? null, maContext: null,
     });
+
+    // ── Learned scoring enrichment ────────────────────────────────────────────
+    {
+      const sig = signals[signals.length - 1];
+      // Bridge fields expected by applyLearnedScoring onto the existing shape
+      sig.score    = sig.totalNotional * sig.multiplier;
+      sig.tier     = sig.badge;
+      sig.notional = sig.totalNotional;
+      sig.tags     = sig.tags ?? [];
+      const note   = localStorage.getItem(`analyst_note_${ticker}`) ?? '';
+      applyLearnedScoring(sig, note);
+      // Override tier if golden-rule forces it
+      if (sig.forceEventTrade) sig.badge = 'EVENT';
+      // Strip put positions for calls-only names
+      if (sig.callsOnly) { sig.puts = []; sig.putNotional = 0; }
+    }
   }
 
   // ── Sort helper (called twice: pre-MA and post-MA) ────────────────────────
@@ -588,6 +604,40 @@ function renderSignals(signals) {
       ? `<div class="card-ema">21D EMA <span class="card-ema-val">$${s.ema21d.toFixed(2)}</span></div>`
       : '';
 
+    // ── Tag pills ─────────────────────────────────────────────
+    const _tagColors = {
+      'RISK REVERSAL':          'gold',
+      'ITM PUT SALE':           'gold',
+      'ROLLING HIGHER':         'gold',
+      'CONVICTION UPGRADE':     'gold',
+      'BREAKOUT CONFIRMATION':  'gold',
+      'RELATIVE STRENGTH':      'gold',
+      'CALLS ONLY — BIOTECH':   'red',
+      'CALLS ONLY — SMALL CAP': 'red',
+      'SPECULATIVE':            'red',
+      'FIRST FLOW':             'teal',
+      'MOMENTUM ENTRY':         'teal',
+      'GAP FILL TARGET':        'teal',
+      'CATALYST WATCH':         'teal',
+      'TREND CHANGE WATCH':     'teal',
+      'DEFINED RISK':           'teal',
+      'CALENDAR STRUCTURE':     'teal',
+      'ENERGY — USE SPREADS':   'teal',
+    };
+    const _tagColorMap = {
+      gold: { bg: 'rgba(255,200,0,0.12)', border: 'rgba(255,200,0,0.4)', text: '#ffc800' },
+      red:  { bg: 'rgba(255,50,50,0.12)',  border: 'rgba(255,50,50,0.4)',  text: '#ff4444' },
+      teal: { bg: 'rgba(0,188,212,0.12)',  border: 'rgba(0,188,212,0.4)', text: '#00bcd4' },
+    };
+    const tagPillsHtml = (s.tags && s.tags.length)
+      ? `<div style="margin-top:6px;line-height:1.8">${
+          s.tags.map(tag => {
+            const c = _tagColorMap[_tagColors[tag] || 'teal'];
+            return `<span style="display:inline-block;font-family:'JetBrains Mono',monospace;font-size:9px;font-variant:small-caps;letter-spacing:0.05em;padding:2px 6px;margin:2px 3px 2px 0;border-radius:3px;background:${c.bg};border:1px solid ${c.border};color:${c.text}">${tag}</span>`;
+          }).join('')
+        }</div>`
+      : '';
+
     return `
       <div class="signal-card ${cardCls}">
         <div class="card-top">
@@ -597,6 +647,8 @@ function renderSignals(signals) {
             <span class="card-badge ${badgeCls}">${s.badge}</span>
           </div>
         </div>
+
+        ${tagPillsHtml}
 
         ${tags ? `<div class="card-tags">${tags}</div>` : ''}
 
@@ -726,3 +778,94 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('sec01-body').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 });
+
+// ── Learned Signal Intelligence (v2) ─────────────────────────────────────────
+
+const GOLDEN_RULE_BIOTECHS = ['MRNA','BNTX','NVAX','SRPT','RARE','ALNY','BMRN','BLUE','FATE','RCUS','TVTX','QURE','VYGR','MEOX','SKLN','LAES','PHAT','CELC','CELH','CMPS','PEPG','SMR'];
+const GOLDEN_RULE_SMALLCAP_CALLS_ONLY = ['MITK','DKL','FLNG','LAES','AMPX','TGB'];
+
+const SECTOR_ENERGY = ['XLE','EOG','FCX','VLO','OXY','DVN','COP','EQT','MTDR','OVV','APA','CHRD','SLB'];
+const SECTOR_DEFENSE = ['RTX','GD','LMT','AVAV','NOC','HII','TDG'];
+const SECTOR_CHINA = ['BABA','FXI','BIDU','JD','PDD','KWEB'];
+const SECTOR_CRYPTO = ['COIN','MSTR','IBIT','CORZ','IREN','SMR'];
+const SECTOR_AI_INFRA = ['NVDA','AMD','ASTS','IREN','PLTR','SMCI'];
+const SECTOR_COPPER_AI_BOOST = ['FCX','CPER','BHP','TECK','HBM'];
+
+const BOOST_PHRASES = [
+  'first trade','first ever','never sees flow',
+  'reclaiming the 21','reclaimed the 8 ema',
+  'held the 200','relative strength','holding up',
+  'something is brewing','maybe m&a','potential acquisition',
+  'most bullish','most active','gap fill at',
+  'adding to','second day','third day','building',
+  'rolled higher','cup and handle','base breakout','breaking out'
+];
+
+const REDUCE_PHRASES = [
+  'complete gamble','lottery ticket','pure speculation',
+  'broken chart','under all key averages',
+  'weird trade','odd trade','if you\'re uncomfortable'
+];
+
+const CALLS_ONLY_PHRASES = ['biotech','biopharma','sub $1b','small cap'];
+
+function applyLearnedScoring(signal, analystNote = '') {
+  let score = signal.score || 0;
+  const tags = signal.tags || [];
+  const note = analystNote.toLowerCase();
+
+  // ── Golden Rules ────────────────────────────────────────
+  const isBiotech = GOLDEN_RULE_BIOTECHS.includes(signal.ticker) || CALLS_ONLY_PHRASES.some(p => note.includes(p) && p.includes('bio'));
+  const isSmallCap = GOLDEN_RULE_SMALLCAP_CALLS_ONLY.includes(signal.ticker) || note.includes('sub $1b') || note.includes('small cap');
+
+  if (isBiotech) { tags.push('CALLS ONLY — BIOTECH'); signal.callsOnly = true; }
+  if (isSmallCap) { tags.push('CALLS ONLY — SMALL CAP'); signal.callsOnly = true; }
+
+  // ── Reduce phrases ──────────────────────────────────────
+  REDUCE_PHRASES.forEach(p => { if (note.includes(p)) score *= 0.7; });
+  if (note.includes('complete gamble') || note.includes('lottery ticket')) {
+    signal.forceEventTrade = true;
+  }
+
+  // ── Boost phrases ───────────────────────────────────────
+  BOOST_PHRASES.forEach(p => { if (note.includes(p)) score *= 1.2; });
+
+  // ── Relative strength ───────────────────────────────────
+  if (note.includes('relative strength') || note.includes('holding up')) {
+    score *= 1.3; tags.push('RELATIVE STRENGTH');
+  }
+
+  // ── Gap fill target ─────────────────────────────────────
+  if (note.includes('gap fill')) { tags.push('GAP FILL TARGET'); }
+
+  // ── Breakout confirmation ───────────────────────────────
+  if (note.includes('cup and handle') || note.includes('breaking out') || note.includes('base breakout')) {
+    score *= 1.25; tags.push('BREAKOUT CONFIRMATION');
+  }
+
+  // ── First flow ──────────────────────────────────────────
+  if (note.includes('first trade') || note.includes('first ever') || note.includes('never sees flow')) {
+    tags.push('FIRST FLOW');
+    if (signal.notional > 500000) signal.tier = 'UNUSUAL';
+    if (note.includes('up') && (note.includes('this week') || note.includes('today'))) {
+      tags.push('MOMENTUM ENTRY');
+    }
+  }
+
+  // ── Trade structure boosts ──────────────────────────────
+  if (signal.isRiskReversal) { score *= 1.35; tags.push('RISK REVERSAL'); }
+  if (signal.isITMPutSale)   { score *= 1.30; tags.push('ITM PUT SALE'); }
+  if (signal.isRolling)      { score *= 1.40; tags.push('ROLLING HIGHER'); }
+  if (signal.isSpread)       { tags.push('DEFINED RISK'); }
+  if (signal.isCalendar)     { score *= 1.25; tags.push('CALENDAR STRUCTURE'); }
+
+  // ── Sector rules ────────────────────────────────────────
+  if (SECTOR_ENERGY.includes(signal.ticker)) { tags.push('ENERGY — USE SPREADS'); }
+  if (SECTOR_DEFENSE.includes(signal.ticker) && signal.dte < 30) { signal.forceEventTrade = true; }
+  if (SECTOR_CHINA.includes(signal.ticker))  { tags.push('CATALYST WATCH'); }
+  if (SECTOR_CRYPTO.includes(signal.ticker)) { tags.push('TREND CHANGE WATCH'); }
+
+  signal.score = score;
+  signal.tags  = [...new Set(tags)];
+  return signal;
+}
