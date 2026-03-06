@@ -397,6 +397,18 @@ body::before {
   flex-shrink: 0;
 }
 
+.pos-spread-badge {
+  font-size: 7px;
+  font-family: var(--mono);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  padding: 1px 4px;
+  border: 1px solid var(--fg3);
+  border-radius: 2px;
+  color: var(--fg3);
+  flex-shrink: 0;
+}
+
 .pos-strike {
   font-size: 14px;
   font-weight: 700;

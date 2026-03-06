@@ -15,25 +15,51 @@ async function fetchPutFlowData(ticker) {
   return all
     .filter(p => String(p.symbol ?? '').trim().toUpperCase() === ticker)
     .map(p => {
-      // original_premium may be null if the column was added after this row was entered;
-      // fall back to current_premium so older rows still render.
-      const orig = parseFloat(p.original_premium ?? p.current_premium ?? p.premium);
+      const strikeRaw = String(p.strike ?? '');
+      const spread    = strikeRaw.includes('/');
+
+      let strike, leg1Strike, leg2Strike, netLabel;
+      if (spread) {
+        const parts = strikeRaw.replace(/[CP]/gi, '').split('/').map(s => parseFloat(s.trim()));
+        parts.sort((a, b) => a - b);
+        leg1Strike = parts[0];
+        leg2Strike = parts[1];
+        strike     = strikeRaw;                   // raw string for display e.g. "140/230C"
+        netLabel   = p.net_label ?? '';
+      } else {
+        strike = parseFloat(strikeRaw);
+      }
+
+      // Spreads: use net_premium for notional; single legs: use original_premium.
+      const orig = spread
+        ? parseFloat(p.net_premium ?? p.original_premium)
+        : parseFloat(p.original_premium ?? p.current_premium ?? p.premium);
       const curr = parseFloat(p.current_premium ?? p.premium);
+
       return {
-        strike:          parseFloat(p.strike),
+        strike,
+        leg1Strike,
+        leg2Strike,
+        isSpread:        spread,
+        netLabel,
         expiry:          parseDate(p.expiry),
         contracts:       parseInt(p.contracts),
         originalPremium: orig,
         currentPremium:  curr,
         tradeDate:       parseDate(p.trade_date),
-        type:            (p.type ?? 'put').toLowerCase(), // 'put' or 'call'
+        type:            (p.type ?? 'put').toLowerCase(),
       };
     })
-    .filter(d =>
-      isFinite(d.strike) && isFinite(d.contracts) && isFinite(d.originalPremium) &&
-      d.expiry instanceof Date && d.tradeDate instanceof Date &&
-      d.expiry > d.tradeDate
-    );
+    .filter(d => {
+      const strikeOk = d.isSpread
+        ? isFinite(d.leg1Strike) && isFinite(d.leg2Strike)
+        : isFinite(d.strike);
+      return (
+        strikeOk && isFinite(d.contracts) && isFinite(d.originalPremium) &&
+        d.expiry instanceof Date && d.tradeDate instanceof Date &&
+        d.expiry > d.tradeDate
+      );
+    });
 }
 
 // ── Yahoo Finance ──────────────────────────────────────────────────────────────
@@ -188,28 +214,35 @@ function createLabels(positions) {
 
   const container = document.getElementById('chart-container');
 
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
   for (const p of positions) {
     const dte   = getDTE(p.expiry);
     const color = p.type === 'call' ? '#aa44ff' : dteColor(dte);
-    // Market value uses original premium — what was paid at trade time
     const mv    = p.contracts * p.originalPremium * 100;
-
-    // Format: Jan 26 2027 · 95C · 20,000x · $18.9M  (C for calls, P for puts)
-    const typeChar  = p.type === 'call' ? 'C' : 'P';
-    const strikeStr = p.strike % 1 === 0 ? p.strike.toFixed(0) : p.strike.toFixed(2);
-    const mvStr     = fmtMoney(mv);
-    const months    = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const mvStr = fmtMoney(mv);
     const dateLabel = `${months[p.expiry.getMonth()]} ${p.expiry.getDate()} ${p.expiry.getFullYear()}`;
-    const text      = `${dateLabel} · ${strikeStr}${typeChar} · ${p.contracts.toLocaleString()}x · ${mvStr}`;
+
+    let text, labelStrike;
+    if (p.isSpread) {
+      // e.g. "Jan 17 2027 · 140/230C · 1,150x · $1.2M NET DEBIT"
+      const netStr = p.netLabel ? ` ${p.netLabel}` : '';
+      text        = `${dateLabel} · ${p.strike} · ${p.contracts.toLocaleString()}x · ${mvStr}${netStr}`;
+      labelStrike = (p.leg1Strike + p.leg2Strike) / 2;
+    } else {
+      const typeChar  = p.type === 'call' ? 'C' : 'P';
+      const strikeStr = p.strike % 1 === 0 ? p.strike.toFixed(0) : p.strike.toFixed(2);
+      text        = `${dateLabel} · ${strikeStr}${typeChar} · ${p.contracts.toLocaleString()}x · ${mvStr}`;
+      labelStrike = p.strike;
+    }
 
     const el = document.createElement('div');
-    el.className    = 'strike-label';
-    el.style.color  = color;
-    // All labels: right end of line, left-edge of label sits just past expiry date.
-    el.textContent  = text;
+    el.className   = 'strike-label';
+    el.style.color = color;
+    el.textContent = text;
     container.appendChild(el);
 
-    _labelData.push({ p, el });
+    _labelData.push({ p, el, labelStrike });
   }
 
   updateLabelPositions();
@@ -227,8 +260,8 @@ function updateLabelPositions() {
   // Labels sit at the right end of their line. Because strike lines are clamped
   // to today+90, use the same clamped date so the label tracks the line tip.
   const farDate = lineFarDate();
-  const items = _labelData.map(({ p, el }) => {
-    const y      = _candlesSeries.priceToCoordinate(p.strike);
+  const items = _labelData.map(({ p, el, labelStrike }) => {
+    const y      = _candlesSeries.priceToCoordinate(labelStrike ?? p.strike);
     const tipDate = p.expiry < farDate ? p.expiry : farDate;
     const xe     = _chart.timeScale().timeToCoordinate(dateToStr(tipDate));
     const x      = xe !== null ? Math.min(xe + 4, maxLabelX) : null;
@@ -367,7 +400,8 @@ function buildChart(ohlcv, positions) {
       if (_filterLarge) {
         return notional >= 1_000_000;
       } else {
-        return p.strike >= lastPrice * 0.40 && p.strike <= lastPrice * 1.60;
+        const strikeRef = p.isSpread ? (p.leg1Strike + p.leg2Strike) / 2 : p.strike;
+        return strikeRef >= lastPrice * 0.40 && strikeRef <= lastPrice * 1.60;
       }
     })
     .sort((a, b) => (b.contracts * b.originalPremium * 100) - (a.contracts * a.originalPremium * 100))
@@ -387,26 +421,48 @@ function buildChart(ohlcv, positions) {
       ? LightweightCharts.LineStyle.Dashed
       : LightweightCharts.LineStyle.Solid;
 
-    const series = _chart.addLineSeries({
-      color,
-      lineWidth:              width,
-      lineStyle:              style,
-      lastValueVisible:       false,
-      priceLineVisible:       false,
-      crosshairMarkerVisible: false,
-      autoscaleInfoProvider:  () => null,
-    });
-
     // Clamp the right endpoint to today+90 so far-dated expiries (e.g. 2028)
     // don't stretch the time axis into years of empty whitespace.
     const farDate = lineFarDate();
     const lineEnd = p.expiry < farDate ? p.expiry : farDate;
-    series.setData([
-      { time: dateToStr(p.tradeDate), value: p.strike },
-      { time: dateToStr(lineEnd),     value: p.strike },
-    ]);
 
-    _strikeData.push({ p, series, color, width });
+    if (p.isSpread) {
+      // Draw one line per leg; store both refs so hover can brighten/dim together.
+      const makeLeg = strikeVal => {
+        const s = _chart.addLineSeries({
+          color,
+          lineWidth:              width,
+          lineStyle:              style,
+          lastValueVisible:       false,
+          priceLineVisible:       false,
+          crosshairMarkerVisible: false,
+          autoscaleInfoProvider:  () => null,
+        });
+        s.setData([
+          { time: dateToStr(p.tradeDate), value: strikeVal },
+          { time: dateToStr(lineEnd),     value: strikeVal },
+        ]);
+        return s;
+      };
+      const series1 = makeLeg(p.leg1Strike);
+      const series2 = makeLeg(p.leg2Strike);
+      _strikeData.push({ p, series1, series2, isSpread: true, color, width });
+    } else {
+      const series = _chart.addLineSeries({
+        color,
+        lineWidth:              width,
+        lineStyle:              style,
+        lastValueVisible:       false,
+        priceLineVisible:       false,
+        crosshairMarkerVisible: false,
+        autoscaleInfoProvider:  () => null,
+      });
+      series.setData([
+        { time: dateToStr(p.tradeDate), value: p.strike },
+        { time: dateToStr(lineEnd),     value: p.strike },
+      ]);
+      _strikeData.push({ p, series, color, width });
+    }
   }
 
   // Set the initial visible range to the current timeframe selection.
@@ -430,26 +486,46 @@ function renderSidebarCards(positions, isExpired) {
 
   cardsEl.innerHTML = '';
 
-  [...positions]
+  // Deduplicate spread positions: one card per unique (type+expiry+tradeDate+strike).
+  const seenSpreads = new Set();
+  const deduped = [...positions]
     .sort((a, b) => b.tradeDate - a.tradeDate)
-    .forEach(p => {
+    .filter(p => {
+      if (!p.isSpread) return true;
+      const key = `${p.type}|${dateToStr(p.expiry)}|${dateToStr(p.tradeDate)}|${p.strike}`;
+      if (seenSpreads.has(key)) return false;
+      seenSpreads.add(key);
+      return true;
+    });
+
+  deduped.forEach(p => {
       const dte      = getDTE(p.expiry);
       const isCall   = p.type === 'call';
       const typeCol  = isCall ? '#aa44ff' : dteColor(dte);
       const typeStr  = isCall ? 'CALL' : 'PUT';
 
-      const strikeStr = p.strike % 1 === 0 ? p.strike.toFixed(0) : p.strike.toFixed(2);
       const dteLabel  = isExpired ? 'Expired' : 'DTE';
       const dteVal    = isExpired
         ? p.expiry.toLocaleDateString()
         : `<span style="color:${dteColor(dte)}">${dte}d</span>`;
+
+      let strikeDisplay, notionalLabel;
+      if (p.isSpread) {
+        strikeDisplay = p.strike;                       // raw string e.g. "140/230C"
+        notionalLabel = p.netLabel || '';
+      } else {
+        const sf = p.strike % 1 === 0 ? p.strike.toFixed(0) : p.strike.toFixed(2);
+        strikeDisplay = `$${sf}`;
+        notionalLabel = '';
+      }
 
       const card = document.createElement('div');
       card.className = isExpired ? 'pos-card pos-card--expired' : 'pos-card';
       card.innerHTML = `
         <div class="pos-card-top">
           <span class="pos-type-badge" style="color:${typeCol}">${typeStr}</span>
-          <span class="pos-strike" style="color:${typeCol}">$${strikeStr}</span>
+          ${p.isSpread ? '<span class="pos-spread-badge">SPREAD</span>' : ''}
+          <span class="pos-strike" style="color:${typeCol}">${strikeDisplay}</span>
         </div>
         <div class="pos-details">
           <span class="pos-detail-lbl">Expiry</span>
@@ -458,7 +534,7 @@ function renderSidebarCards(positions, isExpired) {
           <span class="pos-detail-val">${dteVal}</span>
           <span class="pos-detail-lbl">Contracts</span>
           <span class="pos-detail-val">${p.contracts.toLocaleString()}</span>
-          <span></span>
+          <span class="pos-detail-lbl">${notionalLabel}</span>
           <span class="pos-detail-val" style="color:var(--fg3)">${fmtMoney(p.contracts * p.originalPremium * 100)}</span>
           <span class="pos-detail-lbl">Traded</span>
           <span class="pos-detail-val">${p.tradeDate.toLocaleDateString()}</span>
@@ -466,17 +542,39 @@ function renderSidebarCards(positions, isExpired) {
       `;
       cardsEl.appendChild(card);
 
-      // Highlight the corresponding strike line when hovering this card
+      // Highlight the corresponding strike line(s) when hovering this card
       card.addEventListener('mouseenter', () => {
         const entry = _strikeData.find(d => d.p === p);
         if (!entry) return;
         const hoverColor = p.type === 'call' ? '#cc66ff' : '#40dfff';
-        entry.series.applyOptions({ color: hoverColor, lineWidth: Math.min(entry.width + 2, 4) });
+        if (entry.isSpread) {
+          entry.series1.applyOptions({ color: hoverColor, lineWidth: Math.min(entry.width + 2, 4) });
+          entry.series2.applyOptions({ color: hoverColor, lineWidth: Math.min(entry.width + 2, 4) });
+        } else {
+          entry.series.applyOptions({ color: hoverColor, lineWidth: Math.min(entry.width + 2, 4) });
+        }
+        // Dim all other strike lines
+        _strikeData.forEach(e => {
+          if (e === entry) return;
+          const dim = e.color + '33';
+          if (e.isSpread) {
+            e.series1.applyOptions({ color: dim });
+            e.series2.applyOptions({ color: dim });
+          } else {
+            e.series.applyOptions({ color: dim });
+          }
+        });
       });
       card.addEventListener('mouseleave', () => {
-        const entry = _strikeData.find(d => d.p === p);
-        if (!entry) return;
-        entry.series.applyOptions({ color: entry.color, lineWidth: entry.width });
+        // Restore all strike lines to their original colour and width
+        _strikeData.forEach(e => {
+          if (e.isSpread) {
+            e.series1.applyOptions({ color: e.color, lineWidth: e.width });
+            e.series2.applyOptions({ color: e.color, lineWidth: e.width });
+          } else {
+            e.series.applyOptions({ color: e.color, lineWidth: e.width });
+          }
+        });
       });
     });
 }

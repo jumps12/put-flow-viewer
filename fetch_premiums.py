@@ -155,6 +155,36 @@ def _has_premium(value) -> bool:
         return False
 
 
+# ── Spread helpers ────────────────────────────────────────────────────────────
+
+def is_spread(strike_str: str) -> bool:
+    """Return True if strike contains a slash indicating a spread."""
+    return "/" in str(strike_str)
+
+
+def parse_spread_legs(strike_str: str, option_type: str):
+    """
+    Parse spread legs from e.g. '140/230C' or '310/300P'.
+    Returns (leg1_strike, leg2_strike) as floats, always (lower, higher).
+    """
+    parts = str(strike_str).replace("C", "").replace("P", "").split("/")
+    strikes = sorted([float(p.strip()) for p in parts])
+    return strikes[0], strikes[1]
+
+
+def compute_net_premium(leg1_premium: float, leg2_premium: float, option_type: str) -> tuple:
+    """
+    Compute net premium and label based on option type.
+    PUT spread → net credit (higher leg sold, lower leg bought).
+    CALL spread → net debit (lower leg bought, higher leg sold).
+    Always returns a positive net value.
+    Returns (net_premium, label) e.g. (1.45, 'NET DEBIT') or (2.10, 'NET CREDIT')
+    """
+    net = abs(leg1_premium - leg2_premium)
+    label = "NET CREDIT" if option_type.lower() == "put" else "NET DEBIT"
+    return round(net, 4), label
+
+
 # ── Persistent failure tracking ───────────────────────────────────────────────
 
 def load_failures() -> set:
@@ -198,11 +228,22 @@ def main() -> None:
             p["status"] = "ACTIVE"
             n_active += 1
 
-        # ── Skip/fetch decision (lines 161-164) ───────────────────────────
-        # If original_premium has ANY non-zero non-empty value → skip entirely.
-        # Only add to needs_premium if the value is missing, None, or zero.
-        if not _has_premium(p.get("original_premium")):
-            needs_premium.append(idx)
+        # ── Skip/fetch decision ───────────────────────────────────────────
+        if is_spread(p.get("strike")):
+            has_l1 = _has_premium(p.get("leg1_premium"))
+            has_l2 = _has_premium(p.get("leg2_premium"))
+            if has_l1 and has_l2:
+                net, label = compute_net_premium(
+                    float(p["leg1_premium"]), float(p["leg2_premium"]),
+                    p.get("type", "put"),
+                )
+                p["net_premium"] = net
+                p["net_label"]   = label
+            else:
+                needs_premium.append(idx)
+        else:
+            if not _has_premium(p.get("original_premium")):
+                needs_premium.append(idx)
 
     n_skip = len(positions) - len(needs_premium)
     print(f"Will fetch {len(needs_premium)} positions, skipping {n_skip}")
@@ -289,37 +330,72 @@ def main() -> None:
 
         group_fetched = 0
         for idx in indices:
-            p        = positions[idx]
-            is_put   = p.get("type", "put").lower() == "put"
-            chain    = puts if is_put else calls
-            strike   = float(p.get("strike", 0))
+            p      = positions[idx]
+            is_put = p.get("type", "put").lower() == "put"
+            chain  = puts if is_put else calls
 
-            # Try exact strike first; fall back to closest listed strike.
-            contract = find_contract(chain, strike)
-            used_strike = strike
-            if contract is None:
-                contract, used_strike = find_closest_contract(chain, strike)
-                if contract is not None:
-                    print(
-                        f"\n    ⚠ {strike} not listed, using closest "
-                        f"({used_strike})",
-                        end="", flush=True,
-                    )
+            if is_spread(p.get("strike")):
+                # ── Spread: fetch each leg separately ─────────────────────
+                leg1_s, leg2_s = parse_spread_legs(
+                    p.get("strike"), p.get("type", "put")
+                )
 
-            if contract is None:
-                not_found += 1
-                missing.append((ticker, p.get("strike"), expiry_str))
-                continue
+                def _fetch_leg(leg_strike, leg_num):
+                    c = find_contract(chain, leg_strike)
+                    if c is None:
+                        c, actual = find_closest_contract(chain, leg_strike)
+                        if c is not None:
+                            print(
+                                f"\n    ⚠ leg{leg_num} {leg_strike} not listed, "
+                                f"using closest ({actual})",
+                                end="", flush=True,
+                            )
+                    return mid_price(c) if c is not None else None
 
-            price = mid_price(contract)
-            if price is None:
-                not_found += 1
-                missing.append((ticker, p.get("strike"), expiry_str))
-                continue
+                pr1 = _fetch_leg(leg1_s, 1)
+                pr2 = _fetch_leg(leg2_s, 2)
 
-            p["original_premium"] = price   # write once, never overwritten again
-            group_fetched += 1
-            fetched       += 1
+                if pr1 is None or pr2 is None:
+                    not_found += 1
+                    missing.append((ticker, p.get("strike"), expiry_str))
+                    continue
+
+                p["leg1_premium"] = pr1
+                p["leg2_premium"] = pr2
+                net, label = compute_net_premium(pr1, pr2, p.get("type", "put"))
+                p["net_premium"] = net
+                p["net_label"]   = label
+                group_fetched += 1
+                fetched       += 1
+
+            else:
+                # ── Single leg: exact then closest-strike fallback ─────────
+                strike = float(p.get("strike", 0))
+                contract = find_contract(chain, strike)
+                used_strike = strike
+                if contract is None:
+                    contract, used_strike = find_closest_contract(chain, strike)
+                    if contract is not None:
+                        print(
+                            f"\n    ⚠ {strike} not listed, using closest "
+                            f"({used_strike})",
+                            end="", flush=True,
+                        )
+
+                if contract is None:
+                    not_found += 1
+                    missing.append((ticker, p.get("strike"), expiry_str))
+                    continue
+
+                price = mid_price(contract)
+                if price is None:
+                    not_found += 1
+                    missing.append((ticker, p.get("strike"), expiry_str))
+                    continue
+
+                p["original_premium"] = price   # write once, never overwritten again
+                group_fetched += 1
+                fetched       += 1
 
         marker = "✓" if group_fetched == n else ("⚠" if group_fetched > 0 else "✗")
         print(f"  {marker} {group_fetched}/{n} fetched", flush=True)
@@ -338,11 +414,20 @@ def main() -> None:
     if missing:
         print()
         print("MISSING PREMIUMS - add manually to sheet:")
-        print(f"  {'TICKER':<10}  {'STRIKE':>8}  EXPIRY")
-        print(f"  {'──────':<10}  {'──────':>8}  ──────────")
+        print(f"  {'TICKER':<10}  {'STRIKE':>14}  EXPIRY")
+        print(f"  {'──────':<10}  {'──────':>14}  ──────────")
         for m_ticker, m_strike, m_expiry in sorted(missing):
-            strike_str = f"{float(m_strike):.2f}" if m_strike is not None else "?"
-            print(f"  {m_ticker:<10}  {strike_str:>8}  {m_expiry}")
+            m_strike_s = str(m_strike) if m_strike is not None else "?"
+            if is_spread(m_strike_s):
+                strike_fmt = m_strike_s
+                suffix = "  (set each leg separately with --set-premium)"
+            else:
+                try:
+                    strike_fmt = f"{float(m_strike_s):.2f}"
+                except (ValueError, TypeError):
+                    strike_fmt = m_strike_s
+                suffix = ""
+            print(f"  {m_ticker:<10}  {strike_fmt:>14}  {m_expiry}{suffix}")
 
 
 # ── --set-premium command ─────────────────────────────────────────────────────
@@ -387,22 +472,25 @@ def set_premium_cmd(ticker_arg: str, strike_arg: str, expiry_arg: str, premium_a
               file=sys.stderr)
         sys.exit(1)
 
-    matched = []
+    matched_single = []
+    matched_spread = []
     for p in positions:
         if str(p.get("symbol", "")).strip().upper() != ticker:
-            continue
-        try:
-            if abs(float(p.get("strike", "x")) - strike) > 0.01:
-                continue
-        except (ValueError, TypeError):
             continue
         if _parse_date_field(p.get("expiry")) != input_exp:
             continue
         if type_filter is not None and p.get("type", "put").lower() != type_filter:
             continue
-        matched.append(p)
+        if is_spread(p.get("strike")):
+            matched_spread.append(p)
+        else:
+            try:
+                if abs(float(p.get("strike", "x")) - strike) <= 0.01:
+                    matched_single.append(p)
+            except (ValueError, TypeError):
+                continue
 
-    if not matched:
+    if not matched_single and not matched_spread:
         print(
             f"ERROR: no position found for  {ticker}  strike={strike}  "
             f"expiry={expiry}"
@@ -412,10 +500,37 @@ def set_premium_cmd(ticker_arg: str, strike_arg: str, expiry_arg: str, premium_a
         sys.exit(1)
 
     strike_int = int(strike) if strike == int(strike) else strike
-    for p in matched:
+
+    for p in matched_single:
         p["original_premium"] = premium
         type_char = "C" if p.get("type", "put").lower() == "call" else "P"
         print(f"Set {ticker} {strike_int}{type_char} {expiry} manual premium = ${premium:.2f}")
+
+    for p in matched_spread:
+        leg1_s, leg2_s = parse_spread_legs(p.get("strike"), p.get("type", "put"))
+        if abs(strike - leg1_s) <= 0.01:
+            p["leg1_premium"] = premium
+            leg_label = "leg1"
+        elif abs(strike - leg2_s) <= 0.01:
+            p["leg2_premium"] = premium
+            leg_label = "leg2"
+        else:
+            print(
+                f"ERROR: strike {strike} does not match leg1 ({leg1_s}) or "
+                f"leg2 ({leg2_s}) of spread {p.get('strike')}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        type_char = "C" if p.get("type", "put").lower() == "call" else "P"
+        print(f"Set {ticker} {p.get('strike')} {leg_label} {strike_int}{type_char} = ${premium:.2f}")
+        if _has_premium(p.get("leg1_premium")) and _has_premium(p.get("leg2_premium")):
+            net, label = compute_net_premium(
+                float(p["leg1_premium"]), float(p["leg2_premium"]),
+                p.get("type", "put"),
+            )
+            p["net_premium"] = net
+            p["net_label"]   = label
+            print(f"  → net_premium computed: ${net:.2f} {label}")
 
     POSITIONS_FILE.write_text(json.dumps(positions, indent=2))
 
