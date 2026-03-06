@@ -30,7 +30,6 @@ from pathlib import Path
 # ── Configuration ─────────────────────────────────────────────────────────────
 
 POSITIONS_FILE = Path(__file__).parent / "positions.json"
-FAILURES_FILE  = Path(__file__).parent / "fetch_failures.json"
 HEADERS        = {"User-Agent": "Mozilla/5.0"}
 TIMEOUT_SECS   = 10    # per-request HTTP timeout (seconds)
 MAX_RETRIES    = 3     # attempts before permanently giving up on one fetch
@@ -185,25 +184,6 @@ def compute_net_premium(leg1_premium: float, leg2_premium: float, option_type: s
     return round(net, 4), label
 
 
-# ── Persistent failure tracking ───────────────────────────────────────────────
-
-def load_failures() -> set:
-    """Load the set of (ticker, expiry) keys that have permanently failed before."""
-    if not FAILURES_FILE.exists():
-        return set()
-    try:
-        data = json.loads(FAILURES_FILE.read_text())
-        return set(tuple(k) for k in data)
-    except Exception:
-        return set()
-
-
-def save_failure(key: tuple, existing: set) -> None:
-    """Append a new (ticker, expiry) failure key and persist to disk."""
-    existing.add(key)
-    FAILURES_FILE.write_text(json.dumps(sorted(existing), indent=2))
-
-
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -265,9 +245,6 @@ def main() -> None:
         groups.setdefault(key, []).append(idx)
 
     total_groups = len(groups)
-    permanent_failures = load_failures()
-    if permanent_failures:
-        print(f"  → {len(permanent_failures)} (ticker, expiry) pairs permanently skipped (prior fetch failures)")
     print(f"  → {total_groups} (ticker, expiry) pairs to fetch")
     print("─" * 60)
 
@@ -278,17 +255,6 @@ def main() -> None:
 
     for g_num, ((ticker, expiry_str), indices) in enumerate(sorted(groups.items()), 1):
         n = len(indices)
-        if (ticker, expiry_str) in permanent_failures:
-            print(
-                f"[{g_num:3d}/{total_groups}]  {ticker:<8s}  {expiry_str}  "
-                f"({n} position{'s' if n != 1 else ''}) ...  ⊘ skipped (prior failure)",
-                flush=True,
-            )
-            failed += n
-            for idx in indices:
-                p = positions[idx]
-                missing.append((ticker, p.get("strike"), expiry_str))
-            continue
         print(
             f"[{g_num:3d}/{total_groups}]  {ticker:<8s}  {expiry_str}  "
             f"({n} position{'s' if n != 1 else ''}) ...",
@@ -320,7 +286,6 @@ def main() -> None:
         if not puts and not calls:
             reason = "API failure" if data is None else "no chain data after retries"
             print(f"  ✗ {reason}", flush=True)
-            save_failure((ticker, expiry_str), permanent_failures)
             for idx in indices:
                 p = positions[idx]
                 missing.append((ticker, p.get("strike"), expiry_str))
