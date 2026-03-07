@@ -696,13 +696,6 @@ async function load(raw) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const totalHeaderH = ['.tab-bar', '#header', '.hdr-rule']
-    .reduce((sum, sel) => {
-      const el = document.querySelector(sel);
-      return sum + (el ? el.offsetHeight : 0);
-    }, 0);
-  document.documentElement.style.setProperty('--header-h', totalHeaderH + 'px');
-
   startClock();
   initCollapsibles();
 
