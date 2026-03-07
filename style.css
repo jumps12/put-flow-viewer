@@ -233,7 +233,7 @@ body::before {
 
 #sec02 {
   flex: 0 0 320px;
-  height: 100%;
+  height: calc(100vh - 61px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -241,8 +241,9 @@ body::before {
 
 /* ── Sidebar scrolls internally ───────────────────── */
 #sidebar-cards {
+  flex: 1 1 auto;
   overflow-y: auto;
-  max-height: calc(100vh - 200px);
+  min-height: 0;
   scrollbar-width: thin;
   scrollbar-color: #1c2535 transparent;
 }
