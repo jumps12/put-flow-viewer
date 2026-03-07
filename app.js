@@ -305,12 +305,8 @@ function buildChart(ohlcv, positions) {
 
   if (_chart) { _chart.remove(); _chart = null; }
 
-  const h = (() => {
-    const tabH   = document.querySelector('.tab-bar')?.offsetHeight  ?? 37;
-    const hdrH   = document.querySelector('#header')?.offsetHeight   ?? 56;
-    const ruleH  = document.querySelector('.hdr-rule')?.offsetHeight ?? 2;
-    return window.innerHeight - tabH - hdrH - ruleH;
-  })();
+  const h = (container.getBoundingClientRect().height ||
+            (window.innerHeight - (document.querySelector('.tab-bar')?.offsetHeight ?? 37) - (document.querySelector('#header')?.offsetHeight ?? 56) - 2)) - 60;
 
   _chart = LightweightCharts.createChart(container, {
     width:  container.clientWidth,
