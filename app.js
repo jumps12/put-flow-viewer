@@ -306,7 +306,7 @@ function buildChart(ohlcv, positions) {
 
   requestAnimationFrame(() => {
     const rect = container.getBoundingClientRect();
-    const h = rect.height > 50 ? rect.height : (window.innerHeight - 97);
+    const h = (rect.height > 50 ? rect.height : (window.innerHeight - 97)) - 32;
 
     _chart = LightweightCharts.createChart(container, {
     width:  container.clientWidth,
@@ -340,7 +340,7 @@ function buildChart(ohlcv, positions) {
     for (const entry of entries) {
       _chart.applyOptions({
         width:  entry.contentRect.width,
-        height: entry.contentRect.height,
+        height: entry.contentRect.height - 32,
       });
     }
   }).observe(container);
