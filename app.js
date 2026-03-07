@@ -304,12 +304,21 @@ function buildChart(ohlcv, positions) {
   const container = document.getElementById('chart-container');
   if (_chart) { _chart.remove(); _chart = null; }
 
-  requestAnimationFrame(() => {
-    _chart = LightweightCharts.createChart(container, {
-      width:  container.clientWidth,
-      height: container.clientHeight || container.parentElement.clientHeight - container.previousElementSibling?.offsetHeight - 50 || 500,
-      layout: {
-        background: { type: 'solid', color: '#07090d' },
+  // Explicitly size the container so LightweightCharts has real dimensions.
+  // sec01 fills the left column; subtract its header rows to get chart height.
+  const sec01      = document.getElementById('sec01');
+  const sectionHdr = sec01.querySelector('.section-hdr');
+  const legendBar  = sec01.querySelector('.legend-bar');
+  const chartH     = sec01.clientHeight
+                   - (sectionHdr?.offsetHeight ?? 0)
+                   - (legendBar?.offsetHeight  ?? 0);
+  container.style.height = chartH + 'px';
+
+  _chart = LightweightCharts.createChart(container, {
+    width:  container.clientWidth,
+    height: chartH,
+    layout: {
+      background: { type: 'solid', color: '#07090d' },
         textColor:  '#c8d8ea',
         fontSize:   12,
       },
@@ -331,6 +340,15 @@ function buildChart(ohlcv, positions) {
         lockVisibleTimeRangeOnResize: false,
       },
     });
+
+  new ResizeObserver(() => {
+    if (!_chart) return;
+    const newH = sec01.clientHeight
+               - (sectionHdr?.offsetHeight ?? 0)
+               - (legendBar?.offsetHeight  ?? 0);
+    container.style.height = newH + 'px';
+    _chart.applyOptions({ width: container.clientWidth, height: newH });
+  }).observe(sec01);
 
   // ── OHLC bars ────────────────────────────────────────────
   const candles = _chart.addBarSeries({
@@ -467,7 +485,6 @@ function buildChart(ohlcv, positions) {
 
     // Wait one frame for the range to settle, then place labels.
     requestAnimationFrame(() => createLabels(chartPositions));
-  });
 }
 
 // ── Sidebar (section 02 — Active Positions) ───────────────────────────────────
