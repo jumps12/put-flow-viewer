@@ -36,7 +36,7 @@
   <div id="tab-chart" class="tab-panel tab-panel--active">
 
     <!-- ── 01 Price Chart ─────────────────────────────────────────── -->
-    <section class="section">
+    <section id="sec01" class="section">
       <div class="section-hdr">
         <span class="sec-num">01</span>
         <div class="sec-meta">
@@ -80,22 +80,24 @@
     </section>
 
     <!-- ── 02 Active Positions (sidebar) ─────────────────────────── -->
-    <aside id="positions-sidebar">
-      <div class="sidebar-hdr">
-        <span class="sec-num">02</span>
-        <div class="sidebar-meta">
-          <div class="sidebar-sec-title">Active Positions</div>
-          <div id="sidebar-info">Load a ticker…</div>
+    <div id="sec02">
+      <aside id="positions-sidebar">
+        <div class="sidebar-hdr">
+          <span class="sec-num">02</span>
+          <div class="sidebar-meta">
+            <div class="sidebar-sec-title">Active Positions</div>
+            <div id="sidebar-info">Load a ticker…</div>
+          </div>
         </div>
-      </div>
-      <div class="sidebar-tabs">
-        <button class="stab stab-on" data-tab="active">ACTIVE</button>
-        <button class="stab" data-tab="expired">EXPIRED</button>
-      </div>
-      <div class="sidebar-body">
-        <div id="sidebar-cards"></div>
-      </div>
-    </aside>
+        <div class="sidebar-tabs">
+          <button class="stab stab-on" data-tab="active">ACTIVE</button>
+          <button class="stab" data-tab="expired">EXPIRED</button>
+        </div>
+        <div class="sidebar-body">
+          <div id="sidebar-cards"></div>
+        </div>
+      </aside>
+    </div>
 
   </div><!-- /#tab-chart -->
 

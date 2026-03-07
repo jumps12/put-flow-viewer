@@ -208,9 +208,30 @@ body::before {
   display: none;
 }
 
+/* ── Chart tab inner layout — chart left, sidebar right ── */
 #tab-chart.tab-panel--active {
   display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  height: calc(100vh - 37px);
+  overflow: hidden;
+}
+
+#sec01 {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
   flex-direction: column;
+}
+
+#sec02 {
+  flex: 0 0 320px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* ── Sidebar scrolls internally ───────────────────── */
