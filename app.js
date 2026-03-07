@@ -316,33 +316,31 @@ function buildChart(ohlcv, positions) {
 
   _chart = LightweightCharts.createChart(container, {
     width:  container.clientWidth,
-    height: chartH,
+    height: container.clientHeight,
     layout: {
       background: { type: 'solid', color: '#07090d' },
-        textColor:  '#c8d8ea',
-        fontSize:   12,
-      },
-      grid: {
-        vertLines: { color: '#111520' },
-        horzLines: { color: '#111520' },
-      },
-      crosshair:       { mode: LightweightCharts.CrosshairMode.Normal },
-      handleScroll:    true,
-      handleScale:     true,
-      rightPriceScale: {
-        borderColor: '#1c2535',
-        scaleMargins: { top: 0.02, bottom: 0.28 },
-      },
-      timeScale: {
-        borderColor:                '#1c2535',
-        secondsVisible:             false,
-        rightOffset:                10,
-        barSpacing:                 10,
-        fixLeftEdge:                false,
-        fixRightEdge:               false,
-        lockVisibleTimeRangeOnResize: false,
-      },
-    });
+      textColor:  '#c8d8ea',
+      fontSize:   12,
+      panes: { separatorColor: '#1c2535' },
+    },
+    grid: {
+      vertLines: { color: '#111520' },
+      horzLines: { color: '#111520' },
+    },
+    crosshair:       { mode: LightweightCharts.CrosshairMode.Normal },
+    handleScroll:    true,
+    handleScale:     true,
+    rightPriceScale: { borderColor: '#1c2535' },
+    timeScale: {
+      borderColor:                  '#1c2535',
+      secondsVisible:               false,
+      rightOffset:                  10,
+      barSpacing:                   10,
+      fixLeftEdge:                  false,
+      fixRightEdge:                 false,
+      lockVisibleTimeRangeOnResize: false,
+    },
+  });
 
   const ohlcDisplay = document.createElement('div');
   ohlcDisplay.id = 'ohlc-display';
@@ -399,17 +397,17 @@ function buildChart(ohlcv, positions) {
   const volumeSeries = _chart.addHistogramSeries({
     color: '#1c2535',
     priceFormat: { type: 'volume' },
-    priceScaleId: 'volume',
-    autoscaleInfoProvider: () => null,
-  });
-  _chart.priceScale('volume').applyOptions({
-    scaleMargins: { top: 0.75, bottom: 0 },
-  });
+  }, 1); // pane index 1 = separate pane below
+
   volumeSeries.setData(ohlcv.map(d => ({
     time:  d.time,
     value: d.volume ?? 0,
-    color: d.close >= d.open ? 'rgba(0,230,118,0.25)' : 'rgba(255,51,85,0.25)',
+    color: d.close >= d.open ? 'rgba(0,230,118,0.4)' : 'rgba(255,51,85,0.4)',
   })));
+
+  // Size the panes: 80% price, 20% volume
+  _chart.panes()[0].setHeight(Math.floor(container.clientHeight * 0.80));
+  _chart.panes()[1].setHeight(Math.floor(container.clientHeight * 0.20));
 
   // ── Invisible future line — forces the time axis to render 90 days ahead ──
   // LightweightCharts only allocates time slots for dates present in series data.
