@@ -307,7 +307,7 @@ function buildChart(ohlcv, positions) {
 
   _chart = LightweightCharts.createChart(container, {
     width:  container.clientWidth,
-    height: 540,
+    height: container.clientHeight || 540,
     layout: {
       background: { type: 'solid', color: '#07090d' },
       textColor:  '#c8d8ea',
@@ -334,7 +334,10 @@ function buildChart(ohlcv, positions) {
 
   // Responsive resize
   new ResizeObserver(() => {
-    if (_chart) _chart.applyOptions({ width: container.clientWidth });
+    if (_chart) _chart.applyOptions({
+      width: container.clientWidth,
+      height: container.clientHeight,
+    });
   }).observe(container);
 
   // ── OHLC bars ────────────────────────────────────────────
