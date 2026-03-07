@@ -11,6 +11,11 @@
 </head>
 <body>
 
+  <div class="tab-bar">
+    <button class="tab-btn tab-btn--active" data-tab="chart">CHART</button>
+    <button class="tab-btn" data-tab="signals">SIGNALS</button>
+  </div>
+
   <header id="header">
     <div class="hdr-left">
       <div class="hdr-brand">
@@ -27,74 +32,52 @@
 
   <div class="hdr-rule"></div>
 
-  <div class="layout-wrap">
+  <!-- ── CHART TAB ────────────────────────────────────────────────── -->
+  <div id="tab-chart" class="tab-panel tab-panel--active">
 
-    <div class="main-col">
-
-      <!-- ── 01 Price Chart ─────────────────────────────────────────── -->
-      <section class="section">
-        <div class="section-hdr">
-          <span class="sec-num">01</span>
-          <div class="sec-meta">
-            <div class="sec-title">Price Chart</div>
-            <div class="sec-sub">PRICE ACTION · STRIKE LEVELS · TRADE MARKERS · UPDATED DAILY</div>
-          </div>
-          <div class="sec-controls">
-            <input type="text" id="ticker-input" placeholder="TICKER…" maxlength="10"
-                   autocomplete="off" spellcheck="false">
-            <button id="load-btn">LOAD</button>
-          </div>
-          <button class="collapse-btn open" data-target="sec01-body">▸</button>
+    <!-- ── 01 Price Chart ─────────────────────────────────────────── -->
+    <section class="section">
+      <div class="section-hdr">
+        <span class="sec-num">01</span>
+        <div class="sec-meta">
+          <div class="sec-title">Price Chart</div>
+          <div class="sec-sub">PRICE ACTION · STRIKE LEVELS · TRADE MARKERS · UPDATED DAILY</div>
         </div>
-        <div class="section-body" id="sec01-body">
-          <div id="status" hidden></div>
-          <div class="legend-bar">
-            <div class="lg-group">
-              <span class="dte-item" style="color:#00c8ff">180+ DTE</span>
-              <span class="dte-item" style="color:#00e676">90–180 DTE</span>
-              <span class="dte-item" style="color:#ffb300">30–90 DTE</span>
-              <span class="dte-item" style="color:#ff3355">&lt;30 DTE</span>
-            </div>
-            <span class="lg-sep"></span>
-            <div class="lg-group">
-              <span class="lw-item"><span class="lw lw3"></span>&gt;$2M</span>
-              <span class="lw-item"><span class="lw lw2"></span>&gt;$500K</span>
-              <span class="lw-item"><span class="lw lw1"></span>&lt;$500K</span>
-            </div>
-            <span class="lg-sep"></span>
-            <button id="filter-btn" class="filter-btn">&gt;$1M</button>
-            <span class="lg-sep"></span>
-            <div class="tf-group">
-              <button class="tf-btn" data-months="3">3M</button>
-              <button class="tf-btn" data-months="6">6M</button>
-              <button class="tf-btn tf-btn--active" data-months="12">1Y</button>
-              <button class="tf-btn" data-months="24">2Y</button>
-            </div>
-          </div>
-          <div id="chart-container"></div>
+        <div class="sec-controls">
+          <input type="text" id="ticker-input" placeholder="TICKER…" maxlength="10"
+                 autocomplete="off" spellcheck="false">
+          <button id="load-btn">LOAD</button>
         </div>
-      </section>
-
-      <!-- ── 03 Confluence Signals ──────────────────────────────────── -->
-      <section class="section">
-        <div class="section-hdr">
-          <span class="sec-num">03</span>
-          <div class="sec-meta">
-            <div class="sec-title">Confluence Signals</div>
-            <div class="sec-sub">ALL POSITIONS BULLISH · PUTS SOLD + CALLS BOUGHT · COORDINATED WITHIN 7-DAY WINDOW · SORTED BY BULLISH CONVICTION SCORE</div>
+        <button class="collapse-btn open" data-target="sec01-body">▸</button>
+      </div>
+      <div class="section-body" id="sec01-body">
+        <div id="status" hidden></div>
+        <div class="legend-bar">
+          <div class="lg-group">
+            <span class="dte-item" style="color:#00c8ff">180+ DTE</span>
+            <span class="dte-item" style="color:#00e676">90–180 DTE</span>
+            <span class="dte-item" style="color:#ffb300">30–90 DTE</span>
+            <span class="dte-item" style="color:#ff3355">&lt;30 DTE</span>
           </div>
-          <button class="collapse-btn open" data-target="sec03-body">▸</button>
-        </div>
-        <div class="section-body" id="sec03-body">
-          <div id="sig-status" hidden></div>
-          <div class="sig-header-strip" id="sig-summary" hidden></div>
-          <div id="signals-grid" class="signals-grid">
-            <div class="sig-loading">Loading signals…</div>
+          <span class="lg-sep"></span>
+          <div class="lg-group">
+            <span class="lw-item"><span class="lw lw3"></span>&gt;$2M</span>
+            <span class="lw-item"><span class="lw lw2"></span>&gt;$500K</span>
+            <span class="lw-item"><span class="lw lw1"></span>&lt;$500K</span>
+          </div>
+          <span class="lg-sep"></span>
+          <button id="filter-btn" class="filter-btn">&gt;$1M</button>
+          <span class="lg-sep"></span>
+          <div class="tf-group">
+            <button class="tf-btn" data-months="3">3M</button>
+            <button class="tf-btn" data-months="6">6M</button>
+            <button class="tf-btn tf-btn--active" data-months="12">1Y</button>
+            <button class="tf-btn" data-months="24">2Y</button>
           </div>
         </div>
-      </section>
-
-    </div><!-- /.main-col -->
+        <div id="chart-container"></div>
+      </div>
+    </section>
 
     <!-- ── 02 Active Positions (sidebar) ─────────────────────────── -->
     <aside id="positions-sidebar">
@@ -114,11 +97,45 @@
       </div>
     </aside>
 
-  </div><!-- /.layout-wrap -->
+  </div><!-- /#tab-chart -->
+
+  <!-- ── SIGNALS TAB ──────────────────────────────────────────────── -->
+  <div id="tab-signals" class="tab-panel">
+
+    <!-- ── 03 Confluence Signals ──────────────────────────────────── -->
+    <section class="section">
+      <div class="section-hdr">
+        <span class="sec-num">03</span>
+        <div class="sec-meta">
+          <div class="sec-title">Confluence Signals</div>
+          <div class="sec-sub">ALL POSITIONS BULLISH · PUTS SOLD + CALLS BOUGHT · COORDINATED WITHIN 7-DAY WINDOW · SORTED BY BULLISH CONVICTION SCORE</div>
+        </div>
+        <button class="collapse-btn open" data-target="sec03-body">▸</button>
+      </div>
+      <div class="section-body" id="sec03-body">
+        <div id="sig-status" hidden></div>
+        <div class="sig-header-strip" id="sig-summary" hidden></div>
+        <div id="signals-grid" class="signals-grid">
+          <div class="sig-loading">Loading signals…</div>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /#tab-signals -->
 
   <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
   <script src="config.js"></script>
   <script src="app.js"></script>
   <script src="signals.js"></script>
+  <script>
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-btn--active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('tab-panel--active'));
+        btn.classList.add('tab-btn--active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('tab-panel--active');
+      });
+    });
+  </script>
 </body>
 </html>

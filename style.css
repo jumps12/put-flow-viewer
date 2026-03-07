@@ -157,6 +157,96 @@ body::before {
   gap: 2px;
 }
 
+/* ── Tab bar ───────────────────────────────────────── */
+.tab-bar {
+  display: flex;
+  gap: 2px;
+  padding: 8px 12px 0;
+  border-bottom: 1px solid #1c2535;
+  background: #0a0a0a;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.tab-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-variant: small-caps;
+  letter-spacing: 0.1em;
+  color: #4a5a6a;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 6px 16px 8px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tab-btn:hover {
+  color: #a0b4c8;
+}
+
+.tab-btn--active {
+  color: #00BCD4;
+  border-bottom: 2px solid #00BCD4;
+}
+
+/* ── Tab panels ────────────────────────────────────── */
+.tab-panel {
+  display: none;
+}
+
+.tab-panel--active {
+  display: block;
+}
+
+/* ── Chart tab — no page scroll ───────────────────── */
+#tab-chart {
+  height: calc(100vh - 37px);
+  overflow: hidden;
+  display: none;
+}
+
+#tab-chart.tab-panel--active {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Sidebar scrolls internally ───────────────────── */
+#sidebar-cards {
+  overflow-y: auto;
+  max-height: calc(100vh - 200px);
+  scrollbar-width: thin;
+  scrollbar-color: #1c2535 transparent;
+}
+
+#sidebar-cards::-webkit-scrollbar { width: 4px; }
+#sidebar-cards::-webkit-scrollbar-thumb {
+  background: #1c2535;
+  border-radius: 2px;
+}
+
+/* ── Signals tab — full width grid ────────────────── */
+#tab-signals {
+  padding: 12px;
+  overflow-y: auto;
+  height: calc(100vh - 37px);
+}
+
+.signals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+/* ── Full box borders on signal cards ─────────────── */
+.signal-card--strong  { border: 1px solid #FFD700; }
+.signal-card--notable { border: 1px solid #00BCD4; }
+.signal-card--unusual { border: 1px solid #FFFFFF; }
+.signal-card--event   { border: 1px solid #FF9800; }
+
 /* ── Sections ────────────────────────────────────────────── */
 .section {
   background: var(--bg2);
