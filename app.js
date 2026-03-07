@@ -306,7 +306,8 @@ function buildChart(ohlcv, positions) {
 
   requestAnimationFrame(() => {
     _chart = LightweightCharts.createChart(container, {
-      autoSize: true,
+      width:  container.clientWidth,
+      height: container.clientHeight,
       layout: {
         background: { type: 'solid', color: '#07090d' },
         textColor:  '#c8d8ea',
