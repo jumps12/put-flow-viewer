@@ -975,6 +975,7 @@ body::before {
   min-height: 0;
   overflow: hidden;
   position: relative;
+  height: 100%;
 }
 
 /* ── Right column: sidebar ───────────────────────────────────── */
