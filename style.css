@@ -900,6 +900,17 @@ body::before {
   letter-spacing: 0.06em;
 }
 
+/* Signal summary line on each card */
+.card-sigline {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-variant: small-caps;
+  letter-spacing: 0.08em;
+  color: #a0b4c8;
+  margin: 8px 0 10px;
+  line-height: 1.4;
+}
+
 /* Strategy line on each signal card */
 .card-strat {
   font-size: 9px;

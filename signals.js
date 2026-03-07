@@ -386,6 +386,7 @@ async function loadSignals() {
         daysActive, minTradeDate, maxExpiry,
         tier1Triggers: tier1, tier2Triggers: tier2, deprioritize: dep,
         multiplier, followThrough, ft250, isFirstTime, isQuiet,
+        repeatDays: countLast5,
         ema21d: posEma[ticker] ?? null, maContext: null,
       });
       continue;
@@ -400,6 +401,7 @@ async function loadSignals() {
       daysActive, minTradeDate, maxExpiry,
       tier1Triggers: tier1, tier2Triggers: tier2, deprioritize: dep,
       multiplier, followThrough, ft250, isFirstTime, isQuiet,
+      repeatDays: countLast5,
       ema21d: posEma[ticker] ?? null, maContext: null,
     });
 
@@ -411,7 +413,7 @@ async function loadSignals() {
       sig.tier     = sig.badge;
       sig.notional = sig.totalNotional;
       sig.tags     = sig.tags ?? [];
-      const note   = localStorage.getItem(`analyst_note_${ticker}`) ?? '';
+      const note   = '';
       applyLearnedScoring(sig, note);
       // Override tier if golden-rule forces it
       if (sig.forceEventTrade) sig.badge = 'EVENT';
@@ -534,7 +536,7 @@ function renderSignals(signals) {
   const strongN   = signals.filter(s => s.badge === 'STRONG').length;
   const notableN  = signals.filter(s => s.badge === 'NOTABLE').length;
   const unusualN  = signals.filter(s => s.badge === 'UNUSUAL').length;
-  const ftN       = signals.filter(s => s.followThrough || s.ft250).length;
+  const ftN       = signals.filter(s => s.repeatDays >= 2).length;
   const qualified = signals._qualified    ?? signals.length;
   const tracked   = signals._totalTracked ?? qualified;
   const dateStr   = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
@@ -542,7 +544,7 @@ function renderSignals(signals) {
   const summary = document.getElementById('sig-summary');
   summary.innerHTML = `
     <span class="sum-pill bull-key">TOP SIGNALS · ${dateStr} · ${qualified} tickers qualified out of ${tracked} tracked</span>
-    ${ftN      ? `<span class="sum-pill follow-thru">${ftN} FOLLOW-THROUGH</span>` : ''}
+    ${ftN      ? `<span class="sum-pill follow-thru">${ftN} REPEAT</span>` : ''}
     ${strongN  ? `<span class="sum-pill strong">${strongN} STRONG</span>`          : ''}
     ${notableN ? `<span class="sum-pill notable">${notableN} NOTABLE</span>`       : ''}
     ${unusualN ? `<span class="sum-pill unusual">${unusualN} UNUSUAL</span>`       : ''}
@@ -562,125 +564,65 @@ function renderSignals(signals) {
                    : s.badge === 'UNUSUAL' ? 'signal-card--unusual'
                    : 'signal-card--event';
 
-    const dateRange = `${fmtDate(s.minTradeDate)} → ${fmtDate(s.maxExpiry)}`;
-
-    // EMA status dot
+    // EMA indicator — only show if above or reclaim, never below
     const maStatus = s.maContext?.maStatus ?? null;
-    const dotTitle = maStatus === 'reclaim' ? '⚡ 21D EMA Reclaim'
-                   : maStatus === 'above'   ? '↑ Above 21D EMA'
-                   : maStatus === 'below'   ? '↓ Below 21D EMA'
-                   : '';
-    const dotCls   = maStatus === 'reclaim' ? 'ema-dot--reclaim'
-                   : maStatus === 'above'   ? 'ema-dot--above'
-                   : maStatus === 'below'   ? 'ema-dot--below'
-                   : '';
-    const emaDot   = dotCls
-      ? `<span class="ema-dot ${dotCls}" title="${dotTitle}"></span>`
+    const emaDot   = maStatus === 'reclaim'
+      ? `<span class="ema-dot ema-dot--reclaim" title="21D EMA Reclaim"></span>`
+      : maStatus === 'above'
+      ? `<span class="ema-dot ema-dot--above" title="Above 21D EMA"></span>`
       : '';
 
-    // Tags row — most significant first
-    const tags = [
-      s.ft250          ? `<span class="sig-tag tag-ft">3+ OF 5 DAYS</span>`   : '',
-      s.followThrough  ? `<span class="sig-tag tag-ft">FOLLOW-THROUGH</span>` : '',
-      s.isFirstTime    ? `<span class="sig-tag tag-new">NEW</span>`           : '',
-      (!s.isFirstTime && s.isQuiet) ? `<span class="sig-tag tag-new">QUIET NAME</span>` : '',
-    ].filter(Boolean).join('');
+    // Signal line — 2-3 most important signals, priority order
+    const sigParts = [];
+    if (maStatus === 'reclaim')          sigParts.push('⚡ RECLAIM');
+    if (s.repeatDays >= 2)               sigParts.push(`REPEAT ${s.repeatDays} DAYS`);
+    if (s.puts.length && s.calls.length) sigParts.push('PUT + CALL');
+    else if (s.puts.length)             sigParts.push('PUT ONLY');
+    else                                 sigParts.push('CALL ONLY');
+    // Best qualifying tag from learned scoring (first gold tag, else first non-warning teal)
+    const goldTags = ['RISK REVERSAL','ITM PUT SALE','ROLLING HIGHER','CONVICTION UPGRADE','BREAKOUT CONFIRMATION','RELATIVE STRENGTH'];
+    const bestTag  = (s.tags || []).find(t => goldTags.includes(t)) ||
+                     (s.tags || []).find(t => !['CALLS ONLY — BIOTECH','CALLS ONLY — SMALL CAP','ENERGY — USE SPREADS'].includes(t));
+    if (bestTag)     sigParts.push(bestTag);
+    const sigLine  = sigParts.slice(0, 3).join(' · ');
 
-    const hasBoth   = s.puts.length > 0 && s.calls.length > 0;
-    const stratLine = hasBoth
-      ? `PUT SOLD <span class="card-strat-bull">▲ BULLISH</span> + CALL BOUGHT`
-      : s.puts.length
-        ? `PUT SOLD <span class="card-strat-bull">▲ BULLISH</span>`
-        : s.badge === 'EVENT'
-          ? `CALL BOUGHT <span class="card-strat-event">⚡ EVENT PLAY</span>`
-          : `CALL BOUGHT <span class="card-strat-bull">▲ BULLISH</span>`;
-
-    const maInds = s.maContext?.indicators ?? [];
-    const maHtml = maInds.length
-      ? `<div class="card-ma">${maInds.map(i => `<span class="ma-tag ${i.cls}">${i.text}</span>`).join('')}</div>`
-      : '';
-
-    const emaHtml = s.ema21d != null
-      ? `<div class="card-ema">21D EMA <span class="card-ema-val">$${s.ema21d.toFixed(2)}</span></div>`
-      : '';
-
-    // ── Tag pills ─────────────────────────────────────────────
-    const _tagColors = {
-      'RISK REVERSAL':          'gold',
-      'ITM PUT SALE':           'gold',
-      'ROLLING HIGHER':         'gold',
-      'CONVICTION UPGRADE':     'gold',
-      'BREAKOUT CONFIRMATION':  'gold',
-      'RELATIVE STRENGTH':      'gold',
-      'CALLS ONLY — BIOTECH':   'red',
-      'CALLS ONLY — SMALL CAP': 'red',
-      'SPECULATIVE':            'red',
-      'FIRST FLOW':             'teal',
-      'MOMENTUM ENTRY':         'teal',
-      'GAP FILL TARGET':        'teal',
-      'CATALYST WATCH':         'teal',
-      'TREND CHANGE WATCH':     'teal',
-      'DEFINED RISK':           'teal',
-      'CALENDAR STRUCTURE':     'teal',
-      'ENERGY — USE SPREADS':   'teal',
-    };
-    const _tagColorMap = {
-      gold: { bg: 'rgba(255,200,0,0.12)', border: 'rgba(255,200,0,0.4)', text: '#ffc800' },
-      red:  { bg: 'rgba(255,50,50,0.12)',  border: 'rgba(255,50,50,0.4)',  text: '#ff4444' },
-      teal: { bg: 'rgba(0,188,212,0.12)',  border: 'rgba(0,188,212,0.4)', text: '#00bcd4' },
-    };
-    const tagPillsHtml = (s.tags && s.tags.length)
-      ? `<div style="margin-top:6px;line-height:1.8">${
-          s.tags.map(tag => {
-            const c = _tagColorMap[_tagColors[tag] || 'teal'];
-            return `<span style="display:inline-block;font-family:'JetBrains Mono',monospace;font-size:9px;font-variant:small-caps;letter-spacing:0.05em;padding:2px 6px;margin:2px 3px 2px 0;border-radius:3px;background:${c.bg};border:1px solid ${c.border};color:${c.text}">${tag}</span>`;
-          }).join('')
-        }</div>`
-      : '';
+    // Warning tags — calls only flags shown as red pills
+    const warnTags = (s.tags || []).filter(t => t.startsWith('CALLS ONLY'));
+    const warnHtml = warnTags.map(t =>
+      `<span style="font-family:'JetBrains Mono',monospace;font-size:9px;font-variant:small-caps;padding:2px 6px;border-radius:3px;background:rgba(255,50,50,0.12);border:1px solid rgba(255,50,50,0.4);color:#ff4444">${t}</span>`
+    ).join(' ');
 
     return `
-      <div class="signal-card ${cardCls}">
-        <div class="card-top">
-          <span class="card-ticker">${s.ticker}</span>
-          <div class="card-top-right">
-            ${emaDot}
-            <span class="card-badge ${badgeCls}">${s.badge}</span>
-          </div>
+    <div class="signal-card ${cardCls}">
+      <div class="card-top">
+        <span class="card-ticker">${s.ticker}</span>
+        <div class="card-top-right">
+          ${emaDot}
+          <span class="card-badge ${badgeCls}">${s.badge}</span>
         </div>
+      </div>
 
-        ${tagPillsHtml}
+      <div class="card-sigline">${sigLine}</div>
 
-        ${tags ? `<div class="card-tags">${tags}</div>` : ''}
+      ${warnHtml ? `<div style="margin-top:4px">${warnHtml}</div>` : ''}
 
-        <div class="card-strat">${stratLine}</div>
-
-        ${maHtml}
-
-        <div class="card-stats">
-          <div class="stat">
-            <div class="stat-val" style="color:var(--up)">${fmtNotional(s.totalNotional)}</div>
-            <div class="stat-lbl">Total Notional</div>
-          </div>
-          <div class="stat-divider"></div>
-          <div class="stat">
-            <div class="stat-val">${s.daysActive}</div>
-            <div class="stat-lbl">Days active</div>
-          </div>
+      <div class="card-stats">
+        <div class="stat">
+          <div class="stat-val" style="color:var(--up)">${fmtNotional(s.totalNotional)}</div>
+          <div class="stat-lbl">TOTAL NOTIONAL</div>
         </div>
-
-        <div class="card-footer">
-          ${emaHtml}
-          <div class="card-dates">${dateRange}</div>
-          <div class="card-row2">
-            <a class="card-link" href="#" data-ticker="${s.ticker}">View chart →</a>
-          </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <div class="stat-val">${s.daysActive}</div>
+          <div class="stat-lbl">DAYS ACTIVE</div>
         </div>
+      </div>
 
-        <div class="card-note-wrap">
-          <div class="card-note-lbl">ANALYST NOTE</div>
-          <textarea class="card-note" data-ticker="${s.ticker}" placeholder="Add context…" rows="2"></textarea>
-        </div>
-      </div>`;
+      <div class="card-footer">
+        <div class="card-dates">${fmtDate(s.minTradeDate)} → ${fmtDate(s.maxExpiry)}</div>
+        <a class="card-link" href="#" data-ticker="${s.ticker}">View chart →</a>
+      </div>
+    </div>`;
   };
 
   // Main structural signals grid
@@ -706,27 +648,6 @@ function renderSignals(signals) {
     `;
     document.getElementById('sec03-body').appendChild(wrap);
   }
-
-  // ── Wire analyst notes (all cards, incl. events) ─────────────────────────
-  document.getElementById('sec03-body').querySelectorAll('.card-note').forEach(ta => {
-    const key   = `analyst_note_${ta.dataset.ticker}`;
-    const saved = localStorage.getItem(key) ?? '';
-    if (saved) { ta.value = saved; ta.classList.add('has-note'); }
-    let debounce;
-    ta.addEventListener('input', () => {
-      clearTimeout(debounce);
-      debounce = setTimeout(() => {
-        if (ta.value.trim()) {
-          localStorage.setItem(key, ta.value);
-          ta.classList.add('has-note');
-        } else {
-          localStorage.removeItem(key);
-          ta.classList.remove('has-note');
-        }
-      }, 400);
-    });
-    ta.addEventListener('click', e => e.stopPropagation());
-  });
 
   // ── Wire export button ────────────────────────────────────────────────────
   document.getElementById('export-btn')?.addEventListener('click', async () => {
