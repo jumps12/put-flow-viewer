@@ -304,14 +304,13 @@ function buildChart(ohlcv, positions) {
   const container = document.getElementById('chart-container');
   if (_chart) { _chart.remove(); _chart = null; }
 
-  // Explicitly size the container so LightweightCharts has real dimensions.
-  // sec01 fills the left column; subtract its header rows to get chart height.
-  const sec01      = document.getElementById('sec01');
-  const sectionHdr = sec01.querySelector('.section-hdr');
-  const legendBar  = sec01.querySelector('.legend-bar');
-  const chartH     = sec01.clientHeight
-                   - (sectionHdr?.offsetHeight ?? 0)
-                   - (legendBar?.offsetHeight  ?? 0);
+  // Calculate chart height from known fixed element heights
+  const tabBarH  = document.querySelector('.tab-bar')?.offsetHeight  ?? 37;
+  const headerH  = document.querySelector('#header')?.offsetHeight   ?? 56;
+  const hdrRuleH = document.querySelector('.hdr-rule')?.offsetHeight ?? 2;
+  const secHdrH  = document.querySelector('#sec01 .section-hdr')?.offsetHeight ?? 55;
+  const legendH  = document.querySelector('#sec01 .legend-bar')?.offsetHeight  ?? 34;
+  const chartH   = window.innerHeight - tabBarH - headerH - hdrRuleH - secHdrH - legendH;
   container.style.height = chartH + 'px';
 
   _chart = LightweightCharts.createChart(container, {
@@ -341,14 +340,17 @@ function buildChart(ohlcv, positions) {
       },
     });
 
-  new ResizeObserver(() => {
+  window.addEventListener('resize', () => {
     if (!_chart) return;
-    const newH = sec01.clientHeight
-               - (sectionHdr?.offsetHeight ?? 0)
-               - (legendBar?.offsetHeight  ?? 0);
+    const newTabBarH  = document.querySelector('.tab-bar')?.offsetHeight  ?? 37;
+    const newHeaderH  = document.querySelector('#header')?.offsetHeight   ?? 56;
+    const newHdrRuleH = document.querySelector('.hdr-rule')?.offsetHeight ?? 2;
+    const newSecHdrH  = document.querySelector('#sec01 .section-hdr')?.offsetHeight ?? 55;
+    const newLegendH  = document.querySelector('#sec01 .legend-bar')?.offsetHeight  ?? 34;
+    const newH = window.innerHeight - newTabBarH - newHeaderH - newHdrRuleH - newSecHdrH - newLegendH;
     container.style.height = newH + 'px';
     _chart.applyOptions({ width: container.clientWidth, height: newH });
-  }).observe(sec01);
+  });
 
   // ── OHLC bars ────────────────────────────────────────────
   const candles = _chart.addBarSeries({
