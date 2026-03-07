@@ -5,6 +5,8 @@
 html, body {
   height: 100%;
   overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 /* ── Design tokens ───────────────────────────────────────── */
@@ -218,8 +220,8 @@ body::before {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  gap: 12px;
-  padding: 12px;
+  gap: 0;
+  padding: 0;
   height: calc(100vh - 37px);
   overflow: hidden;
 }
