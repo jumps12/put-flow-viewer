@@ -219,10 +219,10 @@ body::before {
 #tab-chart.tab-panel--active {
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 0;
   padding: 0;
-  height: calc(100vh - 37px);
+  height: calc(100vh - 90px);
   overflow: hidden;
 }
 
@@ -231,12 +231,12 @@ body::before {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  overflow: hidden;
 }
 
 #sec02 {
   flex: 0 0 320px;
-  height: 100vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -666,9 +666,8 @@ body::before {
 
 /* ── Chart container ─────────────────────────────────────── */
 #chart-container {
-  position: relative;
-  width: 100%;
-  overflow: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 /* Strike labels */
