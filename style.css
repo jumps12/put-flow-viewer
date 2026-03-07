@@ -952,8 +952,12 @@ body::before {
   flex-direction: row;
   align-items: stretch;
   width: 100%;
-  height: calc(100vh - 97px);
+  height: calc(100vh - 95px);
   overflow: hidden;
+}
+
+#tab-chart.tab-panel--active {
+  display: flex !important;
 }
 
 /* ── Left column: chart ──────────────────────────────────────── */

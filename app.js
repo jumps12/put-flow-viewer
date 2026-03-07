@@ -305,9 +305,12 @@ function buildChart(ohlcv, positions) {
 
   if (_chart) { _chart.remove(); _chart = null; }
 
-  // Force container to fill its flex parent before measuring
-  container.style.height = '100%';
-  const h = container.offsetHeight || container.parentElement?.offsetHeight || 600;
+  const h = (() => {
+    const tabH   = document.querySelector('.tab-bar')?.offsetHeight  ?? 37;
+    const hdrH   = document.querySelector('#header')?.offsetHeight   ?? 56;
+    const ruleH  = document.querySelector('.hdr-rule')?.offsetHeight ?? 2;
+    return window.innerHeight - tabH - hdrH - ruleH;
+  })();
 
   _chart = LightweightCharts.createChart(container, {
     width:  container.clientWidth,
