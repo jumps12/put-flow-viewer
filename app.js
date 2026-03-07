@@ -305,9 +305,13 @@ function buildChart(ohlcv, positions) {
 
   if (_chart) { _chart.remove(); _chart = null; }
 
+  // Force container to fill its flex parent before measuring
+  container.style.height = '100%';
+  const h = container.offsetHeight || container.parentElement?.offsetHeight || 600;
+
   _chart = LightweightCharts.createChart(container, {
     width:  container.clientWidth,
-    height: container.clientHeight || 540,
+    height: h,
     layout: {
       background: { type: 'solid', color: '#07090d' },
       textColor:  '#c8d8ea',
@@ -332,12 +336,14 @@ function buildChart(ohlcv, positions) {
     },
   });
 
-  // Responsive resize
-  new ResizeObserver(() => {
-    if (_chart) _chart.applyOptions({
-      width: container.clientWidth,
-      height: container.clientHeight,
-    });
+  new ResizeObserver(entries => {
+    if (!_chart) return;
+    for (const entry of entries) {
+      _chart.applyOptions({
+        width:  entry.contentRect.width,
+        height: entry.contentRect.height,
+      });
+    }
   }).observe(container);
 
   // ── OHLC bars ────────────────────────────────────────────
