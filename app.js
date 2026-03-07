@@ -329,7 +329,10 @@ function buildChart(ohlcv, positions) {
       crosshair:       { mode: LightweightCharts.CrosshairMode.Normal },
       handleScroll:    true,
       handleScale:     true,
-      rightPriceScale: { borderColor: '#1c2535' },
+      rightPriceScale: {
+        borderColor: '#1c2535',
+        scaleMargins: { top: 0.02, bottom: 0.28 },
+      },
       timeScale: {
         borderColor:                '#1c2535',
         secondsVisible:             false,
@@ -400,7 +403,7 @@ function buildChart(ohlcv, positions) {
     autoscaleInfoProvider: () => null,
   });
   _chart.priceScale('volume').applyOptions({
-    scaleMargins: { top: 0.85, bottom: 0 },
+    scaleMargins: { top: 0.75, bottom: 0 },
   });
   volumeSeries.setData(ohlcv.map(d => ({
     time:  d.time,
