@@ -94,11 +94,12 @@ async function fetchOHLCV(ticker) {
 
   return timestamps
     .map((t, i) => ({
-      time:  tsToDateStr(t),
-      open:  q.open?.[i],
-      high:  q.high?.[i],
-      low:   q.low?.[i],
-      close: q.close?.[i],
+      time:   tsToDateStr(t),
+      open:   q.open?.[i],
+      high:   q.high?.[i],
+      low:    q.low?.[i],
+      close:  q.close?.[i],
+      volume: q.volume?.[i],
     }))
     .filter(d => d.open != null && d.high != null && d.low != null && d.close != null);
 }
@@ -340,6 +341,30 @@ function buildChart(ohlcv, positions) {
       },
     });
 
+  const ohlcDisplay = document.createElement('div');
+  ohlcDisplay.id = 'ohlc-display';
+  container.appendChild(ohlcDisplay);
+
+  _chart.subscribeCrosshairMove(param => {
+    if (!param.time || !param.seriesData) {
+      ohlcDisplay.style.display = 'none';
+      return;
+    }
+    const bar = param.seriesData.get(_candlesSeries);
+    if (!bar) { ohlcDisplay.style.display = 'none'; return; }
+    const chg  = bar.close - bar.open;
+    const pct  = ((chg / bar.open) * 100).toFixed(2);
+    const col  = chg >= 0 ? '#00e676' : '#ff3355';
+    ohlcDisplay.style.display = 'block';
+    ohlcDisplay.innerHTML = `
+      <span style="color:var(--fg3)">O</span> <span style="color:${col}">${bar.open.toFixed(2)}</span>
+      <span style="color:var(--fg3)">H</span> <span style="color:${col}">${bar.high.toFixed(2)}</span>
+      <span style="color:var(--fg3)">L</span> <span style="color:${col}">${bar.low.toFixed(2)}</span>
+      <span style="color:var(--fg3)">C</span> <span style="color:${col}">${bar.close.toFixed(2)}</span>
+      <span style="color:${col}">${chg >= 0 ? '+' : ''}${chg.toFixed(2)} (${chg >= 0 ? '+' : ''}${pct}%)</span>
+    `;
+  });
+
   window.addEventListener('resize', () => {
     if (!_chart) return;
     const newTabBarH  = document.querySelector('.tab-bar')?.offsetHeight  ?? 37;
@@ -367,6 +392,21 @@ function buildChart(ohlcv, positions) {
   });
   candles.setData(ohlcv);
   _candlesSeries = candles;
+
+  const volumeSeries = _chart.addHistogramSeries({
+    color: '#1c2535',
+    priceFormat: { type: 'volume' },
+    priceScaleId: 'volume',
+    autoscaleInfoProvider: () => null,
+  });
+  _chart.priceScale('volume').applyOptions({
+    scaleMargins: { top: 0.85, bottom: 0 },
+  });
+  volumeSeries.setData(ohlcv.map(d => ({
+    time:  d.time,
+    value: d.volume ?? 0,
+    color: d.close >= d.open ? 'rgba(0,230,118,0.25)' : 'rgba(255,51,85,0.25)',
+  })));
 
   // ── Invisible future line — forces the time axis to render 90 days ahead ──
   // LightweightCharts only allocates time slots for dates present in series data.

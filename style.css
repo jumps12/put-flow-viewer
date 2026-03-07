@@ -994,12 +994,53 @@ body::before {
   height: 100%;
 }
 
+#ohlc-display {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  display: none;
+  gap: 10px;
+  z-index: 10;
+  pointer-events: none;
+  background: rgba(7,9,13,0.7);
+  padding: 4px 10px;
+}
+#ohlc-display span { margin-right: 6px; }
+
+#sec01.section {
+  border: none;
+  background: transparent;
+}
+
+#sec01 .section-hdr {
+  padding: 8px 16px 6px;
+  border-bottom: none;
+  background: var(--bg1);
+}
+
+#sec01 .legend-bar {
+  padding: 4px 16px;
+  background: var(--bg1);
+  border-bottom: 1px solid var(--border);
+}
+
+#sec01 .section-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  gap: 0;
+}
+
 #chart-container {
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
   position: relative;
-  height: 100%;
 }
 
 /* ── Right column: sidebar ───────────────────────────────────── */
