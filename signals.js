@@ -579,7 +579,7 @@ function renderSignals(signals) {
   summary.hidden = false;
 
   // ── Shared card template ──────────────────────────────────────────────────
-  const makeCard = s => {
+  const makeCard = (s, rank) => {
     const badgeCls = s.badge === 'STRONG'  ? 'badge-strong'
                    : s.badge === 'NOTABLE' ? 'badge-notable'
                    : s.badge === 'UNUSUAL' ? 'badge-unusual'
@@ -621,7 +621,10 @@ function renderSignals(signals) {
     return `
     <div class="signal-card ${cardCls}">
       <div class="card-top">
-        <span class="card-ticker">${s.ticker}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--fg3);letter-spacing:0.08em;min-width:18px">#${rank}</span>
+          <span class="card-ticker">${s.ticker}</span>
+        </div>
         <div class="card-top-right">
           ${emaDot}
           <span class="card-badge ${badgeCls}">${s.badge}</span>
@@ -648,7 +651,7 @@ function renderSignals(signals) {
 
   // Main structural signals grid
   grid.innerHTML = signals.length
-    ? signals.map(makeCard).join('')
+    ? signals.map((s, i) => makeCard(s, i + 1)).join('')
     : `<div class="sig-empty">
          <div class="sig-empty-icon">◈</div>
          <div>No structural signals today</div>
@@ -665,7 +668,7 @@ function renderSignals(signals) {
         <span class="event-hdr-label">EVENT TRADE</span>
         <span class="event-hdr-sub">Short-dated calls · Binary / catalyst play · Not structural flow</span>
       </div>
-      <div class="signals-grid">${events.map(makeCard).join('')}</div>
+      <div class="signals-grid">${events.map((s, i) => makeCard(s, i + 1)).join('')}</div>
     `;
     document.getElementById('sec03-body').appendChild(wrap);
   }
