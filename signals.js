@@ -291,10 +291,15 @@ async function loadSignals() {
     // T1.4  Most active ticker by weighted notional over rolling 7-day window
     if (maxNotional7d > 0 && notional7d[ticker] === maxNotional7d) tier1.push('most_active_7d');
 
-    // T1.5  Calls rolled to progressively higher strikes
+    // T1 — Rolling higher: calls bought at progressively higher strikes on different dates
+    let isRolling = false;
     if (calls.length >= 2) {
       const sorted = [...calls].sort((a, b) => a.tradeDate - b.tradeDate);
-      if (sorted.some((c, i) => i > 0 && c.strike > sorted[i - 1].strike)) tier1.push('rolled_higher');
+      isRolling = sorted.some((c, i) => i > 0 &&
+        c.strike > sorted[i-1].strike &&
+        !sameDayStr(c.tradeDate, sorted[i-1].tradeDate)
+      );
+      if (isRolling) tier1.push('rolled_higher');
     }
 
     // T1.6  21D EMA reclaim — injected during MA enrichment pass (set below)
@@ -339,6 +344,22 @@ async function loadSignals() {
     // T2.7  Deep support put — strike > 15% below current price
     const currPrice = posPrice[ticker];
     if (currPrice && puts.some(p => p.strike < currPrice * 0.85)) tier2.push('deep_put_support');
+
+    // T1 — ITM put sale: put strike above current price
+    if (currPrice && puts.some(p => p.strike > currPrice)) tier1.push('itm_put_sale');
+
+    // T1 — Risk reversal: put sold + call bought in same expiry month
+    let isRiskReversal = false;
+    outerRR: for (const p of puts) {
+      for (const c of calls) {
+        if (p.expiry && c.expiry &&
+            p.expiry.getFullYear() === c.expiry.getFullYear() &&
+            p.expiry.getMonth()    === c.expiry.getMonth()) {
+          isRiskReversal = true; break outerRR;
+        }
+      }
+    }
+    if (isRiskReversal) tier1.push('risk_reversal');
 
     // T2.8  Zero cost structure — put sold and call bought in same expiry month
     let hasZeroCost = false;
@@ -403,18 +424,25 @@ async function loadSignals() {
       multiplier, followThrough, ft250, isFirstTime, isQuiet,
       repeatDays: countLast5,
       ema21d: posEma[ticker] ?? null, maContext: null,
+      isRiskReversal,
+      isITMPutSale: currPrice ? puts.some(p => p.strike > currPrice) : false,
+      isRolling,
     });
 
     // ── Learned scoring enrichment ────────────────────────────────────────────
     {
       const sig = signals[signals.length - 1];
       // Bridge fields expected by applyLearnedScoring onto the existing shape
-      sig.score    = sig.totalNotional * sig.multiplier;
-      sig.tier     = sig.badge;
-      sig.notional = sig.totalNotional;
-      sig.tags     = sig.tags ?? [];
-      const note   = '';
-      applyLearnedScoring(sig, note);
+      sig.score          = sig.totalNotional * sig.multiplier;
+      sig.tier           = sig.badge;
+      sig.notional       = sig.totalNotional;
+      sig.tags           = sig.tags ?? [];
+      sig.isRiskReversal = sig.isRiskReversal ?? false;
+      sig.isITMPutSale   = sig.isITMPutSale   ?? false;
+      sig.isRolling      = sig.isRolling      ?? false;
+      sig.isSpread       = sig.puts.some(p => String(p.strike).includes('/')) ||
+                           sig.calls.some(p => String(p.strike).includes('/'));
+      applyLearnedScoring(sig, '');
       // Override tier if golden-rule forces it
       if (sig.forceEventTrade) sig.badge = 'EVENT';
       // Strip put positions for calls-only names
@@ -424,16 +452,14 @@ async function loadSignals() {
 
   // ── Sort helper (called twice: pre-MA and post-MA) ────────────────────────
   const sortByConviction = arr => arr.sort((a, b) => {
-    // Primary: follow-through intensity (higher multiplier first)
     const ftRank = s => s.multiplier >= 2.5 ? 3 : s.multiplier >= 2 ? 2 : s.multiplier >= 1.75 ? 1 : 0;
-    const ftDiff = ftRank(b) - ftRank(a);
-    if (ftDiff !== 0) return ftDiff;
-    // Secondary: badge tier
     const tierOrder = { STRONG: 3, NOTABLE: 2, UNUSUAL: 1 };
-    const tDiff = (tierOrder[b.badge] || 0) - (tierOrder[a.badge] || 0);
-    if (tDiff !== 0) return tDiff;
-    // Tertiary: weighted notional
-    return (b.totalNotional * b.multiplier) - (a.totalNotional * a.multiplier);
+    // Weighted score incorporates badge tier, follow-through, and raw notional
+    const score = s =>
+      (tierOrder[s.badge] || 0) * 10_000_000 +
+      ftRank(s)                 *  5_000_000 +
+      s.totalNotional * s.multiplier;
+    return score(b) - score(a);
   });
 
   // Pre-sort → fetch MA for the top 15 candidates in parallel.
