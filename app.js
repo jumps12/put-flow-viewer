@@ -302,13 +302,13 @@ let _currentMonths = 12;     // current timeframe selection (months of history)
 
 function buildChart(ohlcv, positions) {
   const container = document.getElementById('chart-container');
-
   if (_chart) { _chart.remove(); _chart = null; }
 
-  const h = (container.getBoundingClientRect().height ||
-            (window.innerHeight - (document.querySelector('.tab-bar')?.offsetHeight ?? 37) - (document.querySelector('#header')?.offsetHeight ?? 56) - 2)) - 60;
+  requestAnimationFrame(() => {
+    const rect = container.getBoundingClientRect();
+    const h = rect.height > 50 ? rect.height : (window.innerHeight - 97);
 
-  _chart = LightweightCharts.createChart(container, {
+    _chart = LightweightCharts.createChart(container, {
     width:  container.clientWidth,
     height: h,
     layout: {
@@ -355,7 +355,7 @@ function buildChart(ohlcv, positions) {
       const res = orig();
       if (!res) return res;
       const pad = (res.priceRange.maxValue - res.priceRange.minValue) * 0.1;
-      return { priceRange: { minValue: res.priceRange.minValue - pad, maxValue: res.priceRange.maxValue + pad } };
+      return { priceRange: { minValue: Math.max(0, res.priceRange.minValue - pad), maxValue: res.priceRange.maxValue + pad } };
     },
   });
   candles.setData(ohlcv);
@@ -478,8 +478,9 @@ function buildChart(ohlcv, positions) {
   // already reflect the correct coordinate mapping.
   applyTimeframe(_currentMonths);
 
-  // Wait one frame for the range to settle, then place labels.
-  requestAnimationFrame(() => createLabels(chartPositions));
+    // Wait one frame for the range to settle, then place labels.
+    requestAnimationFrame(() => createLabels(chartPositions));
+  });
 }
 
 // ── Sidebar (section 02 — Active Positions) ───────────────────────────────────
