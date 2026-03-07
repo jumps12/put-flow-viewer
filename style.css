@@ -211,9 +211,37 @@ body::before {
 #tab-signals {
   padding: 0;
   margin: 0;
-  overflow-y: auto;
-  height: calc(100vh - 37px);
+  overflow: hidden;
+  height: calc(100vh - 95px);
   background: #0a0a0a;
+  display: flex;
+  flex-direction: column;
+}
+
+#tab-signals .section {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+#tab-signals .section-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#signals-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+  padding: 8px;
+  background: #0a0a0a;
+  align-content: start;
 }
 
 /* ── Signals grid — empty cells match background ──── */
@@ -677,10 +705,10 @@ body::before {
 /* Signal card */
 .signal-card {
   background: var(--bg2);
-  padding: 12px 14px 10px;
+  padding: 10px 12px 8px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   transition: background 0.15s;
   border-left: 2px solid transparent;
 }
@@ -703,7 +731,7 @@ body::before {
   gap: 7px;
 }
 .card-ticker {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--fg1);
   letter-spacing: 0.08em;
@@ -736,15 +764,14 @@ body::before {
 }
 .stat { flex: 1; text-align: center; }
 .stat-val {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
-  color: var(--fg1);
   line-height: 1.1;
 }
 .stat-lbl {
-  font-size: 7.5px;
+  font-size: 7px;
   color: var(--fg3);
-  margin-top: 2px;
+  margin-top: 1px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -778,15 +805,15 @@ body::before {
 
 .card-footer {
   border-top: 1px solid var(--border);
-  padding-top: 8px;
+  padding-top: 6px;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 .card-dates {
-  font-size: 9px;
+  font-size: 8px;
   color: var(--fg2);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
 }
 .card-row2 {
   display: flex;
@@ -800,11 +827,10 @@ body::before {
   letter-spacing: 0.04em;
 }
 .card-link {
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 600;
   color: var(--accent);
   text-decoration: none;
-  letter-spacing: 0.06em;
 }
 .card-link:hover { color: #66d9ff; }
 
@@ -919,7 +945,7 @@ body::before {
 /* Signal summary line on each card */
 .card-sigline {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+  font-size: 9px;
   font-variant: small-caps;
   letter-spacing: 0.07em;
   color: #a0b4c8;
