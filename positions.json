@@ -13230,5 +13230,25 @@
     "contracts": 1000,
     "original_premium": 1.425,
     "status": "ACTIVE"
+  },
+  {
+    "symbol": "AMPX",
+    "strike": 11.0,
+    "expiry": "2026-07-17",
+    "trade_date": "2026-02-27",
+    "type": "put",
+    "contracts": 4000,
+    "original_premium": 1.325,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "AMPX",
+    "strike": 13.0,
+    "expiry": "2026-07-17",
+    "trade_date": "2026-02-05",
+    "type": "call",
+    "contracts": 6000,
+    "original_premium": 5.75,
+    "status": "ACTIVE"
   }
 ]
