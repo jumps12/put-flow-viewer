@@ -367,21 +367,6 @@ body::before {
 #status.warning, #sig-status.warning { color: var(--warn);   border-left-color: var(--warn);   background: rgba(255,179,0,0.05); }
 #status.error,   #sig-status.error   { color: var(--dn);     border-left-color: var(--dn);     background: rgba(255,51,85,0.05); }
 
-/* ── Sidebar (section 02 — Active Positions) ─────────────── */
-#positions-sidebar {
-  flex: 0 0 25%;
-  min-width: 260px;
-  max-width: 380px;
-  position: sticky;
-  top: calc(var(--hdr-h) + 2px);
-  height: calc(100vh - var(--hdr-h) - 2px);
-  display: flex;
-  flex-direction: column;
-  border-left: 1px solid var(--border);
-  background: var(--bg2);
-  overflow: hidden;
-}
-
 .sidebar-hdr {
   flex-shrink: 0;
   display: flex;
@@ -959,7 +944,7 @@ body::before {
   font-weight: 700;
 }
 
-/* ── Chart tab layout ─────────────────────────────── */
+/* ── Chart tab layout ────────────────────────────────────────── */
 #tab-chart { display: none; }
 
 #tab-chart.tab-panel--active {
@@ -971,6 +956,7 @@ body::before {
   overflow: hidden;
 }
 
+/* ── Left column: chart ──────────────────────────────────────── */
 #sec01 {
   flex: 1 1 auto;
   min-width: 0;
@@ -986,6 +972,7 @@ body::before {
   overflow: hidden;
 }
 
+/* ── Right column: sidebar ───────────────────────────────────── */
 #sec02 {
   flex: 0 0 320px;
   width: 320px;
@@ -994,6 +981,15 @@ body::before {
   flex-direction: column;
   overflow: hidden;
   border-left: 1px solid #1c2535;
+  position: relative;
+}
+
+#positions-sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  position: static;
 }
 
 #sidebar-cards {
