@@ -696,6 +696,12 @@ async function load(raw) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Measure actual header height and set CSS variable so chart fills exact remaining space
+  const headerEl = document.querySelector('.site-header') ?? document.querySelector('header') ?? document.querySelector('.tab-bar');
+  if (headerEl) {
+    document.documentElement.style.setProperty('--header-h', headerEl.offsetHeight + 'px');
+  }
+
   startClock();
   initCollapsibles();
 
