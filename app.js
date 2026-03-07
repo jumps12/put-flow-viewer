@@ -305,45 +305,31 @@ function buildChart(ohlcv, positions) {
   if (_chart) { _chart.remove(); _chart = null; }
 
   requestAnimationFrame(() => {
-    const rect = container.getBoundingClientRect();
-    const h = (rect.height > 50 ? rect.height : (window.innerHeight - 97)) - 32;
-
     _chart = LightweightCharts.createChart(container, {
-    width:  container.clientWidth,
-    height: h,
-    layout: {
-      background: { type: 'solid', color: '#07090d' },
-      textColor:  '#c8d8ea',
-      fontSize:   12,
-    },
-    grid: {
-      vertLines: { color: '#111520' },
-      horzLines: { color: '#111520' },
-    },
-    crosshair:       { mode: LightweightCharts.CrosshairMode.Normal },
-    handleScroll:    true,
-    handleScale:     true,
-    rightPriceScale: { borderColor: '#1c2535' },
-    timeScale: {
-      borderColor:                '#1c2535',
-      secondsVisible:             false,
-      rightOffset:                10,
-      barSpacing:                 10,
-      fixLeftEdge:                false,
-      fixRightEdge:               false,
-      lockVisibleTimeRangeOnResize: false,
-    },
-  });
-
-  new ResizeObserver(entries => {
-    if (!_chart) return;
-    for (const entry of entries) {
-      _chart.applyOptions({
-        width:  entry.contentRect.width,
-        height: entry.contentRect.height - 32,
-      });
-    }
-  }).observe(container);
+      autoSize: true,
+      layout: {
+        background: { type: 'solid', color: '#07090d' },
+        textColor:  '#c8d8ea',
+        fontSize:   12,
+      },
+      grid: {
+        vertLines: { color: '#111520' },
+        horzLines: { color: '#111520' },
+      },
+      crosshair:       { mode: LightweightCharts.CrosshairMode.Normal },
+      handleScroll:    true,
+      handleScale:     true,
+      rightPriceScale: { borderColor: '#1c2535' },
+      timeScale: {
+        borderColor:                '#1c2535',
+        secondsVisible:             false,
+        rightOffset:                10,
+        barSpacing:                 10,
+        fixLeftEdge:                false,
+        fixRightEdge:               false,
+        lockVisibleTimeRangeOnResize: false,
+      },
+    });
 
   // ── OHLC bars ────────────────────────────────────────────
   const candles = _chart.addBarSeries({
