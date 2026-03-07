@@ -7,6 +7,7 @@ html, body {
   overflow: hidden;
   margin: 0;
   padding: 0;
+  scroll-behavior: smooth;
 }
 
 /* ── Design tokens ───────────────────────────────────────── */
@@ -31,8 +32,6 @@ html, body {
 }
 
 /* ── Base ────────────────────────────────────────────────── */
-html { scroll-behavior: smooth; }
-
 body {
   background: var(--bg1);
   color: var(--fg1);
@@ -210,8 +209,6 @@ body::before {
 
 /* ── Chart tab — no page scroll ───────────────────── */
 #tab-chart {
-  height: calc(100vh - 37px);
-  overflow: hidden;
   display: none;
 }
 
@@ -733,15 +730,6 @@ body::before {
   letter-spacing: 0.08em;
 }
 
-/* ── Signals grid (section 03) ───────────────────────────── */
-.signals-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1px;
-  background: var(--border);
-  border-top: 1px solid var(--border);
-}
-
 .sig-loading, .sig-empty {
   grid-column: 1 / -1;
   padding: 40px;
@@ -951,44 +939,6 @@ body::before {
 /* Stored 21D EMA value from positions.json */
 .card-ema      { font-size: 9px; color: var(--fg3); letter-spacing: 0.06em; }
 .card-ema-val  { color: var(--fg2); font-weight: 600; }
-
-/* Analyst note textarea on each signal card */
-.card-note-wrap {
-  border-top: 1px solid var(--border);
-  padding-top: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-.card-note-lbl {
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  color: var(--fg3);
-}
-.card-note {
-  background: var(--bg1);
-  border: 1px solid var(--border2);
-  border-radius: 2px;
-  color: var(--fg3);
-  font-family: var(--mono);
-  font-size: 10px;
-  line-height: 1.5;
-  padding: 6px 8px;
-  resize: vertical;
-  width: 100%;
-  transition: border-color 0.15s, color 0.15s;
-  outline: none;
-}
-.card-note:focus {
-  border-color: var(--accent);
-  color: var(--fg1);
-}
-.card-note.has-note {
-  color: var(--accent);
-  border-color: rgba(0,200,255,0.3);
-}
-.card-note::placeholder { color: var(--fg3); opacity: 0.6; }
 
 /* Export button in signals header strip */
 .export-btn {
