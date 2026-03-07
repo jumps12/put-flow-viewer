@@ -611,11 +611,6 @@ function renderSignals(signals) {
           <div class="stat-val" style="color:var(--up)">${fmtNotional(s.totalNotional)}</div>
           <div class="stat-lbl">TOTAL NOTIONAL</div>
         </div>
-        <div class="stat-divider"></div>
-        <div class="stat">
-          <div class="stat-val">${s.daysActive}</div>
-          <div class="stat-lbl">DAYS ACTIVE</div>
-        </div>
       </div>
 
       <div class="card-footer">
