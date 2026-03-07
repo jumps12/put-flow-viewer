@@ -615,7 +615,7 @@ function renderSignals(signals) {
 
       <div class="card-footer">
         <div class="card-dates">${fmtDate(s.minTradeDate)} → ${fmtDate(s.maxExpiry)}</div>
-        <a class="card-link" href="#" data-ticker="${s.ticker}">View chart →</a>
+        <a class="card-link" href="#" onclick="event.preventDefault(); document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('tab-btn--active')); document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('tab-panel--active')); document.querySelector('.tab-btn[data-tab=chart]').classList.add('tab-btn--active'); document.getElementById('tab-chart').classList.add('tab-panel--active'); document.getElementById('ticker-input').value='${s.ticker}'; load('${s.ticker}');">View chart →</a>
       </div>
     </div>`;
   };
