@@ -288,6 +288,9 @@ async function loadSignals() {
     }
     if (Object.values(dailyNotional).some(n => n > 5_000_000)) tier1.push('daily_5m');
 
+    // T1 — Mega block: single position > 10,000 contracts = institutional size
+    if (allPos.some(p => p.contracts >= 10_000)) tier1.push('mega_block');
+
     // T1.4  Most active ticker by weighted notional over rolling 7-day window
     if (maxNotional7d > 0 && notional7d[ticker] === maxNotional7d) tier1.push('most_active_7d');
 
@@ -301,6 +304,14 @@ async function loadSignals() {
       );
       if (isRolling) tier1.push('rolled_higher');
     }
+
+    // T1 — Expiry ladder: same ticker, calls across 3+ distinct expiry months same day
+    const todayCallExpiries = calls
+      .filter(c => sameDayStr(c.tradeDate, dataToday))
+      .map(c => `${c.expiry?.getFullYear()}-${c.expiry?.getMonth()}`)
+      .filter(Boolean);
+    const uniqueExpiryMonths = new Set(todayCallExpiries);
+    if (uniqueExpiryMonths.size >= 3) tier1.push('expiry_ladder');
 
     // T1.6  21D EMA reclaim — injected during MA enrichment pass (set below)
 
@@ -349,17 +360,22 @@ async function loadSignals() {
     if (currPrice && puts.some(p => p.strike > currPrice)) tier1.push('itm_put_sale');
 
     // T1 — Risk reversal: put sold + call bought in same expiry month
+    // Enhanced: same-strike = synthetic long = strongest possible structure
     let isRiskReversal = false;
+    let isSameStrikeRR = false;
     outerRR: for (const p of puts) {
       for (const c of calls) {
         if (p.expiry && c.expiry &&
             p.expiry.getFullYear() === c.expiry.getFullYear() &&
             p.expiry.getMonth()    === c.expiry.getMonth()) {
-          isRiskReversal = true; break outerRR;
+          isRiskReversal = true;
+          if (Math.abs(p.strike - c.strike) < 0.01) isSameStrikeRR = true;
+          break outerRR;
         }
       }
     }
     if (isRiskReversal) tier1.push('risk_reversal');
+    if (isSameStrikeRR) tier1.push('same_strike_rr'); // extra T1 trigger
 
     // T2.8  Zero cost structure — put sold and call bought in same expiry month
     let hasZeroCost = false;
@@ -425,8 +441,11 @@ async function loadSignals() {
       repeatDays: countLast5,
       ema21d: posEma[ticker] ?? null, maContext: null,
       isRiskReversal,
+      isSameStrikeRR,
       isITMPutSale: currPrice ? puts.some(p => p.strike > currPrice) : false,
       isRolling,
+      hasMegaBlock: allPos.some(p => p.contracts >= 10_000),
+      hasExpiryLadder: uniqueExpiryMonths.size >= 3,
     });
 
     // ── Learned scoring enrichment ────────────────────────────────────────────
@@ -481,8 +500,11 @@ async function loadSignals() {
     const tierOrder = { STRONG: 3, NOTABLE: 2, UNUSUAL: 1 };
     // Weighted score incorporates badge tier, follow-through, and raw notional
     const score = s =>
-      (tierOrder[s.badge] || 0) * 10_000_000 +
-      ftRank(s)                 *  5_000_000 +
+      (tierOrder[s.badge] || 0)    * 10_000_000 +
+      ftRank(s)                    *  5_000_000 +
+      (s.isSameStrikeRR ? 1 : 0)  *  3_000_000 +
+      (s.hasMegaBlock   ? 1 : 0)  *  2_000_000 +
+      (s.hasExpiryLadder? 1 : 0)  *  1_500_000 +
       s.totalNotional * s.multiplier;
     return score(b) - score(a);
   });
@@ -843,6 +865,24 @@ function applyLearnedScoring(signal, analystNote = '') {
   if (signal.isRolling)      { score *= 1.40; tags.push('ROLLING HIGHER'); }
   if (signal.isSpread)       { tags.push('DEFINED RISK'); }
   if (signal.isCalendar)     { score *= 1.25; tags.push('CALENDAR STRUCTURE'); }
+
+  // Same-strike risk reversal = synthetic long = maximum bullish conviction
+  if (signal.isSameStrikeRR) {
+    score *= 1.50;
+    tags.push('SYNTHETIC LONG');
+  }
+
+  // Mega block — single position > 10,000 contracts
+  if (signal.hasMegaBlock) {
+    score *= 1.25;
+    tags.push('MEGA BLOCK');
+  }
+
+  // Expiry ladder — institutional building across multiple timeframes
+  if (signal.hasExpiryLadder) {
+    score *= 1.30;
+    tags.push('EXPIRY LADDER');
+  }
 
   // ── Sector rules ────────────────────────────────────────
   if (SECTOR_ENERGY.includes(signal.ticker)) { tags.push('ENERGY — USE SPREADS'); }
