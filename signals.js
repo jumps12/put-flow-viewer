@@ -450,6 +450,31 @@ async function loadSignals() {
     }
   }
 
+  // ── Sector sweep cross-boost ─────────────────────────────────────────────────
+  // If 2+ tickers from the same sector appeared on the same trade date,
+  // boost all of them by 20% and tag with SECTOR SWEEP label.
+  const allSignals = [...signals, ...events];
+  for (const group of SECTOR_SWEEP_GROUPS) {
+    // Find which signals belong to this sector
+    const sectorSigs = allSignals.filter(s => group.tickers.includes(s.ticker));
+    if (sectorSigs.length < 2) continue;
+
+    // Check if 2+ appeared on the same trade date
+    const dateCounts = {};
+    for (const s of sectorSigs) {
+      const dateKey = s.minTradeDate?.toDateString();
+      if (dateKey) dateCounts[dateKey] = (dateCounts[dateKey] || 0) + 1;
+    }
+    const hasSweep = Object.values(dateCounts).some(n => n >= 2);
+    if (!hasSweep) continue;
+
+    // Apply boost and tag to all sector members in the signal list
+    for (const s of sectorSigs) {
+      s.multiplier *= 1.20;
+      s.tags = [...new Set([...(s.tags || []), group.name])];
+    }
+  }
+
   // ── Sort helper (called twice: pre-MA and post-MA) ────────────────────────
   const sortByConviction = arr => arr.sort((a, b) => {
     const ftRank = s => s.multiplier >= 2.5 ? 3 : s.multiplier >= 2 ? 2 : s.multiplier >= 1.75 ? 1 : 0;
@@ -736,6 +761,21 @@ const SECTOR_CRYPTO = ['COIN','MSTR','IBIT','CORZ','IREN','SMR'];
 const SECTOR_AI_INFRA = ['NVDA','AMD','ASTS','IREN','PLTR','SMCI'];
 const SECTOR_COPPER_AI_BOOST = ['FCX','CPER','BHP','TECK','HBM'];
 
+const SECTOR_AIRLINES = ['UAL','DAL','AAL','LUV','SAVE','JBLU','ALK','HA'];
+const SECTOR_BANKS = ['JPM','BAC','WFC','C','GS','MS','USB','PNC','TFC','KEY','CFG','HBAN'];
+const SECTOR_RETAIL = ['WMT','TGT','COST','AMZN','HD','LOW','TJX','ROST','BURL','DG','DLTR'];
+const SECTOR_SEMIS = ['NVDA','AMD','MU','INTC','QCOM','AVGO','TSM','AMAT','KLAC','LRCX','ASML','MRVL','SMCI','SNDK'];
+const SECTOR_OIL_SERVICES = ['SLB','HAL','BKR','RIG','NOV','FTI'];
+
+// Sector sweep: if 2+ names from same sector appear on same trade date → cross-boost all
+const SECTOR_SWEEP_GROUPS = [
+  { name: 'AIRLINE SWEEP', tickers: SECTOR_AIRLINES },
+  { name: 'BANK SWEEP', tickers: SECTOR_BANKS },
+  { name: 'SEMI SWEEP', tickers: SECTOR_SEMIS },
+  { name: 'ENERGY SWEEP', tickers: SECTOR_OIL_SERVICES },
+  { name: 'RETAIL SWEEP', tickers: SECTOR_RETAIL },
+];
+
 const BOOST_PHRASES = [
   'first trade','first ever','never sees flow',
   'reclaiming the 21','reclaimed the 8 ema',
@@ -809,6 +849,23 @@ function applyLearnedScoring(signal, analystNote = '') {
   if (SECTOR_DEFENSE.includes(signal.ticker) && signal.dte < 30) { signal.forceEventTrade = true; }
   if (SECTOR_CHINA.includes(signal.ticker))  { tags.push('CATALYST WATCH'); }
   if (SECTOR_CRYPTO.includes(signal.ticker)) { tags.push('TREND CHANGE WATCH'); }
+
+  // ── Airline sector: flag high-VIX call risk, prefer spread + put sale structure
+  if (SECTOR_AIRLINES.includes(signal.ticker)) {
+    tags.push('HIGH VIX — USE SPREAD STRUCTURE');
+    // If spread already present, that's correct structure — boost it
+    if (signal.isSpread) { score *= 1.20; }
+  }
+
+  // ── Oil services: geopolitical catalyst watch
+  if (SECTOR_OIL_SERVICES.includes(signal.ticker)) {
+    tags.push('CATALYST WATCH');
+  }
+
+  // ── AI infra cross-boost: if NVDA/AMD flow present same day, boost copper names
+  if (SECTOR_AI_INFRA.includes(signal.ticker)) {
+    tags.push('AI INFRA FLOW');
+  }
 
   signal.score = score;
   signal.tags  = [...new Set(tags)];
