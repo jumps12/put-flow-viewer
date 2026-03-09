@@ -188,27 +188,35 @@ async function loadSignals() {
     .filter(p => {
       const expiry    = parseDate(p.expiry);
       const tradeDate = parseDate(p.trade_date);
-      const orig      = parseFloat(p.original_premium ?? p.current_premium ?? p.premium);
       const contracts = parseInt(p.contracts);
       return (
         expiry && tradeDate &&
         expiry >= today &&
         expiry > tradeDate &&
-        isFinite(orig) && orig > 0 &&
         isFinite(contracts) && contracts > 0
       );
     })
     .map(p => {
       const orig      = parseFloat(p.original_premium ?? p.current_premium ?? p.premium);
       const contracts = parseInt(p.contracts) || 0;
+      // Spreads stored as "110/130C" — use the lower (bought) leg for notional
+      const rawStrike = String(p.strike ?? '');
+      const strikeNum = rawStrike.includes('/')
+        ? parseFloat(rawStrike.split('/')[0])
+        : parseFloat(rawStrike);
+      // Notional: contracts × premium × 100
+      // If premium unknown, use strike × 0.03 as a conservative estimate (3% of strike)
+      const premiumForNotional = (isFinite(orig) && orig > 0)
+        ? orig
+        : strikeNum * 0.03;
       return {
         type:            (p.type ?? 'put').toLowerCase(),
-        strike:          parseFloat(p.strike),
+        strike:          strikeNum,
         expiry:          parseDate(p.expiry),
         contracts,
         originalPremium: orig,
         tradeDate:       parseDate(p.trade_date),
-        notional:        contracts * orig * 100,
+        notional:        contracts * premiumForNotional * 100,
         symbol:          String(p.symbol ?? '').trim().toUpperCase(),
       };
     });
