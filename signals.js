@@ -240,6 +240,7 @@ async function loadSignals() {
   const maxNotional7d = Math.max(0, ...Object.values(notional7d));
 
   const signals = [];
+  window._dbgSignals = signals;
   const events  = [];
 
   for (const [ticker, { puts, calls }] of Object.entries(byTicker)) {
