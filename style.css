@@ -1089,3 +1089,16 @@ body::before {
   background: #1c2535;
   border-radius: 2px;
 }
+
+/* ── Strike labels ────────────────────────────────────────────────────────── */
+.strike-label {
+  position:   absolute;
+  font-family: 'JetBrains Mono', monospace;
+  font-size:   10px;
+  line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index:     10;
+  padding:     1px 4px;
+  background:  rgba(7,9,13,0.75);
+}
