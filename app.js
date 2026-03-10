@@ -477,13 +477,72 @@ function buildChart(ohlcv, positions) {
   }
   futureLine.setData(futurePts);
 
-  // ── Trade-date markers ────────────────────────────────────
-  // One arrowUp marker per unique (tradeDate × type) pair — all active positions.
-  // Size scales with how many positions share that date/type combo.
-  // createMarkers disabled — v5 migration pending
+  // ── Filter positions for chart display ─────────────────
+  const lastPrice = ohlcv.length ? ohlcv[ohlcv.length - 1].close : 0;
+  const chartPositions = positions
+    .filter(p => {
+      const strikeRef = p.isSpread ? (p.leg1Strike + p.leg2Strike) / 2 : p.strike;
+      const premEst = (isFinite(p.originalPremium) && p.originalPremium > 0)
+        ? p.originalPremium : strikeRef * 0.03;
+      const notional = p.contracts * premEst * 100;
+      if (_filterLarge) return notional >= 1_000_000;
+      return strikeRef >= lastPrice * 0.40 && strikeRef <= lastPrice * 1.60;
+    })
+    .sort((a, b) => {
+      const notional = p => {
+        const strikeRef = p.isSpread ? (p.leg1Strike + p.leg2Strike) / 2 : p.strike;
+        const premEst = (isFinite(p.originalPremium) && p.originalPremium > 0) ? p.originalPremium : strikeRef * 0.03;
+        return p.contracts * premEst * 100;
+      };
+      return notional(b) - notional(a);
+    })
+    .slice(0, 8);
+
+  // ── Strike lines ─────────────────────────────────────────
+  _strikeData = [];
+  for (const p of chartPositions) {
+    const isCall  = p.type === 'call';
+    const dte     = getDTE(p.expiry);
+    const color   = isCall ? '#aa44ff' : dteColor(dte);
+    const premEst = (isFinite(p.originalPremium) && p.originalPremium > 0) ? p.originalPremium : (p.isSpread ? (p.leg1Strike + p.leg2Strike) / 2 : p.strike) * 0.03;
+    const width   = strikeLineWidth(p.contracts, premEst);
+    const style   = isCall ? LightweightCharts.LineStyle.Dashed : LightweightCharts.LineStyle.Solid;
+    const farDate = lineFarDate();
+    const lineEnd = p.expiry < farDate ? p.expiry : farDate;
+
+    if (p.isSpread) {
+      const makeLeg = strikeVal => {
+        const s = _chart.addSeries(LightweightCharts.LineSeries, {
+          color, lineWidth: width, lineStyle: style,
+          lastValueVisible: false, priceLineVisible: false,
+          crosshairMarkerVisible: false, autoscaleInfoProvider: () => null,
+        });
+        s.setData([
+          { time: dateToStr(p.tradeDate), value: strikeVal },
+          { time: dateToStr(lineEnd),     value: strikeVal },
+        ]);
+        return s;
+      };
+      const series1 = makeLeg(p.leg1Strike);
+      const series2 = makeLeg(p.leg2Strike);
+      _strikeData.push({ p, series1, series2, isSpread: true, color, width });
+    } else {
+      const series = _chart.addSeries(LightweightCharts.LineSeries, {
+        color, lineWidth: width, lineStyle: style,
+        lastValueVisible: false, priceLineVisible: false,
+        crosshairMarkerVisible: false, autoscaleInfoProvider: () => null,
+      });
+      series.setData([
+        { time: dateToStr(p.tradeDate), value: p.strike },
+        { time: dateToStr(lineEnd),     value: p.strike },
+      ]);
+      _strikeData.push({ p, series, color, width });
+    }
+  }
 
   // Set the initial visible range to the current timeframe selection.
   applyTimeframe(_currentMonths);
+  requestAnimationFrame(() => createLabels(chartPositions));
 }
 
 // ── Sidebar (section 02 — Active Positions) ───────────────────────────────────
