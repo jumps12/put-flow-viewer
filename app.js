@@ -287,6 +287,13 @@ let _lastPositions = null;   // cached active positions for filter toggle
 let _filterLarge   = false;  // true = show only notional ≥ $1M
 let _currentMonths = 12;     // current timeframe selection (months of history)
 
+function strikeLineWidth(contracts, premium) {
+  const mv = contracts * premium * 100;
+  if (mv > 2_000_000) return 3;
+  if (mv >   500_000) return 2;
+  return 1;
+}
+
 function buildChart(ohlcv, positions) {
   const container = document.getElementById('chart-container');
   if (_chart) { _chart.remove(); _chart = null; _markerSeries = null; }
