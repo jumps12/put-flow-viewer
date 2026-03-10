@@ -398,7 +398,7 @@ async function loadSignals() {
             p.expiry.getMonth()    === c.expiry.getMonth()) { hasZeroCost = true; break outerZC; }
       }
     }
-    if (hasZeroCost) tier2.push('zero_cost');
+    if (hasZeroCost) tier1.push('zero_cost');
 
     // ── DEPRIORITIZE — reduces weighted score by 50% if any trigger fires ─────
     const dep = [];
@@ -478,6 +478,7 @@ async function loadSignals() {
       applyLearnedScoring(sig, '');
       // Override tier if golden-rule forces it
       if (sig.forceEventTrade) sig.badge = 'EVENT';
+      if (sig.forceTier1) sig.badge = 'STRONG';
       // Strip put positions for calls-only names
       if (sig.callsOnly) { sig.puts = []; sig.putNotional = 0; }
     }
@@ -839,7 +840,15 @@ function applyLearnedScoring(signal, analystNote = '') {
   const isBiotech = GOLDEN_RULE_BIOTECHS.includes(signal.ticker) || CALLS_ONLY_PHRASES.some(p => note.includes(p) && p.includes('bio'));
   const isSmallCap = GOLDEN_RULE_SMALLCAP_CALLS_ONLY.includes(signal.ticker) || note.includes('sub $1b') || note.includes('small cap');
 
-  if (isBiotech) { tags.push('CALLS ONLY — BIOTECH'); signal.callsOnly = true; }
+  if (isBiotech) {
+    tags.push('CALLS ONLY — BIOTECH');
+    signal.callsOnly = true;
+    // Biotech put sale is ultra-rare = automatic T1 upgrade
+    if (signal.isRiskReversal || (signal.puts && signal.puts.length > 0)) {
+      tags.push('BIOTECH PUT SALE — RARE');
+      signal.forceTier1 = true;
+    }
+  }
   if (isSmallCap) { tags.push('CALLS ONLY — SMALL CAP'); signal.callsOnly = true; }
 
   // ── Reduce phrases ──────────────────────────────────────
