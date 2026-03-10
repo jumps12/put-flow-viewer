@@ -333,7 +333,7 @@ function buildChart(ohlcv, positions) {
     });
 
   // ── OHLC bars ────────────────────────────────────────────
-  const candles = _chart.addBarSeries({
+  const candles = _chart.addSeries(LightweightCharts.BarSeries, {
     upColor:          '#00e676',
     downColor:        '#ff3355',
     openVisible:      true,
@@ -364,7 +364,7 @@ function buildChart(ohlcv, positions) {
     axisLabelVisible: true,
     title:            '',
   });
-  const futureLine = _chart.addLineSeries({
+  const futureLine = _chart.addSeries(LightweightCharts.LineSeries, {
     color:                  '#07090d', // matches chart background — effectively invisible
     lineWidth:              1,
     lastValueVisible:       false,
@@ -424,7 +424,7 @@ function buildChart(ohlcv, positions) {
     if (p.isSpread) {
       // Draw one line per leg; store both refs so hover can brighten/dim together.
       const makeLeg = strikeVal => {
-        const s = _chart.addLineSeries({
+        const s = _chart.addSeries(LightweightCharts.LineSeries, {
           color,
           lineWidth:              width,
           lineStyle:              style,
@@ -443,7 +443,7 @@ function buildChart(ohlcv, positions) {
       const series2 = makeLeg(p.leg2Strike);
       _strikeData.push({ p, series1, series2, isSpread: true, color, width });
     } else {
-      const series = _chart.addLineSeries({
+      const series = _chart.addSeries(LightweightCharts.LineSeries, {
         color,
         lineWidth:              width,
         lineStyle:              style,
