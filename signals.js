@@ -422,8 +422,10 @@ async function loadSignals() {
     const t1 = tier1.length, t2 = tier2.length, d = dep.length;
     let badge = null;
 
-    if      (t1 >= 1 && d === 0)             badge = 'STRONG';
-    else if (t1 >= 1 && d === 1 && t2 >= 1)  badge = 'STRONG';
+    // Mega block or expiry ladder overrides dep penalty
+    const hasPowerT1 = tier1.includes('mega_contract_day') || tier1.includes('expiry_ladder') || tier1.includes('mega_block');
+    if      (t1 >= 1 && (d === 0 || hasPowerT1))  badge = 'STRONG';
+    else if (t1 >= 1 && d === 1 && t2 >= 1)        badge = 'STRONG';
     else if (t2 >= 2 && d === 0)             badge = 'NOTABLE';
     else if (t2 >= 3 && d <= 1)              badge = 'NOTABLE';
     else if (t2 >= 2 && d === 1)             badge = 'NOTABLE';
