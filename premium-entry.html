@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Premium Entry — Options Flow</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #07090d;
+    --bg2:     #0d1117;
+    --bg3:     #111520;
+    --border:  #1c2535;
+    --fg:      #c8d8ea;
+    --fg2:     #7a8fa6;
+    --fg3:     #4a5a6a;
+    --cyan:    #00c8ff;
+    --green:   #00e676;
+    --amber:   #ffb300;
+    --red:     #ff3355;
+    --purple:  #aa44ff;
+    --font:    'JetBrains Mono', monospace;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font);
+    font-size: 12px;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .header-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+  .header-title { font-size: 13px; font-weight: 700; letter-spacing: 0.12em; color: var(--fg); }
+  .header-sub { font-size: 10px; color: var(--fg3); letter-spacing: 0.08em; margin-left: auto; }
+
+  /* ── Load section ── */
+  .load-section {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .load-section label { color: var(--fg2); font-size: 11px; letter-spacing: 0.06em; }
+  #file-input { display: none; }
+  .btn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    font-family: var(--font);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .btn:hover { border-color: var(--cyan); color: var(--cyan); }
+  .btn-primary { border-color: var(--cyan); color: var(--cyan); }
+  .btn-primary:hover { background: rgba(0,200,255,0.08); }
+  .btn-green { border-color: var(--green); color: var(--green); }
+  .btn-green:hover { background: rgba(0,230,118,0.08); }
+
+  .status-pill {
+    font-size: 10px;
+    padding: 3px 10px;
+    border: 1px solid var(--border);
+    color: var(--fg3);
+    letter-spacing: 0.06em;
+  }
+  .status-pill.ok { border-color: var(--green); color: var(--green); }
+  .status-pill.warn { border-color: var(--amber); color: var(--amber); }
+
+  /* ── Stats bar ── */
+  .stats-bar {
+    padding: 10px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 32px;
+    background: var(--bg2);
+  }
+  .stat { display: flex; flex-direction: column; gap: 2px; }
+  .stat-val { font-size: 16px; font-weight: 700; color: var(--cyan); }
+  .stat-lbl { font-size: 9px; color: var(--fg3); letter-spacing: 0.08em; }
+
+  /* ── Filter bar ── */
+  .filter-bar {
+    padding: 10px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .filter-bar label { color: var(--fg2); font-size: 10px; letter-spacing: 0.06em; }
+  .filter-input {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    font-family: var(--font);
+    font-size: 11px;
+    padding: 4px 10px;
+    width: 120px;
+    outline: none;
+  }
+  .filter-input:focus { border-color: var(--cyan); }
+
+  /* ── Table ── */
+  .table-wrap {
+    padding: 16px 24px;
+    overflow-x: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  thead th {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: var(--fg3);
+    text-align: left;
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  tbody tr {
+    border-bottom: 1px solid var(--bg3);
+    transition: background 0.1s;
+  }
+  tbody tr:hover { background: var(--bg3); }
+  tbody td {
+    padding: 6px 12px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .td-ticker { color: var(--cyan); font-weight: 700; letter-spacing: 0.06em; }
+  .td-type-put  { color: var(--red); font-size: 9px; letter-spacing: 0.06em; }
+  .td-type-call { color: var(--purple); font-size: 9px; letter-spacing: 0.06em; }
+  .td-strike { color: var(--fg); }
+  .td-expiry { color: var(--fg2); }
+  .td-contracts { color: var(--fg2); text-align: right; }
+  .td-date { color: var(--fg3); }
+
+  .prem-input {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--green);
+    font-family: var(--font);
+    font-size: 11px;
+    padding: 3px 8px;
+    width: 90px;
+    outline: none;
+    text-align: right;
+  }
+  .prem-input:focus { border-color: var(--green); }
+  .prem-input.filled { border-color: var(--green); background: rgba(0,230,118,0.05); }
+  .prem-input.skip-input { color: var(--fg3); }
+
+  .skip-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--fg3);
+    font-family: var(--font);
+    font-size: 9px;
+    padding: 2px 8px;
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .skip-btn:hover { border-color: var(--red); color: var(--red); }
+  .skip-btn.skipped { border-color: var(--red); color: var(--red); }
+
+  .row-skipped td { opacity: 0.35; }
+
+  /* ── Output section ── */
+  .output-section {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+  }
+  .output-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .output-label { font-size: 10px; letter-spacing: 0.1em; color: var(--fg3); }
+  pre#output-code {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+    font-size: 10px;
+    color: var(--green);
+    overflow-x: auto;
+    white-space: pre;
+    max-height: 300px;
+    overflow-y: auto;
+    line-height: 1.6;
+  }
+
+  .empty-state {
+    padding: 60px 24px;
+    text-align: center;
+    color: var(--fg3);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+  .empty-state .big { font-size: 32px; margin-bottom: 12px; opacity: 0.3; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-dot"></div>
+  <div class="header-title">PREMIUM ENTRY — OPTIONS FLOW COMMAND CENTRE</div>
+  <div class="header-sub">MANUAL PREMIUM INPUT · MISSING DATA REPAIR</div>
+</div>
+
+<div class="load-section">
+  <label>LOAD POSITIONS.JSON</label>
+  <input type="file" id="file-input" accept=".json">
+  <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">BROWSE FILE</button>
+  <span id="load-status" class="status-pill">NO FILE LOADED</span>
+  <button class="btn btn-green" id="gen-btn" style="margin-left:auto" onclick="generateScript()" disabled>GENERATE SCRIPT</button>
+  <button class="btn" id="copy-btn" onclick="copyScript()" disabled>COPY</button>
+</div>
+
+<div class="stats-bar" id="stats-bar" style="display:none">
+  <div class="stat"><div class="stat-val" id="stat-total">0</div><div class="stat-lbl">TOTAL POSITIONS</div></div>
+  <div class="stat"><div class="stat-val" id="stat-missing">0</div><div class="stat-lbl">MISSING PREMIUMS</div></div>
+  <div class="stat"><div class="stat-val" id="stat-filled">0</div><div class="stat-lbl">FILLED IN</div></div>
+  <div class="stat"><div class="stat-val" id="stat-skipped">0</div><div class="stat-lbl">SKIPPED</div></div>
+</div>
+
+<div class="filter-bar" id="filter-bar" style="display:none">
+  <label>FILTER TICKER</label>
+  <input class="filter-input" id="filter-input" placeholder="e.g. NVDA" oninput="applyFilter()">
+  <label style="margin-left:16px">SHOW</label>
+  <button class="btn" id="show-all-btn" onclick="setShowAll(true)">ALL</button>
+  <button class="btn btn-primary" id="show-missing-btn" onclick="setShowAll(false)">MISSING ONLY</button>
+</div>
+
+<div class="table-wrap" id="table-wrap">
+  <div class="empty-state">
+    <div class="big">◈</div>
+    LOAD YOUR POSITIONS.JSON FILE TO BEGIN
+  </div>
+</div>
+
+<div class="output-section" id="output-section" style="display:none">
+  <div class="output-header">
+    <div class="output-label">PYTHON SCRIPT — PASTE INTO TERMINAL</div>
+  </div>
+  <pre id="output-code"></pre>
+</div>
+
+<script>
+let positions = [];
+let missing = [];
+let showAll = false;
+let filterTicker = '';
+
+document.getElementById('file-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      positions = JSON.parse(ev.target.result);
+      processPositions();
+      document.getElementById('load-status').textContent = file.name;
+      document.getElementById('load-status').className = 'status-pill ok';
+    } catch(err) {
+      document.getElementById('load-status').textContent = 'PARSE ERROR';
+      document.getElementById('load-status').className = 'status-pill warn';
+    }
+  };
+  reader.readAsText(file);
+});
+
+function processPositions() {
+  missing = positions
+    .map((p, idx) => ({ ...p, _idx: idx }))
+    .filter(p => {
+      const sym = String(p.symbol ?? '').trim().toUpperCase();
+      if (!sym || sym === 'TICKER') return false;
+      const orig = parseFloat(p.original_premium ?? p.current_premium ?? p.premium);
+      return !isFinite(orig) || orig <= 0;
+    });
+
+  document.getElementById('stats-bar').style.display = 'flex';
+  document.getElementById('filter-bar').style.display = 'flex';
+  document.getElementById('stat-total').textContent = positions.length.toLocaleString();
+  document.getElementById('stat-missing').textContent = missing.length.toLocaleString();
+  document.getElementById('gen-btn').disabled = false;
+
+  renderTable();
+  updateStats();
+}
+
+function setShowAll(val) {
+  showAll = val;
+  document.getElementById('show-all-btn').className = val ? 'btn btn-primary' : 'btn';
+  document.getElementById('show-missing-btn').className = val ? 'btn' : 'btn btn-primary';
+  renderTable();
+}
+
+function applyFilter() {
+  filterTicker = document.getElementById('filter-input').value.trim().toUpperCase();
+  renderTable();
+}
+
+function renderTable() {
+  const source = showAll ? positions.map((p,i) => ({...p, _idx:i})) : missing;
+  const filtered = filterTicker
+    ? source.filter(p => String(p.symbol ?? '').toUpperCase().includes(filterTicker))
+    : source;
+
+  if (!filtered.length) {
+    document.getElementById('table-wrap').innerHTML =
+      '<div class="empty-state"><div class="big">✓</div>ALL PREMIUMS FILLED OR NO MATCH</div>';
+    return;
+  }
+
+  let html = `<table>
+    <thead><tr>
+      <th>#</th><th>TICKER</th><th>TYPE</th><th>STRIKE</th><th>EXPIRY</th>
+      <th>CONTRACTS</th><th>TRADE DATE</th><th style="text-align:right">PREMIUM</th><th></th>
+    </tr></thead><tbody>`;
+
+  filtered.forEach((p, i) => {
+    const sym = String(p.symbol ?? '').toUpperCase();
+    const type = (p.type ?? 'put').toLowerCase();
+    const typeClass = type === 'call' ? 'td-type-call' : 'td-type-put';
+    const typeLabel = type.toUpperCase();
+    const orig = parseFloat(p.original_premium ?? p.current_premium ?? p.premium);
+    const hasPrem = isFinite(orig) && orig > 0;
+    const isSkipped = p._skipped || false;
+    const rowClass = isSkipped ? 'row-skipped' : '';
+    const inputVal = p._manualPrem ?? (hasPrem ? orig.toFixed(2) : '');
+    const inputClass = inputVal ? 'prem-input filled' : 'prem-input';
+    const skipClass = isSkipped ? 'skip-btn skipped' : 'skip-btn';
+    const skipLabel = isSkipped ? 'SKIPPED' : 'SKIP';
+
+    html += `<tr class="${rowClass}" data-idx="${p._idx}">
+      <td style="color:var(--fg3)">${i+1}</td>
+      <td class="td-ticker">${sym}</td>
+      <td class="${typeClass}">${typeLabel}</td>
+      <td class="td-strike">${p.strike}</td>
+      <td class="td-expiry">${p.expiry ?? ''}</td>
+      <td class="td-contracts">${Number(p.contracts ?? 0).toLocaleString()}</td>
+      <td class="td-date">${p.trade_date ?? ''}</td>
+      <td style="text-align:right">
+        <input class="${inputClass}" type="number" step="0.01" min="0"
+          placeholder="0.00" value="${inputVal}"
+          data-pos-idx="${p._idx}"
+          oninput="onPremInput(this)"
+          ${isSkipped ? 'disabled' : ''}>
+      </td>
+      <td>
+        <button class="${skipClass}" data-pos-idx="${p._idx}" onclick="toggleSkip(this)">${skipLabel}</button>
+      </td>
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('table-wrap').innerHTML = html;
+}
+
+function onPremInput(el) {
+  const idx = parseInt(el.dataset.posIdx);
+  const val = parseFloat(el.value);
+  if (isFinite(val) && val > 0) {
+    positions[idx]._manualPrem = val;
+    el.className = 'prem-input filled';
+  } else {
+    delete positions[idx]._manualPrem;
+    el.className = 'prem-input';
+  }
+  updateStats();
+}
+
+function toggleSkip(btn) {
+  const idx = parseInt(btn.dataset.posIdx);
+  positions[idx]._skipped = !positions[idx]._skipped;
+  renderTable();
+  updateStats();
+}
+
+function updateStats() {
+  const filled = missing.filter(p => positions[p._idx]?._manualPrem > 0).length;
+  const skipped = missing.filter(p => positions[p._idx]?._skipped).length;
+  document.getElementById('stat-filled').textContent = filled;
+  document.getElementById('stat-skipped').textContent = skipped;
+}
+
+function generateScript() {
+  const entries = [];
+  for (const p of missing) {
+    const pos = positions[p._idx];
+    if (pos._skipped) continue;
+    const prem = pos._manualPrem;
+    if (!isFinite(prem) || prem <= 0) continue;
+    const sym = String(pos.symbol ?? '').trim().toUpperCase();
+    const strike = pos.strike;
+    const expiry = pos.expiry;
+    const tdate = pos.trade_date;
+    entries.push({ sym, strike, expiry, tdate, prem });
+  }
+
+  if (!entries.length) {
+    document.getElementById('output-code').textContent = '# No premiums entered yet.';
+    document.getElementById('output-section').style.display = 'block';
+    document.getElementById('copy-btn').disabled = true;
+    return;
+  }
+
+  let script = `python3 << 'EOF'\nimport json\npath = '/Users/chris/put-flow-viewer/positions.json'\ndata = json.load(open(path))\nupdated = 0\n\nentries = [\n`;
+  for (const e of entries) {
+    script += `    ("${e.sym}", "${e.strike}", "${e.expiry}", "${e.tdate}", ${e.prem}),\n`;
+  }
+  script += `]\n\nfor sym, strike, expiry, tdate, prem in entries:\n`;
+  script += `    for p in data:\n`;
+  script += `        if (str(p.get('symbol','')).upper() == sym and\n`;
+  script += `            str(p.get('strike','')) == str(strike) and\n`;
+  script += `            str(p.get('expiry','')) == expiry and\n`;
+  script += `            str(p.get('trade_date','')) == tdate and\n`;
+  script += `            (not p.get('original_premium') or float(p.get('original_premium') or 0) <= 0)):\n`;
+  script += `            p['original_premium'] = prem\n`;
+  script += `            updated += 1\n\n`;
+  script += `json.dump(data, open(path,'w'), indent=2)\n`;
+  script += `print(f"Updated {updated} premiums")\n`;
+  script += `EOF`;
+
+  document.getElementById('output-code').textContent = script;
+  document.getElementById('output-section').style.display = 'block';
+  document.getElementById('copy-btn').disabled = false;
+}
+
+function copyScript() {
+  const text = document.getElementById('output-code').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    const orig = btn.textContent;
+    btn.textContent = 'COPIED';
+    setTimeout(() => btn.textContent = orig, 1500);
+  });
+}
+</script>
+</body>
+</html>
