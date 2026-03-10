@@ -284,7 +284,7 @@ let _lockedLine    = null;      // locked price line from card click
 let _lockedPos     = null;      // position object currently locked
 let _lastOhlcv     = null;   // cached for filter toggle
 let _lastPositions = null;   // cached active positions for filter toggle
-let _filterLarge   = true;   // true = show only notional ≥ $1M
+let _filterLarge   = false;  // true = show only notional ≥ $1M
 let _currentMonths = 12;     // current timeframe selection (months of history)
 
 function buildChart(ohlcv, positions) {
