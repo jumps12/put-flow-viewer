@@ -170,7 +170,7 @@ function lineEndDate() {
 function lineFarDate() {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + 90);
+  d.setDate(d.getDate() + 60);
   return d;
 }
 
