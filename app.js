@@ -267,7 +267,7 @@ function updateLabelPositions() {
     const y      = _candlesSeries.priceToCoordinate(labelStrike ?? p.strike);
     const tipDate = p.expiry < farDate ? p.expiry : farDate;
     const xe     = _chart.timeScale().timeToCoordinate(dateToStr(tipDate));
-    const x      = xe !== null ? Math.min(xe + 4, maxLabelX) : null;
+    const x      = xe !== null ? Math.min(xe + 8, maxLabelX) : null;
     return { el, x, y };
   });
 
