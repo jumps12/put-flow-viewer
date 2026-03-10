@@ -219,7 +219,10 @@ function createLabels(positions) {
   for (const p of positions) {
     const dte   = getDTE(p.expiry);
     const color = p.type === 'call' ? '#aa44ff' : dteColor(dte);
-    const mv    = p.contracts * p.originalPremium * 100;
+    const premForLabel = (isFinite(p.originalPremium) && p.originalPremium > 0)
+      ? p.originalPremium
+      : (p.isSpread ? (p.leg1Strike + p.leg2Strike) / 2 : p.strike) * 0.03;
+    const mv    = p.contracts * premForLabel * 100;
     const mvStr = fmtMoney(mv);
     const dateLabel = `${months[p.expiry.getMonth()]} ${p.expiry.getDate()} ${p.expiry.getFullYear()}`;
 
