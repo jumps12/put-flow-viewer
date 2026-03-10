@@ -432,9 +432,10 @@ async function loadSignals() {
 
     // UNUSUAL: first appearance OR quiet name OR mega size — shown in separate section
     const isRecent = meta.maxTradeDate && (today - meta.maxTradeDate) / 86_400_000 <= 3;
+    const isMegaCallsOnly = puts.length === 0 && (tier1.includes('mega_block') || tier1.includes('mega_contract_day'));
     const isUnusual = (
       (isFirstTime || isQuiet) && isRecent && totalNotional > 200_000
-    ) || todayContracts >= 5_000;
+    ) || todayContracts >= 5_000 || isMegaCallsOnly;
 
     if (!badge && isUnusual) {
       events.push({
@@ -561,7 +562,7 @@ async function loadSignals() {
   const shown = signals.filter(s => {
     const weighted = s.totalNotional * s.multiplier;
     return weighted >= (THRESH[s.badge] ?? 0);
-  }).slice(0, 20);
+  }).slice(0, 12);
 
   shown._qualified    = shown.length;
   shown._totalTracked = totalTracked;
