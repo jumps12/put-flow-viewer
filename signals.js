@@ -151,10 +151,12 @@ async function loadSignals() {
     if (!tickerMeta[sym]) tickerMeta[sym] = {
       d0: false, d1: false, d2: false, d3: false, d4: false,
       minTradeDate: td,
+      maxTradeDate: td,
       allDateKeys: new Set(),
     };
     const m = tickerMeta[sym];
     if (td < m.minTradeDate) m.minTradeDate = td;
+    if (td > m.maxTradeDate) m.maxTradeDate = td;
     m.allDateKeys.add(td.toDateString());
     if (sameDayStr(td, dataToday)) m.d0 = true;
     if (sameDayStr(td, dataDay1))  m.d1 = true;
@@ -316,7 +318,7 @@ async function loadSignals() {
       .map(c => `${c.expiry?.getFullYear()}-${c.expiry?.getMonth()}`)
       .filter(Boolean);
     const uniqueExpiryMonths = new Set(todayCallExpiries);
-    if (uniqueExpiryMonths.size >= 3) tier1.push('expiry_ladder');
+    if (uniqueExpiryMonths.size >= 3) { tier1.push('expiry_ladder'); const depIdx = dep.indexOf('calls_only_cheap'); if (depIdx > -1) dep.splice(depIdx, 1); }
 
     // T1.6  Mega contract day — 10,000+ contracts in a single day regardless of history
     // Catches first-time institutional size plays like UAL 40,000x
@@ -404,7 +406,9 @@ async function loadSignals() {
     const dep = [];
     if (daysActive <= 1)                                                   dep.push('one_day');
     if (allPos.every(p => p.originalPremium < 0.50))                      dep.push('all_cheap');
-    if (puts.length === 0 && calls.every(p => p.originalPremium < 2.0))   dep.push('calls_only_cheap');
+    const todayCalls = calls.filter(p => p.tradeDate && p.tradeDate.toDateString() === today.toDateString());
+    const checkCalls = todayCalls.length > 0 ? todayCalls : calls;
+    if (puts.length === 0 && checkCalls.every(p => p.originalPremium < 2.0))   dep.push('calls_only_cheap');
     if (totalNotional < 100_000)                                           dep.push('low_notional');
     if (allPos.every(p => p.expiry &&
         Math.floor((p.expiry - today) / 86_400_000) <= 14) &&
@@ -424,8 +428,9 @@ async function loadSignals() {
     else if (t2 >= 2 && d === 1)             badge = 'NOTABLE';
 
     // UNUSUAL: first appearance OR quiet name OR mega size — shown in separate section
+    const isRecent = meta.maxTradeDate && (today - meta.maxTradeDate) / 86_400_000 <= 3;
     const isUnusual = (
-      (isFirstTime || isQuiet) && totalNotional > 200_000
+      (isFirstTime || isQuiet) && isRecent && totalNotional > 200_000
     ) || todayContracts >= 5_000;
 
     if (!badge && isUnusual) {
