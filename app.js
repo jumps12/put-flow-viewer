@@ -55,7 +55,7 @@ async function fetchPutFlowData(ticker) {
         ? isFinite(d.leg1Strike) && isFinite(d.leg2Strike)
         : isFinite(d.strike);
       return (
-        strikeOk && isFinite(d.contracts) && isFinite(d.originalPremium) &&
+        strikeOk && isFinite(d.contracts) &&
         d.expiry instanceof Date && d.tradeDate instanceof Date &&
         d.expiry > d.tradeDate
       );
