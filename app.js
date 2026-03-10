@@ -248,7 +248,6 @@ function createMarkers(positions) {
       autoscaleInfoProvider:  () => null,
       color:                  'transparent',
     });
-    // v5: setMarkers removed
     _markerSeries.setData(_lastOhlcv.map(d => ({ time: d.time, value: d.close })));
   }
 }
@@ -272,7 +271,6 @@ function setMarkerHighlight(highlightKey) {
     });
   }
   markers.sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
-  // v5: setMarkers removed
 }
 
 // ── Chart ─────────────────────────────────────────────────────────────────────
