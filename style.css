@@ -228,7 +228,7 @@ body::before {
 #tab-signals .section-body {
   flex: 1 1 auto;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
