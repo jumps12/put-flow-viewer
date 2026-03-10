@@ -199,25 +199,22 @@ async function loadSignals() {
     .map(p => {
       const orig      = parseFloat(p.original_premium ?? p.current_premium ?? p.premium);
       const contracts = parseInt(p.contracts) || 0;
-      // Spreads stored as "110/130C" — use the lower (bought) leg for notional
       const rawStrike = String(p.strike ?? '');
       const strikeNum = rawStrike.includes('/')
         ? parseFloat(rawStrike.split('/')[0])
         : parseFloat(rawStrike);
-      // Notional: contracts × premium × 100
-      // If premium unknown, use strike × 0.03 as a conservative estimate (3% of strike)
-      const premiumForNotional = (isFinite(orig) && orig > 0)
-        ? orig
-        : strikeNum * 0.03;
+      const hasPremium  = isFinite(orig) && orig > 0;
+      const premiumUsed = hasPremium ? orig : (isFinite(strikeNum) ? strikeNum * 0.03 : 0);
       return {
-        type:            (p.type ?? 'put').toLowerCase(),
-        strike:          strikeNum,
-        expiry:          parseDate(p.expiry),
+        type:             (p.type ?? 'put').toLowerCase(),
+        strike:           strikeNum,
+        expiry:           parseDate(p.expiry),
         contracts,
-        originalPremium: orig,
-        tradeDate:       parseDate(p.trade_date),
-        notional:        contracts * premiumForNotional * 100,
-        symbol:          String(p.symbol ?? '').trim().toUpperCase(),
+        originalPremium:  orig,
+        premiumEstimated: !hasPremium,
+        tradeDate:        parseDate(p.trade_date),
+        notional:         contracts * premiumUsed * 100,
+        symbol:           String(p.symbol ?? '').trim().toUpperCase(),
       };
     });
 
@@ -321,7 +318,14 @@ async function loadSignals() {
     const uniqueExpiryMonths = new Set(todayCallExpiries);
     if (uniqueExpiryMonths.size >= 3) tier1.push('expiry_ladder');
 
-    // T1.6  21D EMA reclaim — injected during MA enrichment pass (set below)
+    // T1.6  Mega contract day — 10,000+ contracts in a single day regardless of history
+    // Catches first-time institutional size plays like UAL 40,000x
+    const todayContracts = allPos
+      .filter(p => sameDayStr(p.tradeDate, dataToday))
+      .reduce((s, p) => s + p.contracts, 0);
+    if (todayContracts >= 10_000) tier1.push('mega_contract_day');
+
+    // T1.7  21D EMA reclaim — injected during MA enrichment pass (set below)
 
     // ── TIER 2 — needs 2+ triggers → NOTABLE ─────────────────────────────────
     const tier2 = [];
@@ -419,19 +423,21 @@ async function loadSignals() {
     else if (t2 >= 3 && d <= 1)              badge = 'NOTABLE';
     else if (t2 >= 2 && d === 1)             badge = 'NOTABLE';
 
-    // UNUSUAL: first-time or very quiet name with meaningful notional
-    if (!badge && isQuiet && totalNotional > 500_000) badge = 'UNUSUAL';
+    // UNUSUAL: first appearance OR quiet name OR mega size — shown in separate section
+    const isUnusual = (
+      (isFirstTime || isQuiet) && totalNotional > 500_000
+    ) || todayContracts >= 10_000;
 
-    // EVENT TRADE: structural badge didn't fire, but it's a short-dated call play
-    if (!badge && isEventPlay && totalNotional > 50_000) {
+    if (!badge && isUnusual) {
       events.push({
-        ticker, badge: 'EVENT',
-        totalNotional, putNotional: 0, callNotional,
-        puts: [], calls,
+        ticker, badge: 'UNUSUAL',
+        totalNotional, putNotional, callNotional,
+        puts, calls,
         daysActive, minTradeDate, maxExpiry,
         tier1Triggers: tier1, tier2Triggers: tier2, deprioritize: dep,
         multiplier, followThrough, ft250, isFirstTime, isQuiet,
         repeatDays: countLast5,
+        todayContracts,
         ema21d: posEma[ticker] ?? null, maContext: null,
       });
       continue;
@@ -692,7 +698,7 @@ function renderSignals(signals) {
 
       <div class="card-stats">
         <div class="stat">
-          <div class="stat-val" style="color:var(--up)">${fmtNotional(s.totalNotional)}</div>
+          <div class="stat-val" style="color:var(--up)">${fmtNotional(s.totalNotional)}${s.puts.concat(s.calls).some(p => p.premiumEstimated) ? '<span class="est-label">EST</span>' : ''}</div>
           <div class="stat-lbl">TOTAL NOTIONAL</div>
         </div>
       </div>
@@ -720,8 +726,8 @@ function renderSignals(signals) {
     wrap.id = 'event-wrap';
     wrap.innerHTML = `
       <div class="event-section-hdr">
-        <span class="event-hdr-label">EVENT TRADE</span>
-        <span class="event-hdr-sub">Short-dated calls · Binary / catalyst play · Not structural flow</span>
+        <span class="event-hdr-label">UNUSUAL FLOW</span>
+        <span class="event-hdr-sub">First appearance · Mega size · Quiet names with large notional</span>
       </div>
       <div class="signals-grid">${events.map((s, i) => makeCard(s, i + 1)).join('')}</div>
     `;

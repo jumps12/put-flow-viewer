@@ -156,15 +156,7 @@ function getDTE(expiry) {
   return Math.floor((exp - today) / 86_400_000);
 }
 
-// Visible right endpoint of each line (where label sits): today + 30 days.
-function lineEndDate() {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + 30);
-  return d;
-}
-
-// Maximum right boundary for strike lines and the invisible future anchor.
+// Maximum right boundary for the invisible future anchor.
 // LightweightCharts allocates time-axis space for every date present in any
 // series. Clamping to 90 days prevents far-dated expiries (e.g. 2028) from
 // stretching the chart to years of empty whitespace.
@@ -193,109 +185,92 @@ function dteColor(dte) {
   return '#ff3355';                 // red
 }
 
-function strikeLineWidth(contracts, premium) {
-  const mv = contracts * premium * 100;
-  if (mv > 2_000_000) return 3;
-  if (mv >   500_000) return 2;
-  return 1;
-}
-
 function fmtMoney(v) {
   if (v >= 1e6) return `$${(v / 1e6).toFixed(1)}M`;
   if (v >= 1e3) return `$${(v / 1e3).toFixed(0)}K`;
   return `$${v.toFixed(0)}`;
 }
 
-// ── Strike labels ─────────────────────────────────────────────────────────────
+// ── Marker helpers ─────────────────────────────────────────────────────────────
 
-function createLabels(positions) {
-  // Remove any labels left over from a previous load
-  document.querySelectorAll('.strike-label').forEach(el => el.remove());
-  _labelData = [];
-
-  const container = document.getElementById('chart-container');
-
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-  for (const p of positions) {
-    const dte   = getDTE(p.expiry);
-    const color = p.type === 'call' ? '#aa44ff' : dteColor(dte);
-    const mv    = p.contracts * p.originalPremium * 100;
-    const mvStr = fmtMoney(mv);
-    const dateLabel = `${months[p.expiry.getMonth()]} ${p.expiry.getDate()} ${p.expiry.getFullYear()}`;
-
-    let text, labelStrike;
-    if (p.isSpread) {
-      // e.g. "Jan 17 2027 · 140/230C · 1,150x · $1.2M NET DEBIT"
-      const netStr = p.netLabel ? ` ${p.netLabel}` : '';
-      text        = `${dateLabel} · ${p.strike} · ${p.contracts.toLocaleString()}x · ${mvStr}${netStr}`;
-      labelStrike = (p.leg1Strike + p.leg2Strike) / 2;
-    } else {
-      const typeChar  = p.type === 'call' ? 'C' : 'P';
-      const strikeStr = p.strike % 1 === 0 ? p.strike.toFixed(0) : p.strike.toFixed(2);
-      text        = `${dateLabel} · ${strikeStr}${typeChar} · ${p.contracts.toLocaleString()}x · ${mvStr}`;
-      labelStrike = p.strike;
-    }
-
-    const el = document.createElement('div');
-    el.className   = 'strike-label';
-    el.style.color = color;
-    el.textContent = text;
-    container.appendChild(el);
-
-    _labelData.push({ p, el, labelStrike });
+function makeStrikeLine(p) {
+  const isCall   = p.type === 'call';
+  const color    = isCall ? '#aa44ff' : '#00c8ff';
+  const typeChar = isCall ? 'C' : 'P';
+  let priceVal, title;
+  if (p.isSpread) {
+    priceVal = (p.leg1Strike + p.leg2Strike) / 2;
+    title    = String(p.strike);
+  } else {
+    priceVal = p.strike;
+    const sf = p.strike % 1 === 0 ? p.strike.toFixed(0) : p.strike.toFixed(2);
+    title    = `${sf}${typeChar}`;
   }
-
-  updateLabelPositions();
+  return _candlesSeries.createPriceLine({
+    price:            priceVal,
+    color,
+    lineWidth:        1,
+    lineStyle:        LightweightCharts.LineStyle.Dashed,
+    axisLabelVisible: true,
+    title,
+  });
 }
 
-function updateLabelPositions() {
-  if (!_chart || !_candlesSeries || !_labelData.length) return;
-
-  const container   = document.getElementById('chart-container');
-  const priceScaleW = 75;
-  const maxLabelX   = container.clientWidth - priceScaleW;
-  // Approximate rendered label height (10px font × 1.6 line-height + 2px padding)
-  const LABEL_H     = 18;
-
-  // Labels sit at the right end of their line. Because strike lines are clamped
-  // to today+90, use the same clamped date so the label tracks the line tip.
-  const farDate = lineFarDate();
-  const items = _labelData.map(({ p, el, labelStrike }) => {
-    const y      = _candlesSeries.priceToCoordinate(labelStrike ?? p.strike);
-    const tipDate = p.expiry < farDate ? p.expiry : farDate;
-    const xe     = _chart.timeScale().timeToCoordinate(dateToStr(tipDate));
-    const x      = xe !== null ? Math.min(xe + 4, maxLabelX) : null;
-    return { el, x, y };
-  });
-
-  // Hide off-screen items
-  for (const item of items) {
-    if (item.x === null || item.y === null) item.el.style.display = 'none';
+function createMarkers(positions) {
+  _markerData = new Map();
+  for (const p of positions) {
+    const key = `${dateToStr(p.tradeDate)}|${p.type}`;
+    if (!_markerData.has(key)) {
+      _markerData.set(key, { positions: [], type: p.type, dateStr: dateToStr(p.tradeDate) });
+    }
+    _markerData.get(key).positions.push(p);
   }
-
-  // Resolve vertical overlaps for all labels together (all on the right side now).
-  const visible = items.filter(i => i.x !== null && i.y !== null);
-  visible.sort((a, b) => a.y - b.y);
-  for (let i = 0; i < visible.length; i++) {
-    visible[i].adjY = i === 0
-      ? visible[i].y
-      : Math.max(visible[i].y, visible[i - 1].adjY + LABEL_H);
+  const markers = [];
+  for (const [, group] of _markerData) {
+    const count = group.positions.length;
+    markers.push({
+      time:     group.dateStr,
+      position: 'belowBar',
+      shape:    'arrowUp',
+      color:    group.type === 'put' ? '#00c8ff' : '#aa44ff',
+      size:     Math.min(count + 1, 4),
+      text:     '',
+    });
   }
+  markers.sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
+  _candlesSeries.setMarkers(markers);
+}
 
-  for (const item of visible) {
-    item.el.style.display = 'block';
-    item.el.style.left    = `${item.x}px`;
-    item.el.style.top     = `${item.adjY}px`;
+function setMarkerHighlight(highlightKey) {
+  if (!_candlesSeries) return;
+  const markers = [];
+  for (const [key, group] of _markerData) {
+    const count = group.positions.length;
+    const isPut = group.type === 'put';
+    const isHL  = key === highlightKey;
+    markers.push({
+      time:     group.dateStr,
+      position: 'belowBar',
+      shape:    'arrowUp',
+      color:    isPut
+        ? (isHL ? '#40e0ff' : '#00c8ff')
+        : (isHL ? '#cc88ff' : '#aa44ff'),
+      size:     isHL ? Math.min(count + 2, 5) : Math.min(count + 1, 4),
+      text:     '',
+    });
   }
+  markers.sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
+  _candlesSeries.setMarkers(markers);
 }
 
 // ── Chart ─────────────────────────────────────────────────────────────────────
 
 let _chart         = null;
 let _candlesSeries = null;
-let _labelData     = []; // [{ p, el }] — kept in sync with the current chart
-let _strikeData    = []; // [{ p, series, color, width }] — one entry per strike line
+let _markerData    = new Map(); // "YYYY-MM-DD|put"|"YYYY-MM-DD|call" → { positions[], type, dateStr }
+let _hoveredLine   = null;      // temporary price line from card mouseenter
+let _lockedLine    = null;      // locked price line from card click
+let _lockedPos     = null;      // position object currently locked
 let _lastOhlcv     = null;   // cached for filter toggle
 let _lastPositions = null;   // cached active positions for filter toggle
 let _filterLarge   = true;   // true = show only notional ≥ $1M
@@ -304,6 +279,8 @@ let _currentMonths = 12;     // current timeframe selection (months of history)
 function buildChart(ohlcv, positions) {
   const container = document.getElementById('chart-container');
   if (_chart) { _chart.remove(); _chart = null; }
+  // Clean up overlays from any previous chart instance
+  container.querySelectorAll('.chart-overlay').forEach(el => el.remove());
 
   // Calculate chart height from known fixed element heights
   const tabBarH  = document.querySelector('.tab-bar')?.offsetHeight  ?? 37;
@@ -344,26 +321,72 @@ function buildChart(ohlcv, positions) {
 
   const ohlcDisplay = document.createElement('div');
   ohlcDisplay.id = 'ohlc-display';
+  ohlcDisplay.className = 'chart-overlay';
   container.appendChild(ohlcDisplay);
 
+  const tooltip = document.createElement('div');
+  tooltip.id = 'chart-tooltip';
+  tooltip.className = 'chart-overlay';
+  container.appendChild(tooltip);
+
+  const _months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
   _chart.subscribeCrosshairMove(param => {
+    // — OHLC display —
     if (!param.time || !param.seriesData) {
       ohlcDisplay.style.display = 'none';
-      return;
+    } else {
+      const bar = param.seriesData.get(_candlesSeries);
+      if (!bar) {
+        ohlcDisplay.style.display = 'none';
+      } else {
+        const chg = bar.close - bar.open;
+        const pct = ((chg / bar.open) * 100).toFixed(2);
+        const col = chg >= 0 ? '#00e676' : '#ff3355';
+        ohlcDisplay.style.display = 'block';
+        ohlcDisplay.innerHTML = `
+          <span style="color:var(--fg3)">O</span> <span style="color:${col}">${bar.open.toFixed(2)}</span>
+          <span style="color:var(--fg3)">H</span> <span style="color:${col}">${bar.high.toFixed(2)}</span>
+          <span style="color:var(--fg3)">L</span> <span style="color:${col}">${bar.low.toFixed(2)}</span>
+          <span style="color:var(--fg3)">C</span> <span style="color:${col}">${bar.close.toFixed(2)}</span>
+          <span style="color:${col}">${chg >= 0 ? '+' : ''}${chg.toFixed(2)} (${chg >= 0 ? '+' : ''}${pct}%)</span>
+        `;
+      }
     }
-    const bar = param.seriesData.get(_candlesSeries);
-    if (!bar) { ohlcDisplay.style.display = 'none'; return; }
-    const chg  = bar.close - bar.open;
-    const pct  = ((chg / bar.open) * 100).toFixed(2);
-    const col  = chg >= 0 ? '#00e676' : '#ff3355';
-    ohlcDisplay.style.display = 'block';
-    ohlcDisplay.innerHTML = `
-      <span style="color:var(--fg3)">O</span> <span style="color:${col}">${bar.open.toFixed(2)}</span>
-      <span style="color:var(--fg3)">H</span> <span style="color:${col}">${bar.high.toFixed(2)}</span>
-      <span style="color:var(--fg3)">L</span> <span style="color:${col}">${bar.low.toFixed(2)}</span>
-      <span style="color:var(--fg3)">C</span> <span style="color:${col}">${bar.close.toFixed(2)}</span>
-      <span style="color:${col}">${chg >= 0 ? '+' : ''}${chg.toFixed(2)} (${chg >= 0 ? '+' : ''}${pct}%)</span>
-    `;
+
+    // — Marker tooltip —
+    if (!param.time || !param.point) { tooltip.style.display = 'none'; return; }
+    const putGroup  = _markerData.get(`${param.time}|put`);
+    const callGroup = _markerData.get(`${param.time}|call`);
+    const groups    = [putGroup, callGroup].filter(Boolean);
+    if (!groups.length) { tooltip.style.display = 'none'; return; }
+
+    const dp  = String(param.time).split('-');
+    let html  = `<div class="ctt-date">${_months[+dp[1]-1]} ${+dp[2]}, ${dp[0]}</div>`;
+    for (const group of groups) {
+      for (const p of group.positions) {
+        const typeChar  = p.type === 'call' ? 'C' : 'P';
+        const sf        = p.isSpread ? p.strike : (p.strike % 1 === 0 ? p.strike.toFixed(0) : p.strike.toFixed(2));
+        const strikeStr = p.isSpread ? String(p.strike) : `${sf}${typeChar}`;
+        const notional  = fmtMoney(p.contracts * p.originalPremium * 100);
+        const color     = p.type === 'call' ? '#aa44ff' : '#00c8ff';
+        html += `<div class="ctt-row" style="color:${color}">${strikeStr} · ${p.contracts.toLocaleString()}x · ${notional}</div>`;
+      }
+    }
+    tooltip.innerHTML = html;
+
+    const cw = container.clientWidth;
+    const ch = container.clientHeight;
+    const tw = tooltip.offsetWidth  || 200;
+    const th = tooltip.offsetHeight || 60;
+    let tx = param.point.x + 12;
+    let ty = param.point.y - th / 2;
+    if (tx + tw > cw - 10) tx = param.point.x - tw - 12;
+    if (ty < 4) ty = 4;
+    if (ty + th > ch - 4) ty = ch - th - 4;
+    tooltip.style.left    = `${tx}px`;
+    tooltip.style.top     = `${ty}px`;
+    tooltip.style.display = 'block';
   });
 
   window.addEventListener('resize', () => {
@@ -443,91 +466,13 @@ function buildChart(ohlcv, positions) {
   }
   futureLine.setData(futurePts);
 
-  // ── Filter positions for chart display ───────────────────
-  // >$1M mode: keep all positions with notional ≥ $1M, no price-range gate.
-  //            High-notional strikes are always relevant regardless of distance.
-  // ALL mode:  apply ±60% price range to avoid clutter from cheap distant OTM positions.
-  // Both modes: sort largest-notional first, cap at 8 lines.
-  const lastPrice = ohlcv.length ? ohlcv[ohlcv.length - 1].close : 0;
-
-  const chartPositions = positions
-    .filter(p => {
-      const notional = p.contracts * p.originalPremium * 100;
-      if (_filterLarge) {
-        return notional >= 1_000_000;
-      } else {
-        const strikeRef = p.isSpread ? (p.leg1Strike + p.leg2Strike) / 2 : p.strike;
-        return strikeRef >= lastPrice * 0.40 && strikeRef <= lastPrice * 1.60;
-      }
-    })
-    .sort((a, b) => (b.contracts * b.originalPremium * 100) - (a.contracts * a.originalPremium * 100))
-    .slice(0, 8);
-
-  // ── Strike lines ─────────────────────────────────────────
-  // Puts: solid line, DTE color. Calls: dashed purple.
-  // Store refs so sidebar hover can brighten/restore each line.
-  // autoscaleInfoProvider: () => null keeps strike lines from stretching the y-axis.
-  _strikeData = [];
-  for (const p of chartPositions) {
-    const isCall  = p.type === 'call';
-    const dte     = getDTE(p.expiry);
-    const color   = isCall ? '#aa44ff' : dteColor(dte);
-    const width   = strikeLineWidth(p.contracts, p.originalPremium);
-    const style   = isCall
-      ? LightweightCharts.LineStyle.Dashed
-      : LightweightCharts.LineStyle.Solid;
-
-    // Clamp the right endpoint to today+90 so far-dated expiries (e.g. 2028)
-    // don't stretch the time axis into years of empty whitespace.
-    const farDate = lineFarDate();
-    const lineEnd = p.expiry < farDate ? p.expiry : farDate;
-
-    if (p.isSpread) {
-      // Draw one line per leg; store both refs so hover can brighten/dim together.
-      const makeLeg = strikeVal => {
-        const s = _chart.addSeries(LightweightCharts.LineSeries, {
-          color,
-          lineWidth:              width,
-          lineStyle:              style,
-          lastValueVisible:       false,
-          priceLineVisible:       false,
-          crosshairMarkerVisible: false,
-          autoscaleInfoProvider:  () => null,
-        });
-        s.setData([
-          { time: dateToStr(p.tradeDate), value: strikeVal },
-          { time: dateToStr(lineEnd),     value: strikeVal },
-        ]);
-        return s;
-      };
-      const series1 = makeLeg(p.leg1Strike);
-      const series2 = makeLeg(p.leg2Strike);
-      _strikeData.push({ p, series1, series2, isSpread: true, color, width });
-    } else {
-      const series = _chart.addSeries(LightweightCharts.LineSeries, {
-        color,
-        lineWidth:              width,
-        lineStyle:              style,
-        lastValueVisible:       false,
-        priceLineVisible:       false,
-        crosshairMarkerVisible: false,
-        autoscaleInfoProvider:  () => null,
-      });
-      series.setData([
-        { time: dateToStr(p.tradeDate), value: p.strike },
-        { time: dateToStr(lineEnd),     value: p.strike },
-      ]);
-      _strikeData.push({ p, series, color, width });
-    }
-  }
+  // ── Trade-date markers ────────────────────────────────────
+  // One arrowUp marker per unique (tradeDate × type) pair — all active positions.
+  // Size scales with how many positions share that date/type combo.
+  createMarkers(positions);
 
   // Set the initial visible range to the current timeframe selection.
-  // Done inline (not in rAF) so the label positions computed one frame later
-  // already reflect the correct coordinate mapping.
   applyTimeframe(_currentMonths);
-
-    // Wait one frame for the range to settle, then place labels.
-    requestAnimationFrame(() => createLabels(chartPositions));
 }
 
 // ── Sidebar (section 02 — Active Positions) ───────────────────────────────────
@@ -598,44 +543,52 @@ function renderSidebarCards(positions, isExpired) {
       `;
       cardsEl.appendChild(card);
 
-      // Highlight the corresponding strike line(s) when hovering this card
+      const markerKey = `${dateToStr(p.tradeDate)}|${p.type}`;
+
       card.addEventListener('mouseenter', () => {
-        const entry = _strikeData.find(d => d.p === p);
-        if (!entry) return;
-        const hoverColor = p.type === 'call' ? '#cc66ff' : '#40dfff';
-        if (entry.isSpread) {
-          entry.series1.applyOptions({ color: hoverColor, lineWidth: Math.min(entry.width + 2, 4) });
-          entry.series2.applyOptions({ color: hoverColor, lineWidth: Math.min(entry.width + 2, 4) });
-        } else {
-          entry.series.applyOptions({ color: hoverColor, lineWidth: Math.min(entry.width + 2, 4) });
+        setMarkerHighlight(markerKey);
+        if (_lockedPos !== p && _chart) {
+          if (_hoveredLine) { _candlesSeries.removePriceLine(_hoveredLine); _hoveredLine = null; }
+          _hoveredLine = makeStrikeLine(p);
         }
-        // Dim all other strike lines
-        _strikeData.forEach(e => {
-          if (e === entry) return;
-          const dim = e.color + '33';
-          if (e.isSpread) {
-            e.series1.applyOptions({ color: dim });
-            e.series2.applyOptions({ color: dim });
-          } else {
-            e.series.applyOptions({ color: dim });
-          }
-        });
       });
+
       card.addEventListener('mouseleave', () => {
-        // Restore all strike lines to their original colour and width
-        _strikeData.forEach(e => {
-          if (e.isSpread) {
-            e.series1.applyOptions({ color: e.color, lineWidth: e.width });
-            e.series2.applyOptions({ color: e.color, lineWidth: e.width });
-          } else {
-            e.series.applyOptions({ color: e.color, lineWidth: e.width });
-          }
-        });
+        if (_lockedPos !== p) {
+          const lockedKey = _lockedPos ? `${dateToStr(_lockedPos.tradeDate)}|${_lockedPos.type}` : null;
+          setMarkerHighlight(lockedKey);
+          if (_hoveredLine) { _candlesSeries.removePriceLine(_hoveredLine); _hoveredLine = null; }
+        }
+      });
+
+      card.addEventListener('click', () => {
+        if (_lockedPos === p) {
+          // Unlock
+          _lockedPos = null;
+          if (_lockedLine)  { _candlesSeries.removePriceLine(_lockedLine);  _lockedLine  = null; }
+          if (_hoveredLine) { _candlesSeries.removePriceLine(_hoveredLine); _hoveredLine = null; }
+          setMarkerHighlight(null);
+          card.classList.remove('pos-card--locked');
+        } else {
+          // Lock this card
+          if (_lockedLine) _candlesSeries.removePriceLine(_lockedLine);
+          document.querySelectorAll('.pos-card--locked').forEach(c => c.classList.remove('pos-card--locked'));
+          _lockedPos  = p;
+          _lockedLine = makeStrikeLine(p);
+          if (_hoveredLine) { _candlesSeries.removePriceLine(_hoveredLine); _hoveredLine = null; }
+          card.classList.add('pos-card--locked');
+          setMarkerHighlight(markerKey);
+        }
       });
     });
 }
 
 function buildSidebar(ticker, active, expired) {
+  // Reset hover/lock state whenever a new ticker is loaded
+  _lockedPos = null;
+  if (_lockedLine  && _candlesSeries) { _candlesSeries.removePriceLine(_lockedLine);  } _lockedLine  = null;
+  if (_hoveredLine && _candlesSeries) { _candlesSeries.removePriceLine(_hoveredLine); } _hoveredLine = null;
+
   const infoEl = document.getElementById('sidebar-info');
   const totalMV = active.reduce((s, p) => s + p.contracts * p.originalPremium * 100, 0);
   infoEl.textContent = active.length
@@ -754,14 +707,6 @@ async function load(raw) {
 document.addEventListener('DOMContentLoaded', () => {
   startClock();
   initCollapsibles();
-
-  // Drive label positions from the browser's own paint loop so HTML overlays
-  // stay pixel-perfect against the chart canvas on every scroll and zoom frame.
-  // updateLabelPositions() is a no-op when no chart or labels are loaded.
-  (function syncLabels() {
-    updateLabelPositions();
-    requestAnimationFrame(syncLabels);
-  })();
 
   const input = document.getElementById('ticker-input');
   const btn   = document.getElementById('load-btn');

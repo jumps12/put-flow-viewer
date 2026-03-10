@@ -627,22 +627,27 @@ body::before {
 .tf-btn--active { color: var(--accent); border-color: rgba(0,200,255,0.3); background: rgba(0,200,255,0.06); }
 
 
-/* Strike labels */
-.strike-label {
+/* Marker hover tooltip */
+#chart-tooltip {
+  display: none;
   position: absolute;
-  font-size: 10px;
-  font-weight: 600;
-  font-family: var(--mono);
-  white-space: nowrap;
+  z-index: 50;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 7px 10px;
   pointer-events: none;
-  padding: 1px 6px;
-  border-radius: 2px;
-  background: rgba(7,9,13,0.9);
+  font-size: 10px;
+  color: var(--fg2);
   line-height: 1.6;
-  transform: translateY(-50%);
-  z-index: 10;
-  letter-spacing: 0.04em;
+  min-width: 180px;
+  max-width: 280px;
 }
+.ctt-date { font-size: 9px; color: var(--fg3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.ctt-row  { white-space: nowrap; }
+
+/* Locked card highlight */
+.pos-card--locked { background: var(--bg4) !important; border-left: 2px solid var(--accent) !important; }
 
 /* ── Positions table (section 02) ────────────────────────── */
 .table-outer {
@@ -757,6 +762,14 @@ body::before {
 .ema-dot--above   { background: var(--up); }
 .ema-dot--below   { background: var(--dn); }
 .ema-dot--reclaim { background: var(--accent); box-shadow: 0 0 5px var(--accent); }
+
+.est-label {
+  font-size: 9px;
+  color: #666;
+  letter-spacing: 0.05em;
+  margin-left: 4px;
+  vertical-align: middle;
+}
 
 .card-stats {
   display: flex;
