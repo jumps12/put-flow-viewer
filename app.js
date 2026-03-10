@@ -238,7 +238,19 @@ function createMarkers(positions) {
     });
   }
   markers.sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
-  _chart.setMarkers(markers);
+  // v5: markers are added as a separate series overlay
+  if (_markerSeries) { _chart.removeSeries(_markerSeries); _markerSeries = null; }
+  if (markers.length) {
+    _markerSeries = _chart.addSeries(LightweightCharts.LineSeries, {
+      lastValueVisible:       false,
+      priceLineVisible:       false,
+      crosshairMarkerVisible: false,
+      autoscaleInfoProvider:  () => null,
+      color:                  'transparent',
+    });
+    _markerSeries.setMarkers(markers);
+    _markerSeries.setData(_lastOhlcv.map(d => ({ time: d.time, value: d.close })));
+  }
 }
 
 function setMarkerHighlight(highlightKey) {
@@ -260,13 +272,14 @@ function setMarkerHighlight(highlightKey) {
     });
   }
   markers.sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
-  _chart.setMarkers(markers);
+  if (_markerSeries) _markerSeries.setMarkers(markers);
 }
 
 // ── Chart ─────────────────────────────────────────────────────────────────────
 
 let _chart         = null;
 let _candlesSeries = null;
+let _markerSeries  = null;
 let _markerData    = new Map(); // "YYYY-MM-DD|put"|"YYYY-MM-DD|call" → { positions[], type, dateStr }
 let _hoveredLine   = null;      // temporary price line from card mouseenter
 let _lockedLine    = null;      // locked price line from card click
@@ -278,7 +291,7 @@ let _currentMonths = 12;     // current timeframe selection (months of history)
 
 function buildChart(ohlcv, positions) {
   const container = document.getElementById('chart-container');
-  if (_chart) { _chart.remove(); _chart = null; }
+  if (_chart) { _chart.remove(); _chart = null; _markerSeries = null; }
   // Clean up overlays from any previous chart instance
   container.querySelectorAll('.chart-overlay').forEach(el => el.remove());
 
