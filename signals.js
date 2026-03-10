@@ -561,7 +561,7 @@ async function loadSignals() {
   const shown = signals.filter(s => {
     const weighted = s.totalNotional * s.multiplier;
     return weighted >= (THRESH[s.badge] ?? 0);
-  }).slice(0, 12);
+  }).slice(0, 20);
 
   shown._qualified    = shown.length;
   shown._totalTracked = totalTracked;
