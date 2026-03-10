@@ -685,6 +685,11 @@ def main() -> None:
                     continue
 
                 p["original_premium"] = price   # write once, never overwritten again
+
+    # ── Copy net_premium → original_premium for spreads ──────────────────────
+    for p in positions:
+        if is_spread(p.get("strike","")) and not _has_premium(p.get("original_premium")) and _has_premium(p.get("net_premium")):
+            p["original_premium"] = p["net_premium"]
                 group_fetched += 1
                 fetched       += 1
 

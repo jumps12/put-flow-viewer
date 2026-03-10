@@ -836,17 +836,6 @@
     "status": "EXPIRED"
   },
   {
-    "symbol": "BRKB",
-    "strike": 495.0,
-    "expiry": "2026-03-20",
-    "contracts": 2000,
-    "current_premium": 0.0,
-    "original_premium": null,
-    "trade_date": "2026-02-20",
-    "type": "put",
-    "status": "ACTIVE"
-  },
-  {
     "symbol": "C",
     "strike": 95.0,
     "expiry": "2026-11-20",
@@ -4290,17 +4279,6 @@
     "status": "ACTIVE"
   },
   {
-    "symbol": "SKLN",
-    "strike": 20.0,
-    "expiry": "2026-07-17",
-    "contracts": 30000,
-    "current_premium": 0.0,
-    "original_premium": null,
-    "trade_date": "2026-03-03",
-    "type": "put",
-    "status": "ACTIVE"
-  },
-  {
     "symbol": "SPY",
     "strike": 560.0,
     "expiry": "2026-04-17",
@@ -4785,17 +4763,6 @@
     "status": "ACTIVE"
   },
   {
-    "symbol": "SE",
-    "strike": 75.0,
-    "expiry": "2026-09-17",
-    "contracts": 500,
-    "current_premium": 0.0,
-    "original_premium": null,
-    "trade_date": "2026-03-04",
-    "type": "put",
-    "status": "ACTIVE"
-  },
-  {
     "symbol": "SLV",
     "strike": 76.0,
     "expiry": "2026-03-27",
@@ -5060,17 +5027,6 @@
     "status": "ACTIVE"
   },
   {
-    "symbol": "IAU",
-    "strike": 105.0,
-    "expiry": "2027-12-17",
-    "contracts": 3200,
-    "current_premium": 0.0,
-    "original_premium": null,
-    "trade_date": "2026-02-27",
-    "type": "call",
-    "status": "ACTIVE"
-  },
-  {
     "symbol": "IBIT",
     "strike": 42.0,
     "expiry": "2026-04-17",
@@ -5242,17 +5198,6 @@
     "contracts": 2000,
     "current_premium": 11.12,
     "original_premium": 11.4,
-    "trade_date": "2026-02-27",
-    "type": "call",
-    "status": "ACTIVE"
-  },
-  {
-    "symbol": "PBRA",
-    "strike": 20.0,
-    "expiry": "2027-01-15",
-    "contracts": 35000,
-    "current_premium": 0.0,
-    "original_premium": null,
     "trade_date": "2026-02-27",
     "type": "call",
     "status": "ACTIVE"
@@ -7359,17 +7304,6 @@
     "status": "ACTIVE"
   },
   {
-    "symbol": "KMIA",
-    "strike": 8.5,
-    "expiry": "2026-03-13",
-    "contracts": 4000,
-    "current_premium": 0.0,
-    "original_premium": null,
-    "trade_date": "2026-02-24",
-    "type": "call",
-    "status": "ACTIVE"
-  },
-  {
     "symbol": "LASR",
     "strike": 65.0,
     "expiry": "2026-03-20",
@@ -9328,17 +9262,6 @@
     "status": "ACTIVE"
   },
   {
-    "symbol": "CNW",
-    "strike": 60.0,
-    "expiry": "2027-01-15",
-    "contracts": 1160,
-    "current_premium": 0.0,
-    "original_premium": null,
-    "trade_date": "2026-03-02",
-    "type": "call",
-    "status": "ACTIVE"
-  },
-  {
     "symbol": "COIN",
     "strike": 190.0,
     "expiry": "2026-05-15",
@@ -9911,17 +9834,6 @@
     "status": "ACTIVE"
   },
   {
-    "symbol": "TTWO",
-    "strike": 290.0,
-    "expiry": "2026-06-19",
-    "contracts": 1000,
-    "current_premium": 0.0,
-    "original_premium": null,
-    "trade_date": "2026-03-02",
-    "type": "call",
-    "status": "ACTIVE"
-  },
-  {
     "symbol": "UNH",
     "strike": 290.0,
     "expiry": "2026-04-02",
@@ -9995,17 +9907,6 @@
     "current_premium": 8.93,
     "original_premium": 7.33,
     "trade_date": "2026-03-02",
-    "type": "call",
-    "status": "ACTIVE"
-  },
-  {
-    "symbol": "AAOI",
-    "strike": 115.0,
-    "expiry": "2026-06-19",
-    "contracts": 900,
-    "current_premium": 0.0,
-    "original_premium": null,
-    "trade_date": "2026-03-03",
     "type": "call",
     "status": "ACTIVE"
   },
@@ -10228,17 +10129,6 @@
     "trade_date": "2026-03-03",
     "type": "call",
     "status": "EXPIRED"
-  },
-  {
-    "symbol": "MEOX",
-    "strike": 60.0,
-    "expiry": "2026-12-18",
-    "contracts": 500,
-    "current_premium": 0.0,
-    "original_premium": null,
-    "trade_date": "2026-03-03",
-    "type": "call",
-    "status": "ACTIVE"
   },
   {
     "symbol": "MHK",
@@ -10506,17 +10396,6 @@
   },
   {
     "symbol": "AMZN",
-    "strike": 217.5,
-    "expiry": "2026-03-04",
-    "contracts": 10000,
-    "current_premium": 0.0,
-    "original_premium": null,
-    "trade_date": "2026-03-04",
-    "type": "call",
-    "status": "EXPIRED"
-  },
-  {
-    "symbol": "AMZN",
     "strike": 240.0,
     "expiry": "2026-03-27",
     "contracts": 2000,
@@ -10621,17 +10500,6 @@
     "contracts": 2000,
     "current_premium": 0.0,
     "original_premium": 1.4,
-    "trade_date": "2026-03-04",
-    "type": "call",
-    "status": "ACTIVE"
-  },
-  {
-    "symbol": "CPNG",
-    "strike": 25.0,
-    "expiry": "2027-01-22",
-    "contracts": 2500,
-    "current_premium": 0.0,
-    "original_premium": null,
     "trade_date": "2026-03-04",
     "type": "call",
     "status": "ACTIVE"
@@ -11888,16 +11756,6 @@
     "status": "ACTIVE"
   },
   {
-    "symbol": "TICKER",
-    "strike": 145.0,
-    "expiry": "2026-04-17",
-    "trade_date": "2026-03-06",
-    "type": "put",
-    "contracts": 1000,
-    "original_premium": null,
-    "status": "ACTIVE"
-  },
-  {
     "symbol": "AMCR",
     "strike": 50.0,
     "expiry": "2026-06-18",
@@ -12582,16 +12440,6 @@
     "status": "ACTIVE"
   },
   {
-    "symbol": "TICKER",
-    "strike": 150.0,
-    "expiry": "2026-04-17",
-    "trade_date": "2026-03-06",
-    "type": "call",
-    "contracts": 1000,
-    "original_premium": null,
-    "status": "ACTIVE"
-  },
-  {
     "symbol": "BAC",
     "strike": 42.0,
     "expiry": "2026-04-24",
@@ -13258,16 +13106,6 @@
     "contracts": 6000,
     "original_premium": 5.75,
     "status": "ACTIVE"
-  },
-  {
-    "symbol": "AMD",
-    "strike": 150.0,
-    "expiry": "2026-01-15",
-    "trade_date": "2026-03-09",
-    "type": "put",
-    "contracts": 1000,
-    "original_premium": "",
-    "status": "EXPIRED"
   },
   {
     "symbol": "AMZN",
