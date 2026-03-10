@@ -288,7 +288,7 @@ function updateLabelPositions() {
   for (const item of visible) {
     item.el.style.display = 'block';
     item.el.style.left    = `${item.x}px`;
-    item.el.style.top     = `${item.adjY}px`;
+    item.el.style.top     = `${item.adjY - 7}px`;
   }
 }
 
