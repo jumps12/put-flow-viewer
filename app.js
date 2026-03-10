@@ -55,7 +55,7 @@ async function fetchPutFlowData(ticker) {
         ? isFinite(d.leg1Strike) && isFinite(d.leg2Strike)
         : isFinite(d.strike);
       return (
-        strikeOk && isFinite(d.contracts) && isFinite(d.originalPremium) &&
+        strikeOk && isFinite(d.contracts) &&
         d.expiry instanceof Date && d.tradeDate instanceof Date &&
         d.expiry > d.tradeDate
       );
@@ -297,7 +297,7 @@ let _labelData     = []; // [{ p, el }] — kept in sync with the current chart
 let _strikeData    = []; // [{ p, series, color, width }] — one entry per strike line
 let _lastOhlcv     = null;   // cached for filter toggle
 let _lastPositions = null;   // cached active positions for filter toggle
-let _filterLarge   = true;   // true = show only notional ≥ $1M
+let _filterLarge   = false;  // true = show only notional ≥ $1M
 let _currentMonths = 12;     // current timeframe selection (months of history)
 
 function buildChart(ohlcv, positions) {
