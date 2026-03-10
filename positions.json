@@ -7455,7 +7455,7 @@
     "original_premium": 0.02,
     "trade_date": "2026-02-24",
     "type": "call",
-    "status": "ACTIVE"
+    "status": "EXPIRED"
   },
   {
     "symbol": "NVDA",
@@ -11041,7 +11041,7 @@
     "original_premium": 3.2,
     "trade_date": "2026-03-04",
     "type": "call",
-    "status": "ACTIVE"
+    "status": "EXPIRED"
   },
   {
     "symbol": "OKLO",
@@ -14477,6 +14477,992 @@
     "type": "call",
     "contracts": 2700,
     "original_premium": 1.82,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "ACN",
+    "strike": 170.0,
+    "expiry": "2026-05-15",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 1000,
+    "original_premium": 4.75,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "AKAM",
+    "strike": 100.0,
+    "expiry": "2026-03-20",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 1500,
+    "original_premium": 1.175,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "AMD",
+    "strike": 150.0,
+    "expiry": "2026-04-24",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 7000,
+    "original_premium": 1.755,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "AMZN",
+    "strike": 190.0,
+    "expiry": "2026-03-20",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 2000,
+    "original_premium": 0.495,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "BAX",
+    "strike": 15.0,
+    "expiry": "2026-04-10",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 32000,
+    "original_premium": 0.2,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "BNTX",
+    "strike": 80.0,
+    "expiry": "2026-06-18",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 1000,
+    "original_premium": 6.75,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "BXSL",
+    "strike": 25.0,
+    "expiry": "2026-04-17",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 2900,
+    "original_premium": 1.85,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "CCJ",
+    "strike": 85.0,
+    "expiry": "2026-04-17",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 6000,
+    "original_premium": 0.75,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "CELH",
+    "strike": 42.5,
+    "expiry": "2026-03-13",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 1000,
+    "original_premium": 0.245,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "CI",
+    "strike": 230.0,
+    "expiry": "2026-04-10",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 1900,
+    "original_premium": 2.3,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "CRCL",
+    "strike": 104.0,
+    "expiry": "2026-03-13",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 2000,
+    "original_premium": 0.42,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "CRCL",
+    "strike": 95.0,
+    "expiry": "2026-06-18",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 1000,
+    "original_premium": 8.55,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "CRWV",
+    "strike": 70.0,
+    "expiry": "2026-08-21",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 1000,
+    "original_premium": 15.05,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "CYTK",
+    "strike": 45.0,
+    "expiry": "2026-05-15",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 1000,
+    "original_premium": 3.325,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "EOSE",
+    "strike": 5.5,
+    "expiry": "2026-03-27",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 2000,
+    "original_premium": 0.145,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "EXE",
+    "strike": 90.0,
+    "expiry": "2026-04-17",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 8300,
+    "original_premium": 0.705,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "EXE",
+    "strike": 90.0,
+    "expiry": "2026-04-17",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 8332,
+    "original_premium": 0.705,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "FISV",
+    "strike": 49.0,
+    "expiry": "2026-04-10",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 13000,
+    "original_premium": 0.4,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "GDX",
+    "strike": 100.0,
+    "expiry": "2026-03-20",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 1000,
+    "original_premium": 1.815,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "GTES",
+    "strike": 25.0,
+    "expiry": "2026-04-17",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 2000,
+    "original_premium": 1.075,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "HPE",
+    "strike": 20.0,
+    "expiry": "2026-04-17",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 11000,
+    "original_premium": 0.6,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "HWM",
+    "strike": 215.0,
+    "expiry": "2026-04-24",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 2580,
+    "original_premium": 15.3,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "IBIT",
+    "strike": 40.0,
+    "expiry": "2026-03-27",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 1000,
+    "original_premium": 1.62,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "IGV",
+    "strike": 80.0,
+    "expiry": "2026-04-17",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 5000,
+    "original_premium": 1.9,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "KMI",
+    "strike": 29.0,
+    "expiry": "2026-06-18",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 6750,
+    "original_premium": 0.515,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "LRCX",
+    "strike": 175.0,
+    "expiry": "2026-04-17",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 1260,
+    "original_premium": 4.125,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "MU",
+    "strike": 400.0,
+    "expiry": "2026-03-20",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 5400,
+    "original_premium": 19.925,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "MU",
+    "strike": 385.0,
+    "expiry": "2026-04-02",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 10000,
+    "original_premium": 20.4,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "NFLX",
+    "strike": 98.0,
+    "expiry": "2026-03-20",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 1100,
+    "original_premium": 2.825,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "NKE",
+    "strike": 50.0,
+    "expiry": "2027-01-15",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 1500,
+    "original_premium": 4.525,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "NOW",
+    "strike": 116.0,
+    "expiry": "2026-03-13",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 4134,
+    "original_premium": 1.675,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "NOW",
+    "strike": 85.0,
+    "expiry": "2026-04-10",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 10000,
+    "original_premium": 0.62,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "NXE",
+    "strike": 10.0,
+    "expiry": "2026-04-17",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 2000,
+    "original_premium": 0.225,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "ORCL",
+    "strike": 110.0,
+    "expiry": "2026-04-17",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 2000,
+    "original_premium": 1.45,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "PINS",
+    "strike": 19.0,
+    "expiry": "2026-04-17",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 6000,
+    "original_premium": 1.065,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "QGEN",
+    "strike": 40.0,
+    "expiry": "2026-04-17",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 2500,
+    "original_premium": 0.95,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "QS",
+    "strike": 6.0,
+    "expiry": "2026-04-17",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 1450,
+    "original_premium": 0.26,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "RDDT",
+    "strike": 120.0,
+    "expiry": "2026-03-20",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 1450,
+    "original_premium": 1.62,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "SLV",
+    "strike": 78.0,
+    "expiry": "2026-03-31",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 1175,
+    "original_premium": 4.2,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "STUB",
+    "strike": 8.0,
+    "expiry": "2026-03-20",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 2500,
+    "original_premium": 0.5,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "TSM",
+    "strike": 320.0,
+    "expiry": "2026-09-18",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 1650,
+    "original_premium": 28.175,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "UAMY",
+    "strike": 7.5,
+    "expiry": "2026-04-10",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 4000,
+    "original_premium": 0.275,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "UBER",
+    "strike": 60.0,
+    "expiry": "2026-04-17",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 11500,
+    "original_premium": 0.425,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "VFC",
+    "strike": 20.0,
+    "expiry": "2026-09-18",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 20000,
+    "original_premium": 4.325,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "VRT",
+    "strike": 225.0,
+    "expiry": "2026-03-20",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 1240,
+    "original_premium": 1.26,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "WING",
+    "strike": 210.0,
+    "expiry": "2026-06-18",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 490,
+    "original_premium": 23.95,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "XLF",
+    "strike": 45.0,
+    "expiry": "2028-01-21",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 8000,
+    "original_premium": 3.15,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "XLI",
+    "strike": 141.0,
+    "expiry": "2026-06-18",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 4000,
+    "original_premium": 1.435,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "XOM",
+    "strike": 5.5,
+    "expiry": "2026-03-27",
+    "trade_date": "2026-03-10",
+    "type": "put",
+    "contracts": 10000,
+    "original_premium": 0.06,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "AFRM",
+    "strike": 50.0,
+    "expiry": "2028-01-21",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 300,
+    "original_premium": 19.325,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "AMZN",
+    "strike": 217.5,
+    "expiry": "2026-03-11",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 2000,
+    "original_premium": 0.69,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "AMZN",
+    "strike": 225.0,
+    "expiry": "2026-04-02",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 2000,
+    "original_premium": 2.92,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "AMZN",
+    "strike": 235.0,
+    "expiry": "2026-04-24",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 4500,
+    "original_premium": 2.71,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "AVGO",
+    "strike": 300.0,
+    "expiry": "2026-06-18",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 22500,
+    "original_premium": 66.9,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "AVGO",
+    "strike": 390.0,
+    "expiry": "2026-07-17",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 1000,
+    "original_premium": 25.225,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "AXTI",
+    "strike": 60.0,
+    "expiry": "2026-04-17",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 4000,
+    "original_premium": 5.5,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "BABA",
+    "strike": 135.0,
+    "expiry": "2026-05-15",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 1850,
+    "original_premium": 12.425,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "C",
+    "strike": 125.0,
+    "expiry": "2026-05-15",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 10000,
+    "original_premium": 1.81,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "C",
+    "strike": 115.0,
+    "expiry": "2026-05-15",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 6000,
+    "original_premium": 4.675,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "CAPR",
+    "strike": 40.0,
+    "expiry": "2026-04-17",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 400,
+    "original_premium": 2.9,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "CORZ",
+    "strike": 30.0,
+    "expiry": "2028-01-21",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 25000,
+    "original_premium": 4.075,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "CRCG",
+    "strike": 7.0,
+    "expiry": "2026-04-17",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 1000,
+    "original_premium": 0.325,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "CYTK",
+    "strike": "70/100C",
+    "expiry": "2026-05-15",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 1000,
+    "original_premium": "",
+    "status": "ACTIVE",
+    "leg1_premium": 11.4,
+    "leg2_premium": 3.575,
+    "net_premium": 7.825,
+    "net_label": "NET DEBIT"
+  },
+  {
+    "symbol": "DOW",
+    "strike": 40.0,
+    "expiry": "2028-01-21",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 800,
+    "original_premium": 6.4,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "ERAS",
+    "strike": 15.0,
+    "expiry": "2026-12-18",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 2000,
+    "original_premium": 7.1,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "FCX",
+    "strike": 65.0,
+    "expiry": "2026-03-20",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 2000,
+    "original_premium": 1.295,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "FUTU",
+    "strike": 150.0,
+    "expiry": "2026-09-18",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 600,
+    "original_premium": 25.925,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "GGAL",
+    "strike": 55.0,
+    "expiry": "2027-01-15",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 575,
+    "original_premium": 6.15,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "GLW",
+    "strike": 150.0,
+    "expiry": "2026-04-17",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 3000,
+    "original_premium": 7.95,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "GOOG",
+    "strike": 312.5,
+    "expiry": "2026-03-27",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 1700,
+    "original_premium": 7.7,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "HAYW",
+    "strike": 15.0,
+    "expiry": "2026-04-17",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 2000,
+    "original_premium": 0.675,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "HPE",
+    "strike": 23.0,
+    "expiry": "2026-04-17",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 11000,
+    "original_premium": 0.76,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "HPE",
+    "strike": 25.0,
+    "expiry": "2028-01-21",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 600,
+    "original_premium": 4.0,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "INTC",
+    "strike": 50.0,
+    "expiry": "2026-04-17",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 2500,
+    "original_premium": 2.9,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "INTC",
+    "strike": 55.0,
+    "expiry": "2026-05-15",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 5000,
+    "original_premium": 2.82,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "JEF",
+    "strike": 35.0,
+    "expiry": "2028-01-21",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 200,
+    "original_premium": 11.3,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "LMND",
+    "strike": "80/100C",
+    "expiry": "2026-09-18",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 1000,
+    "original_premium": "",
+    "status": "ACTIVE",
+    "leg1_premium": 7.0,
+    "leg2_premium": 4.0,
+    "net_premium": 3.0,
+    "net_label": "NET DEBIT"
+  },
+  {
+    "symbol": "META",
+    "strike": 672.5,
+    "expiry": "2026-03-20",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 2000,
+    "original_premium": 7.1,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "META",
+    "strike": 695.0,
+    "expiry": "2026-03-27",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 1000,
+    "original_premium": 4.275,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "MSFT",
+    "strike": 440.0,
+    "expiry": "2026-04-17",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 1500,
+    "original_premium": 3.825,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "NAT",
+    "strike": 7.0,
+    "expiry": "2026-10-16",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 1000,
+    "original_premium": 0.325,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "NBIS",
+    "strike": 110.0,
+    "expiry": "2026-04-10",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 1100,
+    "original_premium": 5.25,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "NVO",
+    "strike": 40.0,
+    "expiry": "2026-03-27",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 1000,
+    "original_premium": 0.92,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "ORCL",
+    "strike": 167.5,
+    "expiry": "2026-03-13",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 3000,
+    "original_premium": 2.405,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "ORCL",
+    "strike": 175.0,
+    "expiry": "2026-04-17",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 1000,
+    "original_premium": 4.7,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "ORCL",
+    "strike": 200.0,
+    "expiry": "2027-01-15",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 3000,
+    "original_premium": 17.05,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "QGEN",
+    "strike": "45/50C",
+    "expiry": "2026-04-17",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 2500,
+    "original_premium": "",
+    "status": "ACTIVE",
+    "leg1_premium": 1.15,
+    "leg2_premium": 0.72,
+    "net_premium": 0.43,
+    "net_label": "NET DEBIT"
+  },
+  {
+    "symbol": "RIVN",
+    "strike": 16.5,
+    "expiry": "2026-03-20",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 3300,
+    "original_premium": 1.0,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "RIVN",
+    "strike": 18.5,
+    "expiry": "2026-03-27",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 1500,
+    "original_premium": 0.475,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "RIVN",
+    "strike": 17.0,
+    "expiry": "2026-05-15",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 2000,
+    "original_premium": 2.08,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "RIVN",
+    "strike": 18.0,
+    "expiry": "2026-06-18",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 7500,
+    "original_premium": 2.075,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "RKLB",
+    "strike": 85.0,
+    "expiry": "2026-03-27",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 2200,
+    "original_premium": 1.755,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "SOFI",
+    "strike": 19.0,
+    "expiry": "2026-03-13",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 2000,
+    "original_premium": 0.315,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "TSLA",
+    "strike": 405.0,
+    "expiry": "2026-05-15",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 12000,
+    "original_premium": 31.925,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "TTAN",
+    "strike": "85/95C",
+    "expiry": "2026-03-20",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 4000,
+    "original_premium": "",
+    "status": "ACTIVE",
+    "leg1_premium": 2.9,
+    "leg2_premium": 0.875,
+    "net_premium": 2.025,
+    "net_label": "NET DEBIT"
+  },
+  {
+    "symbol": "UNF",
+    "strike": 300.0,
+    "expiry": "2026-04-17",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 1000,
+    "original_premium": 4.6,
+    "status": "ACTIVE"
+  },
+  {
+    "symbol": "WMT",
+    "strike": 128.0,
+    "expiry": "2026-03-13",
+    "trade_date": "2026-03-10",
+    "type": "call",
+    "contracts": 1560,
+    "original_premium": 0.46,
     "status": "ACTIVE"
   }
 ]
