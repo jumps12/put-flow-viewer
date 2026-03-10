@@ -333,7 +333,7 @@ function buildChart(ohlcv, positions) {
     });
 
   // ── OHLC bars ────────────────────────────────────────────
-  const candles = _chart.addBarSeries({
+  const candles = _chart.addSeries(LightweightCharts.BarSeries, {
     upColor:          '#00e676',
     downColor:        '#ff3355',
     openVisible:      true,
