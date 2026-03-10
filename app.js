@@ -480,7 +480,7 @@ function buildChart(ohlcv, positions) {
   // ── Trade-date markers ────────────────────────────────────
   // One arrowUp marker per unique (tradeDate × type) pair — all active positions.
   // Size scales with how many positions share that date/type combo.
-  createMarkers(positions);
+  // createMarkers disabled — v5 migration pending
 
   // Set the initial visible range to the current timeframe selection.
   applyTimeframe(_currentMonths);
