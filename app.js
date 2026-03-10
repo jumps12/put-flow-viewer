@@ -238,7 +238,7 @@ function createMarkers(positions) {
     });
   }
   markers.sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
-  _candlesSeries.setMarkers(markers);
+  _chart.setMarkers(markers);
 }
 
 function setMarkerHighlight(highlightKey) {
@@ -260,7 +260,7 @@ function setMarkerHighlight(highlightKey) {
     });
   }
   markers.sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
-  _candlesSeries.setMarkers(markers);
+  _chart.setMarkers(markers);
 }
 
 // ── Chart ─────────────────────────────────────────────────────────────────────

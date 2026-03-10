@@ -425,8 +425,8 @@ async function loadSignals() {
 
     // UNUSUAL: first appearance OR quiet name OR mega size — shown in separate section
     const isUnusual = (
-      (isFirstTime || isQuiet) && totalNotional > 500_000
-    ) || todayContracts >= 10_000;
+      (isFirstTime || isQuiet) && totalNotional > 200_000
+    ) || todayContracts >= 5_000;
 
     if (!badge && isUnusual) {
       events.push({
