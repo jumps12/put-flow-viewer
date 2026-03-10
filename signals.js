@@ -318,7 +318,7 @@ async function loadSignals() {
       .map(c => `${c.expiry?.getFullYear()}-${c.expiry?.getMonth()}`)
       .filter(Boolean);
     const uniqueExpiryMonths = new Set(todayCallExpiries);
-    if (uniqueExpiryMonths.size >= 3) { tier1.push('expiry_ladder'); const depIdx = dep.indexOf('calls_only_cheap'); if (depIdx > -1) dep.splice(depIdx, 1); }
+    if (uniqueExpiryMonths.size >= 3) tier1.push('expiry_ladder');
 
     // T1.6  Mega contract day — 10,000+ contracts in a single day regardless of history
     // Catches first-time institutional size plays like UAL 40,000x
@@ -408,7 +408,7 @@ async function loadSignals() {
     if (allPos.every(p => p.originalPremium < 0.50))                      dep.push('all_cheap');
     const todayCalls = calls.filter(p => p.tradeDate && p.tradeDate.toDateString() === today.toDateString());
     const checkCalls = todayCalls.length > 0 ? todayCalls : calls;
-    if (puts.length === 0 && checkCalls.every(p => p.originalPremium < 2.0))   dep.push('calls_only_cheap');
+    if (puts.length === 0 && checkCalls.every(p => p.originalPremium < 2.0) && uniqueExpiryMonths.size < 3)   dep.push('calls_only_cheap');
     if (totalNotional < 100_000)                                           dep.push('low_notional');
     if (allPos.every(p => p.expiry &&
         Math.floor((p.expiry - today) / 86_400_000) <= 14) &&
