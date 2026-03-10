@@ -55,7 +55,7 @@ async function fetchPutFlowData(ticker) {
         ? isFinite(d.leg1Strike) && isFinite(d.leg2Strike)
         : isFinite(d.strike);
       return (
-        strikeOk && isFinite(d.contracts) &&
+        strikeOk && isFinite(d.contracts) && isFinite(d.originalPremium) &&
         d.expiry instanceof Date && d.tradeDate instanceof Date &&
         d.expiry > d.tradeDate
       );
@@ -297,7 +297,7 @@ let _labelData     = []; // [{ p, el }] — kept in sync with the current chart
 let _strikeData    = []; // [{ p, series, color, width }] — one entry per strike line
 let _lastOhlcv     = null;   // cached for filter toggle
 let _lastPositions = null;   // cached active positions for filter toggle
-let _filterLarge   = false;  // true = show only notional ≥ $1M
+let _filterLarge   = true;   // true = show only notional ≥ $1M
 let _currentMonths = 12;     // current timeframe selection (months of history)
 
 function buildChart(ohlcv, positions) {
@@ -333,7 +333,7 @@ function buildChart(ohlcv, positions) {
     });
 
   // ── OHLC bars ────────────────────────────────────────────
-  const candles = _chart.addSeries(LightweightCharts.BarSeries, {
+  const candles = _chart.addBarSeries({
     upColor:          '#00e676',
     downColor:        '#ff3355',
     openVisible:      true,
@@ -389,19 +389,17 @@ function buildChart(ohlcv, positions) {
   // Both modes: sort largest-notional first, cap at 8 lines.
   const lastPrice = ohlcv.length ? ohlcv[ohlcv.length - 1].close : 0;
 
-  const estPrem = p => {
-    if (isFinite(p.originalPremium) && p.originalPremium > 0) return p.originalPremium;
-    const sr = p.isSpread ? (p.leg1Strike + p.leg2Strike) / 2 : p.strike;
-    return isFinite(sr) ? sr * 0.03 : 1;
-  };
   const chartPositions = positions
     .filter(p => {
-      const strikeRef = p.isSpread ? (p.leg1Strike + p.leg2Strike) / 2 : p.strike;
-      const notional = p.contracts * estPrem(p) * 100;
-      if (_filterLarge) return notional >= 1_000_000;
-      return strikeRef >= lastPrice * 0.40 && strikeRef <= lastPrice * 1.60;
+      const notional = p.contracts * p.originalPremium * 100;
+      if (_filterLarge) {
+        return notional >= 1_000_000;
+      } else {
+        const strikeRef = p.isSpread ? (p.leg1Strike + p.leg2Strike) / 2 : p.strike;
+        return strikeRef >= lastPrice * 0.40 && strikeRef <= lastPrice * 1.60;
+      }
     })
-    .sort((a, b) => (b.contracts * estPrem(b) * 100) - (a.contracts * estPrem(a) * 100))
+    .sort((a, b) => (b.contracts * b.originalPremium * 100) - (a.contracts * a.originalPremium * 100))
     .slice(0, 8);
 
   // ── Strike lines ─────────────────────────────────────────
@@ -413,7 +411,7 @@ function buildChart(ohlcv, positions) {
     const isCall  = p.type === 'call';
     const dte     = getDTE(p.expiry);
     const color   = isCall ? '#aa44ff' : dteColor(dte);
-    const width   = strikeLineWidth(p.contracts, estPrem(p));
+    const width   = strikeLineWidth(p.contracts, p.originalPremium);
     const style   = isCall
       ? LightweightCharts.LineStyle.Dashed
       : LightweightCharts.LineStyle.Solid;
