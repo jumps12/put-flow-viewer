@@ -519,6 +519,8 @@ async function loadSignals() {
       sig.isRolling      = sig.isRolling      ?? false;
       sig.isSpread       = sig.puts.some(p => String(p.strike).includes('/')) ||
                            sig.calls.some(p => String(p.strike).includes('/'));
+      sig.currPrice  = posPrice[ticker] ?? null;
+      sig.priorCount = meta.priorCount ?? 0;
       applyLearnedScoring(sig, '');
       // Override tier if golden-rule forces it
       if (sig.forceEventTrade) sig.badge = 'EVENT';
@@ -862,6 +864,9 @@ const SECTOR_RETAIL = ['WMT','TGT','COST','AMZN','HD','LOW','TJX','ROST','BURL',
 const SECTOR_SEMIS = ['NVDA','AMD','MU','INTC','QCOM','AVGO','TSM','AMAT','KLAC','LRCX','ASML','MRVL','SMCI','SNDK'];
 const SECTOR_OIL_SERVICES = ['SLB','HAL','BKR','RIG','NOV','FTI'];
 
+// Government / rare earth catalyst tickers (Mar 11 2026)
+const GOVERNMENT_CATALYST_TICKERS = ['USAR','MP','UAMY','REE','ALTM'];
+
 // Sector sweep: if 2+ names from same sector appear on same trade date → cross-boost all
 const SECTOR_SWEEP_GROUPS = [
   { name: 'AIRLINE SWEEP', tickers: SECTOR_AIRLINES },
@@ -1015,6 +1020,45 @@ function applyLearnedScoring(signal, analystNote = '') {
   }
   // ── Government catalyst (Mar 11 2026) ────────────────────────────────────
   if (note.includes('government') || note.includes('rare earth') || note.includes('defense contract')) {
+    score *= 1.25; tags.push('GOVERNMENT CATALYST');
+  }
+
+  // ── STRUCTURAL RULES (data-driven) ─────────────────────────────────────────
+
+  // Leadership EMA reclaim — established name (3+ prior dates) reclaims 21 EMA
+  const maStatus = signal.maContext?.maStatus ?? null;
+  if (maStatus === 'reclaim' && (signal.priorCount ?? 0) >= 3) {
+    score *= 1.60; tags.push('LEADERSHIP EMA RECLAIM');
+  }
+
+  // Valuation floor put sale — strike >20% below price + DTE >60 days + no calls
+  const currPrice = signal.currPrice ?? null;
+  const hasPutsOnly = (signal.puts?.length ?? 0) > 0 && (signal.calls?.length ?? 0) === 0;
+  if (currPrice && hasPutsOnly) {
+    const deepLongDated = signal.puts.filter(p =>
+      p.strike < currPrice * 0.80 &&
+      p.expiry && Math.floor((p.expiry - new Date()) / 86_400_000) > 60
+    );
+    if (deepLongDated.length > 0) { score *= 1.20; tags.push('VALUATION FLOOR'); }
+  }
+
+  // Gap support put sale — strike 10-25% below price + DTE <=45 days
+  if (currPrice && hasPutsOnly) {
+    const gapZonePuts = signal.puts.filter(p =>
+      p.strike < currPrice * 0.90 && p.strike > currPrice * 0.75 &&
+      p.expiry && Math.floor((p.expiry - new Date()) / 86_400_000) <= 45
+    );
+    if (gapZonePuts.length > 0) { score *= 1.25; tags.push('GAP SUPPORT PUT SALE'); }
+  }
+
+  // Rare flow + high conviction — quiet name + notional >$500K + OTM calls
+  if ((signal.priorCount ?? 0) < 3 && signal.notional > 500_000 && currPrice) {
+    const otmCalls = (signal.calls ?? []).filter(c => c.strike > currPrice);
+    if (otmCalls.length > 0) { score *= 1.35; tags.push('RARE FLOW — HIGH CONVICTION'); }
+  }
+
+  // Government / rare earth catalyst
+  if (typeof GOVERNMENT_CATALYST_TICKERS !== 'undefined' && GOVERNMENT_CATALYST_TICKERS.includes(signal.ticker)) {
     score *= 1.25; tags.push('GOVERNMENT CATALYST');
   }
 
