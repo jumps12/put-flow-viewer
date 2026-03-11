@@ -1103,3 +1103,33 @@ body::before {
   padding:     1px 4px;
   background:  rgba(7,9,13,0.75);
 }
+
+/* ── Calls overlay panel ─────────────────────────────────────────────────── */
+#calls-overlay {
+  position:   absolute;
+  top:        10px;
+  right:      10px;
+  z-index:    20;
+  background: rgba(7,9,13,0.85);
+  border:     1px solid #aa44ff44;
+  padding:    8px 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size:  10px;
+  max-height: 45%;
+  overflow-y: auto;
+  pointer-events: none;
+  min-width:  260px;
+}
+.calls-overlay-title {
+  color:          #aa44ff;
+  font-size:      9px;
+  letter-spacing: 0.1em;
+  margin-bottom:  6px;
+  border-bottom:  1px solid #aa44ff44;
+  padding-bottom: 4px;
+}
+.calls-overlay-row {
+  color:       #aa44ff;
+  line-height: 1.8;
+  white-space: nowrap;
+}
