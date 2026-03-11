@@ -154,11 +154,11 @@ def parse_chain(data: dict):
     """Extract puts and calls from Yahoo's option chain response."""
     try:
         tables = data["optionChain"]["result"][0].get("options", [])
-        puts, calls = [], []
+        calls, puts = [], []
         for table in tables:
-            puts.extend(table.get("puts",  []))
             calls.extend(table.get("calls", []))
-        return puts, calls
+            puts.extend(table.get("puts",  []))
+        return calls, puts
     except (KeyError, IndexError, TypeError):
         return [], []
 
@@ -686,16 +686,14 @@ def main() -> None:
 
                 p["original_premium"] = price   # write once, never overwritten again
 
+        marker = "✓" if group_fetched == n else ("⚠" if group_fetched > 0 else "✗")
+        print(f"  {marker} {group_fetched}/{n} fetched", flush=True)
+        time.sleep(FETCH_DELAY)
+
     # ── Copy net_premium → original_premium for spreads ──────────────────────
     for p in positions:
         if is_spread(p.get("strike","")) and not _has_premium(p.get("original_premium")) and _has_premium(p.get("net_premium")):
             p["original_premium"] = p["net_premium"]
-                group_fetched += 1
-                fetched       += 1
-
-        marker = "✓" if group_fetched == n else ("⚠" if group_fetched > 0 else "✗")
-        print(f"  {marker} {group_fetched}/{n} fetched", flush=True)
-        time.sleep(FETCH_DELAY)
 
     _fetch_executor.shutdown(wait=False)
 
