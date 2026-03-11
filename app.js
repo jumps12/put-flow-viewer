@@ -192,10 +192,11 @@ function dteColor(dte) {
   return '#ff3355';                 // red
 }
 
-function strikeLineWidth(contracts, premium) {
+function strikeLineWidth(contracts, premium, type) {
   const mv = contracts * premium * 100;
   if (mv > 2_000_000) return 3;
   if (mv >   500_000) return 2;
+  if (type === 'put') return 2;  // put sales always min width 2
   return 1;
 }
 
