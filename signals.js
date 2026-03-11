@@ -407,7 +407,7 @@ async function loadSignals() {
     const dep = [];
     if (daysActive <= 1)                                                   dep.push('one_day');
     if (allPos.every(p => p.originalPremium < 0.50))                      dep.push('all_cheap');
-    const todayCalls = calls.filter(p => p.tradeDate && p.tradeDate.toDateString() === today.toDateString());
+    const todayCalls = calls.filter(p => p.tradeDate && p.tradeDate.toDateString() === (dataToday ?? today).toDateString());
     const checkCalls = todayCalls.length > 0 ? todayCalls : calls;
     if (puts.length === 0 && checkCalls.every(p => p.originalPremium < 2.0) && uniqueExpiryMonths.size < 3)   dep.push('calls_only_cheap');
     if (totalNotional < 100_000)                                           dep.push('low_notional');
@@ -518,7 +518,26 @@ async function loadSignals() {
     }
   }
 
-  // ── Sort helper (called twice: pre-MA and post-MA) ────────────────────────
+  // ── Macro combo boost: Airlines + Oil Services same day ─────────────────────
+  // Airlines + oil services flowing on the same date = macro read on fuel costs /
+  // travel demand / energy spread. Boost all involved tickers by 25% and tag.
+  {
+    const airlineSigs    = allSignals.filter(s => SECTOR_AIRLINES.includes(s.ticker));
+    const oilServiceSigs = allSignals.filter(s => SECTOR_OIL_SERVICES.includes(s.ticker));
+    if (airlineSigs.length >= 1 && oilServiceSigs.length >= 1) {
+      // Find a shared trade date between the two groups
+      const airlineDates = new Set(airlineSigs.map(s => s.minTradeDate?.toDateString()).filter(Boolean));
+      const sharedDate   = oilServiceSigs.some(s => airlineDates.has(s.minTradeDate?.toDateString()));
+      if (sharedDate) {
+        const comboSigs = [...airlineSigs, ...oilServiceSigs];
+        for (const s of comboSigs) {
+          s.multiplier *= 1.25;
+          s.tags = [...new Set([...(s.tags || []), 'MACRO COMBO — FUEL/TRAVEL'])];
+        }
+        console.log(`[signals] MACRO COMBO boost fired — airlines: ${airlineSigs.map(s=>s.ticker).join(',')} | oil svcs: ${oilServiceSigs.map(s=>s.ticker).join(',')}`);
+      }
+    }
+  }
   const sortByConviction = arr => arr.sort((a, b) => {
     const ftRank = s => s.multiplier >= 2.5 ? 3 : s.multiplier >= 2 ? 2 : s.multiplier >= 1.75 ? 1 : 0;
     const tierOrder = { STRONG: 3, NOTABLE: 2, UNUSUAL: 1 };
@@ -559,6 +578,13 @@ async function loadSignals() {
   // Weighted score = totalNotional × all accumulated multipliers.
   // Targets ~4–8 cards on a typical day; hard cap at 12.
   const THRESH = { STRONG: 150_000, NOTABLE: 75_000, UNUSUAL: 0 };
+  // Debug: log every signal's badge, weighted score, and threshold result
+  signals.forEach((s, i) => {
+    const weighted = s.totalNotional * s.multiplier;
+    const thresh   = THRESH[s.badge] ?? 0;
+    const passes   = weighted >= thresh;
+    console.log(`[signals rank #${i+1}] ${s.ticker} | ${s.badge} | notional=$${Math.round(s.totalNotional).toLocaleString()} | mult=${s.multiplier.toFixed(3)} | weighted=$${Math.round(weighted).toLocaleString()} | thresh=$${thresh.toLocaleString()} | ${passes ? 'PASS' : 'FAIL'} | t1=[${s.tier1Triggers.join(',')}] | dep=[${s.deprioritize.join(',')}]`);
+  });
   const shown = signals.filter(s => {
     const weighted = s.totalNotional * s.multiplier;
     return weighted >= (THRESH[s.badge] ?? 0);
@@ -853,9 +879,12 @@ function applyLearnedScoring(signal, analystNote = '') {
     tags.push('CALLS ONLY — BIOTECH');
     signal.callsOnly = true;
     // Biotech put sale is ultra-rare = automatic T1 upgrade
-    if (signal.isRiskReversal || (signal.puts && signal.puts.length > 0)) {
+    // Fires if: explicit risk reversal OR any puts present (put sale on biotech = strong signal)
+    const hasPuts = Array.isArray(signal.puts) && signal.puts.length > 0;
+    if (signal.isRiskReversal || hasPuts) {
       tags.push('BIOTECH PUT SALE — RARE');
       signal.forceTier1 = true;
+      console.log(`[signals] BIOTECH PUT SALE forceTier1 fired for ${signal.ticker} — isRR=${signal.isRiskReversal} hasPuts=${hasPuts}`);
     }
   }
   if (isSmallCap) { tags.push('CALLS ONLY — SMALL CAP'); signal.callsOnly = true; }
