@@ -237,7 +237,7 @@ body::before {
   flex: 1 1 auto;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 8px;
   padding: 8px;
   background: #0a0a0a;
@@ -247,7 +247,7 @@ body::before {
 /* ── Signals grid — empty cells match background ──── */
 .signals-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 12px;
   width: 100%;
   background: #0a0a0a;
