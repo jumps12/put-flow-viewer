@@ -548,7 +548,6 @@ async function loadSignals() {
       (s.isSameStrikeRR ? 1 : 0)  *  3_000_000 +
       (s.hasMegaBlock   ? 1 : 0)  *  2_000_000 +
       (s.hasExpiryLadder? 1 : 0)  *  1_500_000 +
-      (s.tier1Triggers?.length || 0)    *    750_000 +
       s.totalNotional * s.multiplier;
     return score(b) - score(a);
   });
@@ -757,19 +756,7 @@ function renderSignals(signals) {
        </div>`;
 
   // ── Event trades section (separate, below main grid) ──────────────────────
-  document.getElementById('event-wrap')?.remove();
-  if (events.length) {
-    const wrap = document.createElement('div');
-    wrap.id = 'event-wrap';
-    wrap.innerHTML = `
-      <div class="event-section-hdr">
-        <span class="event-hdr-label">UNUSUAL FLOW</span>
-        <span class="event-hdr-sub">First appearance · Mega size · Quiet names with large notional</span>
-      </div>
-      <div class="signals-grid">${events.map((s, i) => makeCard(s, i + 1)).join('')}</div>
-    `;
-    document.getElementById('sec03-body').appendChild(wrap);
-  }
+  document.getElementById('event-wrap')?.remove(); // hidden until further notice
 
   // ── Wire export button ────────────────────────────────────────────────────
   document.getElementById('export-btn')?.addEventListener('click', async () => {
