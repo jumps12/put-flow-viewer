@@ -878,7 +878,9 @@ const BOOST_PHRASES = [
   'something is brewing','maybe m&a','potential acquisition',
   'most bullish','most active','gap fill at',
   'adding to','second day','third day','building',
-  'rolled higher','cup and handle','base breakout','breaking out'
+  'rolled higher','cup and handle','base breakout','breaking out',
+  'leaders lead','leadership','clearing all','clear shot','instantly reclaimed',
+  'rare earths','government involved','insider buy','insiders buying'
 ];
 
 const REDUCE_PHRASES = [
@@ -989,6 +991,31 @@ function applyLearnedScoring(signal, analystNote = '') {
   // ── AI infra cross-boost: if NVDA/AMD flow present same day, boost copper names
   if (SECTOR_AI_INFRA.includes(signal.ticker)) {
     tags.push('AI INFRA FLOW');
+  }
+
+  // ── Insider buy confluence (Mar 11 2026) ───────────────────────────────────
+  if (note.includes('insider buy') || note.includes('insiders buy') || note.includes('insider buys')) {
+    score *= 1.30; tags.push('INSIDER BUY CONFLUENCE');
+  }
+  // ── Leadership EMA reclaim (Mar 11 2026) ─────────────────────────────────
+  if (note.includes('instantly reclaimed') || note.includes('3 days under') || note.includes('spent 3 days under')) {
+    score *= 1.60; tags.push('LEADERSHIP EMA RECLAIM');
+  }
+  // ── Valuation floor put sale (Mar 11 2026) ───────────────────────────────
+  if (note.includes('too cheap') || note.includes('assignment') || note.includes('forward earnings') || note.includes('cheapest')) {
+    score *= 1.20; tags.push('VALUATION FLOOR');
+  }
+  // ── Gap support put sale (Mar 11 2026) ───────────────────────────────────
+  if (note.includes('gap') && (note.includes('put sale') || note.includes('sell puts') || note.includes('put sold'))) {
+    score *= 1.25; tags.push('GAP SUPPORT PUT SALE');
+  }
+  // ── Rare name + OTM size (Mar 11 2026) ───────────────────────────────────
+  if ((note.includes("doesn't see") || note.includes('rarely sees') || note.includes('not often')) && signal.notional > 500000) {
+    score *= 1.35; tags.push('RARE FLOW — HIGH CONVICTION');
+  }
+  // ── Government catalyst (Mar 11 2026) ────────────────────────────────────
+  if (note.includes('government') || note.includes('rare earth') || note.includes('defense contract')) {
+    score *= 1.25; tags.push('GOVERNMENT CATALYST');
   }
 
   signal.score = score;
