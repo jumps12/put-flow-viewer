@@ -226,7 +226,7 @@ async function loadSignals() {
       const contracts = parseInt(p.contracts);
       return (
         expiry && tradeDate &&
-        expiry >= today &&
+        expiry > prevTradingDay(today, 1) &&
         expiry > tradeDate &&
         isFinite(contracts) && contracts > 0
       );
