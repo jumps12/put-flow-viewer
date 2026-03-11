@@ -431,13 +431,18 @@ function generateScript() {
   }
   script += `]\n\nfor sym, strike, expiry, tdate, prem in entries:\n`;
   script += `    for p in data:\n`;
+  script += `        try:\n`;
+  script += `            s = p.get('strike', 0)\n`;
+  script += `            strike_match = abs(float(str(s).split('/')[0]) - float(strike)) < 0.01\n`;
+  script += `        except:\n`;
+  script += `            strike_match = False\n`;
   script += `        if (str(p.get('symbol','')).upper() == sym and\n`;
-  script += `            str(p.get('strike','')) == str(strike) and\n`;
+  script += `            strike_match and\n`;
   script += `            str(p.get('expiry','')) == expiry and\n`;
-  script += `            str(p.get('trade_date','')) == tdate and\n`;
-  script += `            (not p.get('original_premium') or float(p.get('original_premium') or 0) <= 0)):\n`;
+  script += `            str(p.get('trade_date','')) == tdate):\n`;
   script += `            p['original_premium'] = prem\n`;
-  script += `            updated += 1\n\n`;
+  script += `            updated += 1\n`;
+  script += `            print(f'  Updated {sym} {strike} {expiry}')\n\n`;
   script += `json.dump(data, open(path,'w'), indent=2)\n`;
   script += `print(f"Updated {updated} premiums")\n`;
   script += `EOF`;
