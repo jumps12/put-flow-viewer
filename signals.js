@@ -548,6 +548,7 @@ async function loadSignals() {
       (s.isSameStrikeRR ? 1 : 0)  *  3_000_000 +
       (s.hasMegaBlock   ? 1 : 0)  *  2_000_000 +
       (s.hasExpiryLadder? 1 : 0)  *  1_500_000 +
+      (s.tier1Triggers?.length || 0)    *    750_000 +
       s.totalNotional * s.multiplier;
     return score(b) - score(a);
   });
