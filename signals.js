@@ -57,6 +57,35 @@ function calcEMA(closes, period) {
   return ema;
 }
 
+// ── VIX fetch (CBOE delayed) ───────────────────────────────────────────────────
+let _vixCache = null;
+async function fetchVIX() {
+  if (_vixCache !== null) return _vixCache;
+  try {
+    const url = 'https://cdn.cboe.com/api/global/delayed_quotes/charts/historical/_VIX.json';
+    const res = await fetch(url, { signal: AbortSignal.timeout(8_000) });
+    if (!res.ok) throw new Error('CBOE VIX fetch failed');
+    const json = await res.json();
+    const data = json?.data ?? [];
+    const last = data[data.length - 1];
+    const vix  = Array.isArray(last) ? parseFloat(last[last.length - 1]) : parseFloat(last?.close ?? last?.price);
+    if (!isFinite(vix)) throw new Error('VIX parse failed');
+    _vixCache = vix;
+    console.log(`[signals] VIX = ${vix.toFixed(2)}`);
+    return vix;
+  } catch (err) {
+    console.warn('[signals] VIX fetch failed, defaulting to 20:', err.message);
+    _vixCache = 20;
+    return 20;
+  }
+}
+function vixCallParams(vix) {
+  if (vix > 30) return { cheapThreshold: 5.0, depPenaltyOverride: 0.50, tag: 'HIGH VIX ENVIRONMENT' };
+  if (vix > 25) return { cheapThreshold: 4.0, depPenaltyOverride: 0.55, tag: null };
+  if (vix > 20) return { cheapThreshold: 3.0, depPenaltyOverride: 0.60, tag: null };
+  return         { cheapThreshold: 2.0, depPenaltyOverride: null,  tag: null };
+}
+
 // ── MA context fetch ───────────────────────────────────────────────────────────
 // 21D EMA is the primary bull/bear line.
 //   Reclaim within 2 sessions → +50% boost  · maStatus = 'reclaim'
@@ -126,6 +155,10 @@ async function loadSignals() {
   const res = await fetch('./positions.json');
   if (!res.ok) throw new Error('positions.json not found — run fetch_premiums.py first');
   const all = await res.json();
+
+  // ── Fetch live VIX for dynamic dep penalty ───────────────────────────────
+  const currentVIX = await fetchVIX();
+  const vixParams  = vixCallParams(currentVIX);
 
   // ── Reference dates ─────────────────────────────────────────────────────────
   // dataToday = max trade date in the whole dataset. Using the data's own max
@@ -409,13 +442,15 @@ async function loadSignals() {
     if (allPos.every(p => p.originalPremium < 0.50))                      dep.push('all_cheap');
     const todayCalls = calls.filter(p => p.tradeDate && p.tradeDate.toDateString() === (dataToday ?? today).toDateString());
     const checkCalls = todayCalls.length > 0 ? todayCalls : calls;
-    if (puts.length === 0 && checkCalls.every(p => p.originalPremium < 2.0) && uniqueExpiryMonths.size < 3)   dep.push('calls_only_cheap');
+    if (puts.length === 0 && checkCalls.every(p => p.originalPremium < vixParams.cheapThreshold) && uniqueExpiryMonths.size < 3)   dep.push('calls_only_cheap');
     if (totalNotional < 100_000)                                           dep.push('low_notional');
     if (allPos.every(p => p.expiry &&
         Math.floor((p.expiry - today) / 86_400_000) <= 14) &&
         (meta.priorCount ?? 0) <= 1)                                       dep.push('short_dated_no_history');
 
-    const depPenalty = dep.length > 0 ? 0.5 : 1.0;
+    const basePenalty = (dep.length === 1 && dep[0] === 'calls_only_cheap' && vixParams.depPenaltyOverride) ? vixParams.depPenaltyOverride : 0.5;
+    const depPenalty = dep.length > 0 ? basePenalty : 1.0;
+    const vixEnvTag = vixParams.tag ? [vixParams.tag] : [];
     const multiplier = ftBase * depPenalty;
 
     // ── Badge assignment ──────────────────────────────────────────────────────
@@ -478,7 +513,7 @@ async function loadSignals() {
       sig.score          = sig.totalNotional * sig.multiplier;
       sig.tier           = sig.badge;
       sig.notional       = sig.totalNotional;
-      sig.tags           = sig.tags ?? [];
+      sig.tags           = [...(sig.tags ?? []), ...vixEnvTag];
       sig.isRiskReversal = sig.isRiskReversal ?? false;
       sig.isITMPutSale   = sig.isITMPutSale   ?? false;
       sig.isRolling      = sig.isRolling      ?? false;
