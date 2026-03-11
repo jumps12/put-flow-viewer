@@ -239,6 +239,9 @@ function createLabels(positions) {
       labelStrike = p.strike;
     }
 
+    // Calls go to overlay panel — skip chart label
+    if (p.type === 'call') continue;
+
     const el = document.createElement('div');
     el.className   = 'strike-label';
     el.style.color = color;
@@ -246,6 +249,31 @@ function createLabels(positions) {
     container.appendChild(el);
 
     _labelData.push({ p, el, labelStrike });
+  }
+
+  // ── Calls overlay panel ───────────────────────────────────────────────────
+  let callsPanel = document.getElementById('calls-overlay');
+  if (!callsPanel) {
+    callsPanel = document.createElement('div');
+    callsPanel.id = 'calls-overlay';
+    container.appendChild(callsPanel);
+  }
+  const callPositions = positions.filter(p => p.type === 'call')
+    .sort((a, b) => a.expiry - b.expiry);
+  if (callPositions.length === 0) { callsPanel.style.display = 'none'; }
+  else {
+    callsPanel.style.display = 'block';
+    const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    callsPanel.innerHTML = '<div class="calls-overlay-title">CALLS</div>' + callPositions.map(p => {
+      const prem = (isFinite(p.originalPremium) && p.originalPremium > 0) ? p.originalPremium : (p.isSpread ? (p.leg1Strike + p.leg2Strike) / 2 : p.strike) * 0.03;
+      const mv = p.contracts * prem * 100;
+      const mvStr = fmtMoney(mv);
+      const dl = mo[p.expiry.getMonth()] + ' ' + p.expiry.getDate() + ' ' + p.expiry.getFullYear();
+      const sk = p.isSpread ? p.strike : (p.strike % 1 === 0 ? p.strike.toFixed(0) : p.strike.toFixed(2));
+      const tc = p.isSpread ? '' : 'C';
+      const ns = p.netLabel ? ' ' + p.netLabel : '';
+      return '<div class="calls-overlay-row">' + dl + ' · ' + sk + tc + ' · ' + p.contracts.toLocaleString() + 'x · ' + mvStr + ns + '</div>';
+    }).join('');
   }
 
   updateLabelPositions();
