@@ -21,6 +21,17 @@ export default {
       return new Response(null, { status: 204, headers: CORS_HEADERS });
     }
 
+    // ── VIX proxy route (GET /vix) ──────────────────────────────────────────
+    const url = new URL(request.url);
+    if (request.method === 'GET' && url.pathname === '/vix') {
+      const vixRes = await fetch('https://cdn.cboe.com/api/global/delayed_quotes/charts/historical/_VIX.json');
+      const vixBody = await vixRes.text();
+      return new Response(vixBody, {
+        status: vixRes.status,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      });
+    }
+
     if (request.method !== 'POST') {
       return new Response('Method not allowed', {
         status: 405,
