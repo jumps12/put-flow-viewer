@@ -259,7 +259,7 @@ function createLabels(positions) {
     container.appendChild(callsPanel);
   }
   const callPositions = positions.filter(p => p.type === 'call')
-    .sort((a, b) => a.expiry - b.expiry);
+    .sort((a, b) => a.tradeDate - b.tradeDate);
   if (callPositions.length === 0) { callsPanel.style.display = 'none'; }
   else {
     callsPanel.style.display = 'block';
@@ -442,6 +442,7 @@ function buildChart(ohlcv, positions) {
   // autoscaleInfoProvider: () => null keeps strike lines from stretching the y-axis.
   _strikeData = [];
   for (const p of chartPositions) {
+    if (p.type === 'call') continue; // calls shown in overlay panel
     const isCall  = p.type === 'call';
     const dte     = getDTE(p.expiry);
     const color   = isCall ? '#aa44ff' : dteColor(dte);
