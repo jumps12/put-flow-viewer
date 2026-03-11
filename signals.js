@@ -352,7 +352,12 @@ async function loadSignals() {
       .map(c => `${c.expiry?.getFullYear()}-${c.expiry?.getMonth()}`)
       .filter(Boolean);
     const uniqueExpiryMonths = new Set(todayCallExpiries);
-    if (uniqueExpiryMonths.size >= 3) tier1.push('expiry_ladder');
+    const todayCallExpiryDates = calls
+      .filter(c => sameDayStr(c.tradeDate, dataToday))
+      .map(c => c.expiry?.toDateString())
+      .filter(Boolean);
+    const uniqueExpiryDates = new Set(todayCallExpiryDates);
+    if (uniqueExpiryMonths.size >= 3 || uniqueExpiryDates.size >= 3) tier1.push('expiry_ladder');
 
     // T1.6  Mega contract day — 10,000+ contracts in a single day regardless of history
     // Catches first-time institutional size plays like UAL 40,000x
