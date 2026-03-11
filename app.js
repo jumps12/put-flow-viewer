@@ -257,8 +257,8 @@ function updateLabelPositions() {
   const container   = document.getElementById('chart-container');
   const priceScaleW = 75;
   const maxLabelX   = container.clientWidth - priceScaleW;
-  // Approximate rendered label height (10px font × 1.6 line-height + 2px padding)
-  const LABEL_H     = 18;
+  // Approximate rendered label height (10px font × 3 lines + padding)
+  const LABEL_H     = 42;
 
   // Labels sit at the right end of their line. Because strike lines are clamped
   // to today+90, use the same clamped date so the label tracks the line tip.
@@ -285,9 +285,12 @@ function updateLabelPositions() {
       : Math.max(visible[i].y, visible[i - 1].adjY + LABEL_H);
   }
 
-  for (const item of visible) {
+  for (let i = 0; i < visible.length; i++) {
+    const item = visible[i];
+    // Stagger labels left/right when they're stacked to aid readability
+    const staggerOffset = (item.adjY > item.y + 10) ? (i % 2 === 0 ? 0 : -160) : 0;
     item.el.style.display = 'block';
-    item.el.style.left    = `${item.x}px`;
+    item.el.style.left    = `${Math.max(0, item.x + staggerOffset)}px`;
     item.el.style.top     = `${item.adjY - 7}px`;
   }
 }
