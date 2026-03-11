@@ -69,9 +69,7 @@ async function fetchOHLCV(ticker) {
   const start = now - 2 * 365 * 24 * 3600;  // 2 years back
   const end   = now + 2   * 24 * 3600;      // 2-day buffer for timezone edge cases
 
-  const target = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}` +
-                 `?period1=${start}&period2=${end}&interval=1d`;
-  const url = CONFIG.CORS_PROXY + encodeURIComponent(target);
+  const url = `${CONFIG.AI_WORKER}/ohlcv?ticker=${encodeURIComponent(ticker)}`;
 
   let res;
   try {

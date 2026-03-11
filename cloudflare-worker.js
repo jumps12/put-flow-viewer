@@ -24,6 +24,24 @@ export default {
     // ── VIX proxy route (GET /vix) ──────────────────────────────────────────
     const url = new URL(request.url);
     if (request.method === 'GET' && url.pathname === '/vix') {
+      // ── OHLCV price data proxy ─────────────────────────────────────────
+      if (path === '/ohlcv') {
+        const ticker = url.searchParams.get('ticker');
+        if (!ticker) return new Response('missing ticker', { status: 400, headers: CORS_HEADERS });
+        const now   = Math.floor(Date.now() / 1000);
+        const start = now - 2 * 365 * 24 * 3600;
+        const end   = now + 2 * 24 * 3600;
+        const yhUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?period1=${start}&period2=${end}&interval=1d`;
+        const yhRes = await fetch(yhUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'Accept': 'application/json',
+          }
+        });
+        const body = await yhRes.text();
+        return new Response(body, { status: yhRes.status, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } });
+      }
+
       const vixRes = await fetch('https://cdn.cboe.com/api/global/delayed_quotes/charts/historical/_VIX.json');
       const vixBody = await vixRes.text();
       return new Response(vixBody, {
