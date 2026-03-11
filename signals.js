@@ -62,7 +62,8 @@ let _vixCache = null;
 async function fetchVIX() {
   if (_vixCache !== null) return _vixCache;
   try {
-    const url = 'https://cdn.cboe.com/api/global/delayed_quotes/charts/historical/_VIX.json';
+    const vixTarget = 'https://cdn.cboe.com/api/global/delayed_quotes/charts/historical/_VIX.json';
+    const url = CONFIG.CORS_PROXY + encodeURIComponent(vixTarget);
     const res = await fetch(url, { signal: AbortSignal.timeout(8_000) });
     if (!res.ok) throw new Error('CBOE VIX fetch failed');
     const json = await res.json();
