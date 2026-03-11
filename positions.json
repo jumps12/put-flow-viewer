@@ -14457,16 +14457,6 @@
     "status": "ACTIVE"
   },
   {
-    "symbol": "EXE",
-    "strike": 90.0,
-    "expiry": "2026-04-17",
-    "trade_date": "2026-03-10",
-    "type": "put",
-    "contracts": 8332,
-    "original_premium": 0.705,
-    "status": "ACTIVE"
-  },
-  {
     "symbol": "FISV",
     "strike": 49.0,
     "expiry": "2026-04-10",
